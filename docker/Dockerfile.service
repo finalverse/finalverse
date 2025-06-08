@@ -1,7 +1,9 @@
 # docker/Dockerfile.service
-FROM rust:1.75 as builder
+ARG SERVICE
+FROM rust:1.75 AS builder
 
 ARG SERVICE
+ENV SERVICE=${SERVICE}
 
 WORKDIR /usr/src/finalverse
 
@@ -12,19 +14,24 @@ COPY services ./services
 COPY client ./client
 
 # Build only the specified service
-RUN cargo build --release --bin ${SERVICE}
-
+RUN echo "▶ Building Finalverse binary for: ${SERVICE}" && \
+    cargo build --release --bin ${SERVICE}
 # Runtime stage
 FROM debian:bookworm-slim
 
 ARG SERVICE
+ENV SERVICE=${SERVICE}
 
+# Install required dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/src/finalverse/target/release/${SERVICE} /usr/local/bin/${SERVICE}
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
-ENV SERVICE_NAME=${SERVICE}
+RUN echo "▶ Copied binary: /usr/local/bin/${SERVICE}" && \
+    ls -al /usr/local/bin && \
+    chmod +x /usr/local/bin/${SERVICE} && chmod +x /usr/local/bin/entrypoint.sh
 
-CMD ["/usr/local/bin/${SERVICE}"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
