@@ -1,0 +1,8 @@
+[package]
+name = "silence-service"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+finalverse-common = { path = "../../libs/common" }
+finalverse-protocol = { path = "../../libs/protocol" }

@@ -1,0 +1,1 @@
+// AI common library - placeholder

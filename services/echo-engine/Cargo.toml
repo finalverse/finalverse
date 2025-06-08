@@ -1,0 +1,19 @@
+[package]
+name = "echo-engine"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "echo-engine"
+path = "src/main.rs"
+
+[dependencies]
+finalverse-common = { path = "../../libs/common" }
+finalverse-protocol = { path = "../../libs/protocol" }
+axum.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true

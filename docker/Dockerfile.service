@@ -1,0 +1,30 @@
+# docker/Dockerfile.service
+FROM rust:1.75 as builder
+
+ARG SERVICE
+
+WORKDIR /usr/src/finalverse
+
+# Copy workspace files
+COPY Cargo.toml ./
+COPY libs ./libs
+COPY services ./services
+COPY client ./client
+
+# Build only the specified service
+RUN cargo build --release --bin ${SERVICE}
+
+# Runtime stage
+FROM debian:bookworm-slim
+
+ARG SERVICE
+
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /usr/src/finalverse/target/release/${SERVICE} /usr/local/bin/${SERVICE}
+
+ENV SERVICE_NAME=${SERVICE}
+
+CMD ["/usr/local/bin/${SERVICE}"]

@@ -1,0 +1,11 @@
+[package]
+name = "finalverse-protocol"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+finalverse-common = { path = "../common" }
+serde.workspace = true
+async-trait.workspace = true
+tonic.workspace = true
+tokio.workspace = true

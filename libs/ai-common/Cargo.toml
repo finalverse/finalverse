@@ -1,0 +1,6 @@
+[package]
+name = "finalverse-ai-common"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

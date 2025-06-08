@@ -1,0 +1,75 @@
+# Cargo.toml - Root workspace configuration
+[workspace]
+resolver = "2"
+members = [
+    # Core Services
+    "services/api-gateway",
+    "services/song-engine",
+    "services/world-engine", 
+    "services/story-engine",
+    "services/echo-engine",
+    "services/harmony-service",
+    "services/silence-service",
+    "services/community-service",
+    "services/asset-service",
+    
+    # AI Infrastructure
+    "services/ai-orchestra",
+    "services/procedural-gen",
+    "services/behavior-ai",
+    
+    # Shared Libraries
+    "libs/common",
+    "libs/protocol",
+    "libs/ai-common",
+    
+    # Client
+    "client/mock-client",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Finalverse Team"]
+license = "MIT"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+async-trait = "0.1"
+
+# Web framework
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+prost = "0.12"
+tonic = "0.11"
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono"] }
+redis = { version = "0.24", features = ["tokio-comp"] }
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Utils
+uuid = { version = "1.6", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+rand = "0.8"
+
+# QUIC/Networking
+quinn = "0.10"
+rustls = "0.21"
+
+# AI/ML
+candle-core = "0.3"
+ort = "1.16" # ONNX Runtime
