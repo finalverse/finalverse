@@ -112,10 +112,14 @@ impl MockClient {
             
             if let Some(regions) = data["regions"].as_array() {
                 for region in regions {
-                    println!("\n   Region: {}", region["name"]);
-                    println!("   - Harmony: {:.1}%", region["harmony_level"]);
-                    println!("   - Weather: {:?}", region["weather"]);
-                    println!("   - Active Players: {}", region["active_players"]);
+                    let name = region["name"].as_str().unwrap_or("");
+                    let harmony = region["harmony_level"].as_f64().unwrap_or(0.0);
+                    let weather = &region["weather"];
+                    let active_players = region["active_players"].as_u64().unwrap_or(0);
+                    println!("\n   Region: {}", name);
+                    println!("   - Harmony: {:.1}%", harmony);
+                    println!("   - Weather: {:?}", weather);
+                    println!("   - Active Players: {}", active_players);
                 }
             }
         }
