@@ -54,7 +54,7 @@ struct GenerationResponse {
 #[derive(Clone)]
 struct AIOrchestraState {
     models: Arc<RwLock<std::collections::HashMap<String, AIModel>>>,
-    generation_cache: Arc<RwLock<std::collections::HashMap<String, GenerationResponse>>>,
+    _generation_cache: Arc<RwLock<std::collections::HashMap<String, GenerationResponse>>>,
     total_requests: Arc<RwLock<u64>>,
     start_time: std::time::Instant,
 }
@@ -87,7 +87,7 @@ impl AIOrchestraState {
         
         Self {
             models: Arc::new(RwLock::new(models)),
-            generation_cache: Arc::new(RwLock::new(std::collections::HashMap::new())),
+            _generation_cache: Arc::new(RwLock::new(std::collections::HashMap::new())),
             total_requests: Arc::new(RwLock::new(0)),
             start_time: std::time::Instant::now(),
         }

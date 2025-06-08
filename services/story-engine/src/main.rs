@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{info, warn};
+use tracing::info;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -246,16 +246,15 @@ async fn complete_quest(
     let chronicle = chronicles.get_mut(&player_id)
         .ok_or(StatusCode::NOT_FOUND)?;
     
-    if let Some(current_quest) = &chronicle.current_quest {
+    if let Some(current_quest) = chronicle.current_quest.take() {
         if current_quest.id == quest_uuid {
             let completed = CompletedQuest {
                 quest: current_quest.clone(),
                 completed_at: chrono::Utc::now(),
                 resonance_gained: current_quest.reward_resonance.clone(),
             };
-            
+
             chronicle.quest_history.push(completed.clone());
-            chronicle.current_quest = None;
             
             // Record as a legend
             state.record_legend(
@@ -277,6 +276,7 @@ async fn complete_quest(
                 "new_legend": format!("Completed: {}", current_quest.title),
             })))
         } else {
+            chronicle.current_quest = Some(current_quest);
             Err(StatusCode::BAD_REQUEST)
         }
     } else {
