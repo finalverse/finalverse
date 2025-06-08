@@ -45,7 +45,7 @@ pub enum Melody {
 }
 
 // Echo types
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum EchoType {
     Lumi,   // Hope & Discovery
     KAI,    // Logic & Understanding

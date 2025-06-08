@@ -8,7 +8,6 @@ use axum::{
     Router,
 };
 use finalverse_common::*;
-use finalverse_protocol::*;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;

@@ -5,7 +5,6 @@ use finalverse_protocol::*;
 use reqwest;
 use serde_json;
 use std::collections::HashMap;
-use tracing::info;
 use uuid::Uuid;
 
 pub struct EnhancedClient {
@@ -268,15 +267,6 @@ impl EnhancedClient {
         if response.status().is_success() {
             let result: serde_json::Value = response.json().await?;
             let bond_level = result["bond_level"].as_u64().unwrap_or(0) as u32;
-            
-            // Update local tracking
-            let echo_type = match echo_name.to_lowercase().as_str() {
-                "lumi" => EchoType::Lumi,
-                "kai" => EchoType::KAI,
-                "terra" => EchoType::Terra,
-                "ignis" => EchoType::Ignis,
-                _ => EchoType::Lumi,
-            };
             
             Ok(bond_level)
         } else {

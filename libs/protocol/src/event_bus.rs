@@ -55,14 +55,14 @@ impl EventBus for InMemoryEventBus {
 
 // Simplified Redis event bus that uses basic async connection
 pub struct RedisEventBus {
-    redis_url: String,
+    _redis_url: String,
     local_subscribers: Arc<RwLock<HashMap<String, Vec<mpsc::Sender<FinalverseEvent>>>>>,
 }
 
 impl RedisEventBus {
     pub fn new(redis_url: &str) -> Result<Self, FinalverseError> {
         Ok(Self {
-            redis_url: redis_url.to_string(),
+            _redis_url: redis_url.to_string(),
             local_subscribers: Arc::new(RwLock::new(HashMap::new())),
         })
     }

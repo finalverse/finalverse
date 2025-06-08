@@ -6,7 +6,6 @@ use enhanced_client::EnhancedClient;
 use finalverse_common::*;
 use finalverse_protocol::*;
 use std::io::{self, Write};
-use tracing::info;
 
 fn print_main_menu() {
     println!("\n╔════════════════════════════════════════╗");
@@ -217,8 +216,6 @@ async fn main() -> anyhow::Result<()> {
 }
 
 // Import the basic client functions
-use reqwest;
-use uuid::Uuid;
 
 impl EnhancedClient {
     pub async fn check_services(&self) {
