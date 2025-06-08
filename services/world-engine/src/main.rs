@@ -1,5 +1,8 @@
 // services/world-engine/src/main.rs
 
+pub mod ecosystem;
+use ecosystem::*;
+
 use axum::{
     extract::{Path, State},
     http::StatusCode,

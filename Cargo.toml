@@ -51,7 +51,8 @@ tonic = "0.11"
 
 # Database
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono"] }
-redis = { version = "0.24", features = ["tokio-comp"] }
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
+futures-util = "0.3"
 
 # Logging and tracing
 tracing = "0.1"

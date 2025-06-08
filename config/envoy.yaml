@@ -1,4 +1,4 @@
-# config/envoy.yaml
+# config/envoy.yaml - Updated with new services
 static_resources:
   listeners:
   - name: listener_0
@@ -53,6 +53,20 @@ static_resources:
                 route:
                   prefix_rewrite: "/"
                   cluster: ai_orchestra
+              
+              # Story Engine routes
+              - match:
+                  prefix: "/api/story/"
+                route:
+                  prefix_rewrite: "/"
+                  cluster: story_engine
+              
+              # Harmony Service routes
+              - match:
+                  prefix: "/api/harmony/"
+                route:
+                  prefix_rewrite: "/"
+                  cluster: harmony_service
 
   clusters:
   - name: song_engine
@@ -110,6 +124,34 @@ static_resources:
               socket_address:
                 address: ai-orchestra
                 port_value: 3004
+
+  - name: story_engine
+    connect_timeout: 5s
+    type: LOGICAL_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: story_engine
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: story-engine
+                port_value: 3005
+
+  - name: harmony_service
+    connect_timeout: 5s
+    type: LOGICAL_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: harmony_service
+      endpoints:
+      - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                address: harmony-service
+                port_value: 3006
 
 admin:
   address:

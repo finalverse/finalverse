@@ -3,6 +3,9 @@
 use finalverse_common::*;
 use serde::{Deserialize, Serialize};
 
+pub mod event_bus;
+pub use event_bus::{InMemoryEventBus, RedisEventBus};
+
 // Client -> Server messages
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ClientMessage {

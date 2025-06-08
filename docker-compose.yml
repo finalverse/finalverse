@@ -1,4 +1,4 @@
-# docker-compose.yml
+# docker-compose.yml - Updated version with new services
 # version: '3.8'
 
 services:
@@ -73,8 +73,10 @@ services:
       - world-engine
       - echo-engine
       - ai-orchestra
+      - story-engine
+      - harmony-service
 
-  # Core Services (would be built from Rust source in production)
+  # Core Services
   song-engine:
     build:
       context: .
@@ -149,6 +151,45 @@ services:
         condition: service_healthy
       qdrant:
         condition: service_started
+
+  story-engine:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: story-engine
+    ports:
+      - "3005:3005"
+    environment:
+      DATABASE_URL: postgres://finalverse:finalverse_secret@postgres:5432/finalverse
+      REDIS_URL: redis://redis:6379
+      AI_SERVICE_URL: http://ai-orchestra:3004
+      RUST_LOG: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai-orchestra:
+        condition: service_started
+
+  harmony-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.service
+      args:
+        SERVICE: harmony-service
+    ports:
+      - "3006:3006"
+    environment:
+      DATABASE_URL: postgres://finalverse:finalverse_secret@postgres:5432/finalverse
+      REDIS_URL: redis://redis:6379
+      RUST_LOG: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:

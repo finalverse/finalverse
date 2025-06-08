@@ -1,8 +1,22 @@
+# services/story-engine/Cargo.toml
 [package]
-name = "story-service"
+name = "story-engine"
 version.workspace = true
 edition.workspace = true
+
+[[bin]]
+name = "story-engine"
+path = "src/main.rs"
 
 [dependencies]
 finalverse-common = { path = "../../libs/common" }
 finalverse-protocol = { path = "../../libs/protocol" }
+axum.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+reqwest = { version = "0.11", features = ["json"] }
