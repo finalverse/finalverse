@@ -18,6 +18,7 @@
       <sourceFolder url="file://$MODULE_DIR$/services/song-engine/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/services/story-engine/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/services/world-engine/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/services/websocket-gateway/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

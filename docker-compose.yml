@@ -191,6 +191,19 @@ services:
       redis:
         condition: service_healthy
 
+websocket-gateway:
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.service
+    args:
+      SERVICE: websocket-gateway
+  ports:
+    - "3007:3007"
+  environment:
+    RUST_LOG: info
+  depends_on:
+    - redis
+
 volumes:
   postgres_data:
   redis_data:

@@ -12,6 +12,7 @@ members = [
     "services/silence-service",
     "services/community-service",
     "services/asset-service",
+    "services/websocket-gateway",
     
     # AI Infrastructure
     "services/ai-orchestra",
@@ -42,6 +43,7 @@ async-trait = "0.1"
 axum = "0.7"
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace"] }
+reqwest = "0.12"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
