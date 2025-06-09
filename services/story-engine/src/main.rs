@@ -319,8 +319,9 @@ async fn generate_quest(
         estimated_duration: 30, // minutes
         quest: quest,
     };
+    let json_response = serde_json::to_value(response).unwrap();
 
-    (StatusCode::OK, Json(response))
+    (StatusCode::OK, Json(json_response))
 }
 
 async fn update_chronicle(
@@ -364,8 +365,9 @@ async fn update_chronicle(
         new_achievements,
         story_progression,
     };
+    let json_response = serde_json::to_value(response).unwrap();
 
-    (StatusCode::OK, Json(response))
+    (StatusCode::OK, Json(json_response))
 }
 
 async fn get_player_chronicle(
@@ -389,7 +391,10 @@ async fn get_quest(
     let story_state = state.read().unwrap();
 
     match story_state.active_quests.get(&quest_id) {
-        Some(quest) => (StatusCode::OK, Json(quest)),
+        Some(quest) => {
+            let json_quest = serde_json::to_value(quest).unwrap();
+            (StatusCode::OK, Json(json_quest))
+        }
         None => (StatusCode::NOT_FOUND, Json(serde_json::json!({
             "error": "Quest not found"
         }))),

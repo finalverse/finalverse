@@ -126,6 +126,14 @@ impl SongEngineState {
         // Generate effects based on harmony type and power
         let effects = self.generate_melody_effects(&melody.harmony_type, melody_power, &region);
 
+        // Prepare message description before moving melody
+        let harmony_desc = match melody.harmony_type {
+            HarmonyType::Creative => "creative",
+            HarmonyType::Restoration => "restorative",
+            HarmonyType::Exploration => "exploratory",
+            HarmonyType::Protection => "protective",
+        };
+
         // Store the melody
         let melody_id = uuid::Uuid::new_v4().to_string();
         self.active_melodies.insert(melody_id, melody);
@@ -134,13 +142,10 @@ impl SongEngineState {
             success: true,
             resonance_gained,
             harmony_impact,
-            message: format!("Your {} melody resonates through the Song of Creation!",
-                             match melody.harmony_type {
-                                 HarmonyType::Creative => "creative",
-                                 HarmonyType::Restoration => "restorative",
-                                 HarmonyType::Exploration => "exploratory",
-                                 HarmonyType::Protection => "protective",
-                             }),
+            message: format!(
+                "Your {} melody resonates through the Song of Creation!",
+                harmony_desc
+            ),
             effects,
         }
     }
@@ -274,8 +279,9 @@ async fn perform_melody(
     // Perform the melody
     let mut song_state = state.write().unwrap();
     let response = song_state.perform_melody(melody, coordinates, player_id);
+    let json_response = serde_json::to_value(response).unwrap();
 
-    (StatusCode::OK, Json(response))
+    (StatusCode::OK, Json(json_response))
 }
 
 async fn check_harmony(
@@ -308,8 +314,9 @@ async fn check_harmony(
         corruption_level,
         dominant_song_fragments: dominant_fragments,
     };
+    let json_response = serde_json::to_value(response).unwrap();
 
-    (StatusCode::OK, Json(response))
+    (StatusCode::OK, Json(json_response))
 }
 
 async fn get_global_harmony(State(state): State<SharedSongState>) -> impl IntoResponse {
