@@ -7,7 +7,7 @@ use axum::{
 };
 use finalverse_common::{
     events::HarmonyEvent,
-    types::{EchoId, EchoState, EchoType, PlayerId},
+    types::{EchoId, EchoState, EchoType, PlayerId, RegionId},
     FinalverseError, Result,
 };
 use serde::{Deserialize, Serialize};
@@ -76,7 +76,7 @@ impl EchoEngineState {
             EchoId("lumi".to_string()),
             EchoState {
                 echo_type: EchoType::Lumi,
-                current_region: Some(crate::types::RegionId("terra_nova".to_string())),
+                current_region: Some(RegionId("terra_nova".to_string())),
                 bond_levels: HashMap::new(),
                 active_teachings: vec![
                     "melody_of_hope".to_string(),
@@ -90,7 +90,7 @@ impl EchoEngineState {
             EchoId("kai".to_string()),
             EchoState {
                 echo_type: EchoType::KAI,
-                current_region: Some(crate::types::RegionId("technos_prime".to_string())),
+                current_region: Some(RegionId("technos_prime".to_string())),
                 bond_levels: HashMap::new(),
                 active_teachings: vec![
                     "logic_harmony".to_string(),
@@ -104,7 +104,7 @@ impl EchoEngineState {
             EchoId("terra".to_string()),
             EchoState {
                 echo_type: EchoType::Terra,
-                current_region: Some(crate::types::RegionId("whispering_wilds".to_string())),
+                current_region: Some(RegionId("whispering_wilds".to_string())),
                 bond_levels: HashMap::new(),
                 active_teachings: vec![
                     "nature_song".to_string(),
@@ -118,7 +118,7 @@ impl EchoEngineState {
             EchoId("ignis".to_string()),
             EchoState {
                 echo_type: EchoType::Ignis,
-                current_region: Some(crate::types::RegionId("star_sailor_expanse".to_string())),
+                current_region: Some(RegionId("star_sailor_expanse".to_string())),
                 bond_levels: HashMap::new(),
                 active_teachings: vec![
                     "courage_flame".to_string(),
@@ -239,12 +239,15 @@ async fn interact_with_echo(
         }
     );
 
-    (StatusCode::OK, Json(BondResponse {
+    let response = BondResponse {
         echo_id: echo_id.0,
         new_bond_level,
         abilities_unlocked,
         message,
-    }))
+    };
+    let json_response = serde_json::to_value(response).unwrap();
+
+    (StatusCode::OK, Json(json_response))
 }
 
 async fn request_teaching(
@@ -274,7 +277,7 @@ async fn request_teaching(
     };
 
     if bond_level < required_bond {
-        return (StatusCode::OK, Json(TeachingResponse {
+        let response = TeachingResponse {
             success: false,
             skill_learned: None,
             requirements_met: false,
@@ -282,20 +285,24 @@ async fn request_teaching(
                 "Your bond level ({:.1}) is too low. Required: {:.1}",
                 bond_level, required_bond
             ),
-        }));
+        };
+        let json_response = serde_json::to_value(response).unwrap();
+        return (StatusCode::OK, Json(json_response));
     }
 
     // Check if echo can teach this skill
     if !echo.active_teachings.contains(&request.skill_requested) {
-        return (StatusCode::OK, Json(TeachingResponse {
+        let response = TeachingResponse {
             success: false,
             skill_learned: None,
             requirements_met: true,
             message: format!("{} cannot teach this skill.", echo_id.0),
-        }));
+        };
+        let json_response = serde_json::to_value(response).unwrap();
+        return (StatusCode::OK, Json(json_response));
     }
 
-    (StatusCode::OK, Json(TeachingResponse {
+    let response = TeachingResponse {
         success: true,
         skill_learned: Some(request.skill_requested.clone()),
         requirements_met: true,
@@ -303,7 +310,10 @@ async fn request_teaching(
             "{} has taught you {}! Practice it well, Songweaver.",
             echo_id.0, request.skill_requested
         ),
-    }))
+    };
+    let json_response = serde_json::to_value(response).unwrap();
+
+    (StatusCode::OK, Json(json_response))
 }
 
 async fn get_player_bonds(
