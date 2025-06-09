@@ -1,4 +1,5 @@
-# // services/websocket-gateway/Cargo.toml
+
+# services/websocket-gateway/Cargo.toml
 [package]
 name = "websocket-gateway"
 version.workspace = true
@@ -20,5 +21,5 @@ tracing-subscriber.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.12", features = ["json"] }
 tower = "0.5.2"

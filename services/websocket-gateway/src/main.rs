@@ -1,5 +1,3 @@
-// services/websocket-gateway/src/main.rs
-
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
@@ -14,6 +12,7 @@ use finalverse_common::{
     events::{FinalverseEvent, HarmonyEvent, SongEvent},
     types::{Coordinates, EchoId, Melody, PlayerId, RegionId},
 };
+use futures::{stream::SplitSink, stream::SplitStream, SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -24,6 +23,7 @@ use tokio::sync::mpsc;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
+use reqwest;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WSMessage {
@@ -92,7 +92,7 @@ pub async fn websocket_handler(
 }
 
 async fn handle_websocket(socket: WebSocket, state: SharedGameState) {
-    let (mut sender, mut receiver) = socket.split();
+    let (sender, receiver) = socket.split();
     let (tx, mut rx) = mpsc::unbounded_channel();
 
     // Generate a unique player ID
@@ -117,7 +117,7 @@ async fn handle_websocket(socket: WebSocket, state: SharedGameState) {
     });
 
     // Spawn task to handle outgoing messages
-    let tx_clone = tx.clone();
+    let mut sender = sender;
     tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
             if let Ok(json_msg) = serde_json::to_string(&msg) {
@@ -129,7 +129,8 @@ async fn handle_websocket(socket: WebSocket, state: SharedGameState) {
     });
 
     // Handle incoming messages
-    while let Some(msg) = receiver.recv().await {
+    let mut receiver = receiver;
+    while let Some(msg) = receiver.next().await {
         match msg {
             Ok(Message::Text(text)) => {
                 if let Ok(ws_message) = serde_json::from_str::<WSMessage>(&text) {
@@ -169,7 +170,7 @@ async fn handle_message(
             send_to_song_engine(SongEvent::MelodyWoven {
                 player_id: player_id.clone(),
                 melody: melody.clone(),
-                target: target.clone(),
+                target,
             })
             .await;
 
@@ -245,7 +246,7 @@ async fn health_check() -> impl IntoResponse {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::init();
+    tracing_subscriber::fmt::init();
 
     let state = Arc::new(RwLock::new(GameState::new()));
 

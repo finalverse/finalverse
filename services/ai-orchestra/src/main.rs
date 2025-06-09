@@ -1,5 +1,3 @@
-// services/ai-orchestra/src/main.rs
-
 use axum::{
     extract::State,
     http::StatusCode,
@@ -17,7 +15,7 @@ use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 
 mod llm_integration;
-use llm_integration::{LLMOrchestra, GenerationRequest, GenerationResponse};
+pub use llm_integration::{LLMOrchestra, GenerationRequest, GenerationResponse};
 
 #[derive(Debug, Clone)]
 pub struct AIState {
@@ -238,7 +236,7 @@ async fn generate_world_description(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::init();
+    tracing_subscriber::fmt::init();
 
     let state = Arc::new(RwLock::new(AIState::new()));
 

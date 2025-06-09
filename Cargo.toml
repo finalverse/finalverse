@@ -26,6 +26,7 @@ members = [
     
     # Client
     "client/mock-client",
+    
 ]
 
 [workspace.package]

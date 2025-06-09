@@ -123,7 +123,7 @@ async fn get_all_regions(State(state): State<WorldEngineState>) -> Json<serde_js
 async fn get_region(
     State(state): State<WorldEngineState>,
     Path(region_id): Path<String>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
+) -> Result<Json<serde_json::Value>> {
     let region_uuid = uuid::Uuid::parse_str(&region_id)
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     let region_id = RegionId(region_uuid);
@@ -146,7 +146,7 @@ async fn get_region(
 async fn update_harmony(
     State(state): State<WorldEngineState>,
     Json(request): Json<serde_json::Value>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
+) -> Result<Json<serde_json::Value>> {
     let region_id = request.get("region_id")
         .and_then(|v| v.as_str())
         .ok_or(StatusCode::BAD_REQUEST)?;
@@ -184,7 +184,7 @@ async fn cosmic_metabolism_task(state: WorldEngineState) {
 async fn get_region_ecosystem(
     State(state): State<WorldEngineState>,
     Path(region_id): Path<String>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
+) -> Result<Json<serde_json::Value>> {
     let region_uuid = uuid::Uuid::parse_str(&region_id)
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     let region_id = RegionId(region_uuid);

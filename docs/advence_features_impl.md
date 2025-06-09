@@ -1,5 +1,8 @@
 Now let's create a Dynamic Quest System that integrates with the Story Engine:
 
+// services/story-engine/src/quest_system.rs
+// Dynamic quest generation and management system
+
 Let me create a comprehensive setup guide for all these advanced features:
 
 ## Summary of Advanced Features Implemented

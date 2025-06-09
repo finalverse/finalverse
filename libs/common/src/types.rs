@@ -1,4 +1,3 @@
-// # Fix the libs/common/src/types.rs
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -103,12 +102,13 @@ impl Note {
     }
 }
 
+// Echo-specific types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EchoType {
-    Lumi,
-    KAI,
-    Terra,
-    Ignis,
+    Lumi, // Hope & Discovery
+    KAI,  // Logic & Understanding
+    Terra, // Resilience & Growth
+    Ignis, // Courage & Creation
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -119,6 +119,7 @@ pub struct EchoState {
     pub active_teachings: Vec<String>,
 }
 
+// Player progression types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerProgress {
     pub player_id: PlayerId,
@@ -154,9 +155,114 @@ impl PlayerProgress {
         }
         self.total_resonance = self.creative_resonance + self.exploration_resonance + self.restoration_resonance;
         
+        // Check for tier advancement
         let new_tier = (self.total_resonance / 100.0).floor() as u32 + 1;
         if new_tier > self.attunement_tier {
             self.attunement_tier = new_tier;
         }
     }
+}
+
+// Song-related types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SongFragment {
+    pub id: String,
+    pub melody: Melody,
+    pub power_level: f32,
+    pub creator: Option<PlayerId>,
+    pub creation_time: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SilenceManfestation {
+    pub id: String,
+    pub location: Coordinates,
+    pub intensity: f32,
+    pub corruption_radius: f32,
+    pub manifestation_type: SilenceType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SilenceType {
+    Void,
+    Corruption,
+    Despair,
+    Apathy,
+    Discord,
+}
+
+// Resource and item types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Item {
+    pub id: String,
+    pub name: String,
+    pub item_type: ItemType,
+    pub rarity: Rarity,
+    pub properties: std::collections::HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ItemType {
+    Instrument,
+    Artifact,
+    Essence,
+    Tool,
+    Consumable,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Rarity {
+    Common,
+    Uncommon,
+    Rare,
+    Epic,
+    Legendary,
+    Mythic,
+}
+
+// Quest types
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Quest {
+    pub id: String,
+    pub title: String,
+    pub description: String,
+    pub quest_type: QuestType,
+    pub objectives: Vec<QuestObjective>,
+    pub rewards: Vec<QuestReward>,
+    pub prerequisites: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum QuestType {
+    Exploration,
+    Harmony,
+    Creation,
+    Protection,
+    Discovery,
+    Social,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QuestObjective {
+    pub id: String,
+    pub description: String,
+    pub completed: bool,
+    pub progress: f32,
+    pub target: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct QuestReward {
+    pub reward_type: RewardType,
+    pub amount: u32,
+    pub item_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RewardType {
+    Resonance,
+    Item,
+    Ability,
+    Title,
+    Access,
 }

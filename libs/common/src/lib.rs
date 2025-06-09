@@ -2,9 +2,11 @@
 
 pub mod events;
 pub mod types;
+pub mod error;
 
 pub use events::*;
 pub use types::*;
+pub use error::*;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

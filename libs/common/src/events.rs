@@ -1,4 +1,3 @@
-// libs/common/src/events.rs
 use crate::types::{Coordinates, EchoId, Melody, PlayerId, RegionId};
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};

@@ -254,7 +254,7 @@ async fn get_service_info(State(state): State<HarmonyServiceState>) -> Json<Serv
 async fn get_player_progression(
     State(state): State<HarmonyServiceState>,
     Path(player_id): Path<String>,
-) -> Result<Json<PlayerProgression>, StatusCode> {
+) -> Result<Json<PlayerProgression>> {
     let player_uuid = uuid::Uuid::parse_str(&player_id)
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     let player_id = PlayerId(player_uuid);
@@ -269,7 +269,7 @@ async fn get_player_progression(
 async fn grant_resonance(
     State(state): State<HarmonyServiceState>,
     Json(request): Json<serde_json::Value>,
-) -> Result<Json<PlayerProgression>, StatusCode> {
+) -> Result<Json<PlayerProgression>> {
     let player_id = request.get("player_id")
         .and_then(|v| v.as_str())
         .ok_or(StatusCode::BAD_REQUEST)?;
@@ -314,7 +314,7 @@ async fn grant_resonance(
 async fn get_available_melodies(
     State(state): State<HarmonyServiceState>,
     Path(player_id): Path<String>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
+) -> Result<Json<serde_json::Value>> {
     let player_uuid = uuid::Uuid::parse_str(&player_id)
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     let player_id = PlayerId(player_uuid);
@@ -349,7 +349,7 @@ async fn get_available_melodies(
 async fn get_harmonies(
     State(state): State<HarmonyServiceState>,
     Path(player_id): Path<String>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
+) -> Result<Json<serde_json::Value>> {
     let player_uuid = uuid::Uuid::parse_str(&player_id)
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     let player_id = PlayerId(player_uuid);

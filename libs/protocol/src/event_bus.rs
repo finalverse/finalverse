@@ -21,7 +21,7 @@ impl InMemoryEventBus {
 
 #[async_trait::async_trait]
 impl EventBus for InMemoryEventBus {
-    async fn publish(&self, event: FinalverseEvent) -> Result<(), FinalverseError> {
+    async fn publish(&self, event: FinalverseEvent) -> Result<()> {
         let subscribers = self.subscribers.read().await;
         
         info!("Publishing event: {:?}", event);
@@ -38,7 +38,7 @@ impl EventBus for InMemoryEventBus {
         Ok(())
     }
     
-    async fn subscribe(&self, service_name: &str) -> Result<mpsc::Receiver<FinalverseEvent>, FinalverseError> {
+    async fn subscribe(&self, service_name: &str) -> Result<mpsc::Receiver<FinalverseEvent>> {
         let (tx, rx) = mpsc::channel(100);
         
         let mut subscribers = self.subscribers.write().await;
@@ -60,7 +60,7 @@ pub struct RedisEventBus {
 }
 
 impl RedisEventBus {
-    pub fn new(redis_url: &str) -> Result<Self, FinalverseError> {
+    pub fn new(redis_url: &str) -> Result<Self> {
         Ok(Self {
             _redis_url: redis_url.to_string(),
             local_subscribers: Arc::new(RwLock::new(HashMap::new())),
@@ -77,7 +77,7 @@ impl RedisEventBus {
 
 #[async_trait::async_trait]
 impl EventBus for RedisEventBus {
-    async fn publish(&self, event: FinalverseEvent) -> Result<(), FinalverseError> {
+    async fn publish(&self, event: FinalverseEvent) -> Result<()> {
         // For MVP, we'll use in-memory distribution
         let subscribers = self.local_subscribers.read().await;
         
@@ -94,7 +94,7 @@ impl EventBus for RedisEventBus {
         Ok(())
     }
     
-    async fn subscribe(&self, service_name: &str) -> Result<mpsc::Receiver<FinalverseEvent>, FinalverseError> {
+    async fn subscribe(&self, service_name: &str) -> Result<mpsc::Receiver<FinalverseEvent>> {
         let (tx, rx) = mpsc::channel(100);
         
         let mut subscribers = self.local_subscribers.write().await;

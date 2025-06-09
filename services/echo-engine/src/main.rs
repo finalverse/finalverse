@@ -1,221 +1,353 @@
-// services/echo-engine/src/main.rs
-
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::Json,
+    response::{IntoResponse, Json},
     routing::{get, post},
     Router,
 };
-use finalverse_common::*;
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use tracing::info;
+use finalverse_common::{
+    events::HarmonyEvent,
+    types::{EchoId, EchoState, EchoType, PlayerId},
+    FinalverseError, Result,
+};
+use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    net::SocketAddr,
+    sync::{Arc, RwLock},
+};
+use tokio;
+use tower::ServiceBuilder;
+use tower_http::cors::CorsLayer;
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
-struct Echo {
-    id: EchoId,
-    echo_type: EchoType,
-    personality: String,
-    current_location: Coordinates,
-    player_bonds: std::collections::HashMap<PlayerId, u32>, // Bond level 0-100
+pub struct EchoEngineState {
+    echoes: HashMap<EchoId, EchoState>,
+    player_bonds: HashMap<PlayerId, HashMap<EchoId, f32>>,
 }
 
-impl Echo {
-    fn new(echo_type: EchoType) -> Self {
-        let (personality, location) = match &echo_type {
-            EchoType::Lumi => (
-                "Curious and hopeful, always seeking new discoveries".to_string(),
-                Coordinates { x: 100.0, y: 50.0, z: 200.0 }
-            ),
-            EchoType::KAI => (
-                "Logical and wise, understanding the patterns of the universe".to_string(),
-                Coordinates { x: -200.0, y: 100.0, z: 0.0 }
-            ),
-            EchoType::Terra => (
-                "Patient and nurturing, connected to all living things".to_string(),
-                Coordinates { x: 0.0, y: 0.0, z: -150.0 }
-            ),
-            EchoType::Ignis => (
-                "Passionate and brave, inspiring courage in others".to_string(),
-                Coordinates { x: 300.0, y: 200.0, z: 100.0 }
-            ),
-        };
-        
-        Self {
-            id: echo_type.id(),
-            echo_type,
-            personality,
-            current_location: location,
-            player_bonds: std::collections::HashMap::new(),
-        }
-    }
+type SharedEchoState = Arc<RwLock<EchoEngineState>>;
+
+#[derive(Serialize)]
+struct ServiceInfo {
+    name: String,
+    version: String,
+    status: String,
+    active_echoes: usize,
 }
 
-#[derive(Clone)]
-struct EchoEngineState {
-    echoes: Arc<RwLock<std::collections::HashMap<EchoId, Echo>>>,
-    interactions: Arc<RwLock<u64>>,
-    start_time: std::time::Instant,
+#[derive(Deserialize)]
+struct BondRequest {
+    player_id: String,
+    echo_id: String,
+    interaction_type: String,
+}
+
+#[derive(Serialize)]
+struct BondResponse {
+    echo_id: String,
+    new_bond_level: f32,
+    abilities_unlocked: Vec<String>,
+    message: String,
+}
+
+#[derive(Deserialize)]
+struct TeachingRequest {
+    player_id: String,
+    echo_id: String,
+    skill_requested: String,
+}
+
+#[derive(Serialize)]
+struct TeachingResponse {
+    success: bool,
+    skill_learned: Option<String>,
+    requirements_met: bool,
+    message: String,
 }
 
 impl EchoEngineState {
-    fn new() -> Self {
-        let mut echoes = std::collections::HashMap::new();
-        
-        // Initialize all four Echoes
-        for echo_type in [EchoType::Lumi, EchoType::KAI, EchoType::Terra, EchoType::Ignis] {
-            let echo = Echo::new(echo_type);
-            echoes.insert(echo.id.clone(), echo);
-        }
-        
+    pub fn new() -> Self {
+        let mut echoes = HashMap::new();
+
+        // Initialize the Four First Echoes
+        echoes.insert(
+            EchoId("lumi".to_string()),
+            EchoState {
+                echo_type: EchoType::Lumi,
+                current_region: Some(crate::types::RegionId("terra_nova".to_string())),
+                bond_levels: HashMap::new(),
+                active_teachings: vec![
+                    "melody_of_hope".to_string(),
+                    "light_weaving".to_string(),
+                    "discovery_sense".to_string(),
+                ],
+            },
+        );
+
+        echoes.insert(
+            EchoId("kai".to_string()),
+            EchoState {
+                echo_type: EchoType::KAI,
+                current_region: Some(crate::types::RegionId("technos_prime".to_string())),
+                bond_levels: HashMap::new(),
+                active_teachings: vec![
+                    "logic_harmony".to_string(),
+                    "code_weaving".to_string(),
+                    "analysis_matrix".to_string(),
+                ],
+            },
+        );
+
+        echoes.insert(
+            EchoId("terra".to_string()),
+            EchoState {
+                echo_type: EchoType::Terra,
+                current_region: Some(crate::types::RegionId("whispering_wilds".to_string())),
+                bond_levels: HashMap::new(),
+                active_teachings: vec![
+                    "nature_song".to_string(),
+                    "growth_weaving".to_string(),
+                    "resilience_core".to_string(),
+                ],
+            },
+        );
+
+        echoes.insert(
+            EchoId("ignis".to_string()),
+            EchoState {
+                echo_type: EchoType::Ignis,
+                current_region: Some(crate::types::RegionId("star_sailor_expanse".to_string())),
+                bond_levels: HashMap::new(),
+                active_teachings: vec![
+                    "courage_flame".to_string(),
+                    "creation_forge".to_string(),
+                    "inspiration_burst".to_string(),
+                ],
+            },
+        );
+
         Self {
-            echoes: Arc::new(RwLock::new(echoes)),
-            interactions: Arc::new(RwLock::new(0)),
-            start_time: std::time::Instant::now(),
+            echoes,
+            player_bonds: HashMap::new(),
         }
     }
-    
-    async fn interact_with_echo(&self, player_id: PlayerId, echo_id: EchoId) -> Result<(u32, String), FinalverseError> {
-        let mut echoes = self.echoes.write().await;
-        let echo = echoes.get_mut(&echo_id)
-            .ok_or_else(|| FinalverseError::InvalidRequest("Echo not found".to_string()))?;
-        
-        // Increase bond level
-        let bond_level = echo.player_bonds.entry(player_id).or_insert(0);
-        *bond_level = (*bond_level + 5).min(100);
-        
-        let mut interactions = self.interactions.write().await;
-        *interactions += 1;
-        
-        // Generate response based on Echo personality and bond level
-        let response = match (&echo.echo_type, *bond_level) {
-            (EchoType::Lumi, level) if level < 20 => "Lumi glows softly, curious about you.".to_string(),
-            (EchoType::Lumi, level) if level < 50 => "Lumi's light brightens! She seems happy to see you.".to_string(),
-            (EchoType::Lumi, _) => "Lumi shines brilliantly, radiating hope and joy at your presence!".to_string(),
-            
-            (EchoType::KAI, level) if level < 20 => "KAI observes you with analytical interest.".to_string(),
-            (EchoType::KAI, level) if level < 50 => "KAI nods in acknowledgment, processing your growth.".to_string(),
-            (EchoType::KAI, _) => "KAI's form pulses with understanding. 'Your progress is remarkable.'".to_string(),
-            
-            (EchoType::Terra, level) if level < 20 => "Terra watches you calmly, roots gently stirring.".to_string(),
-            (EchoType::Terra, level) if level < 50 => "Terra's presence feels warm and protective.".to_string(),
-            (EchoType::Terra, _) => "Terra embraces you with nature's strength. You feel deeply connected.".to_string(),
-            
-            (EchoType::Ignis, level) if level < 20 => "Ignis burns with intensity, assessing your courage.".to_string(),
-            (EchoType::Ignis, level) if level < 50 => "Ignis's flames dance with approval!".to_string(),
-            (EchoType::Ignis, _) => "Ignis roars with pride! 'Together, we are unstoppable!'".to_string(),
-        };
-        
-        Ok((*bond_level, response))
+
+    pub fn get_echo(&self, echo_id: &EchoId) -> Option<&EchoState> {
+        self.echoes.get(echo_id)
+    }
+
+    pub fn get_bond_level(&self, player_id: &PlayerId, echo_id: &EchoId) -> f32 {
+        self.player_bonds
+            .get(player_id)
+            .and_then(|bonds| bonds.get(echo_id))
+            .copied()
+            .unwrap_or(0.0)
+    }
+
+    pub fn increase_bond(&mut self, player_id: PlayerId, echo_id: EchoId, amount: f32) -> f32 {
+        let player_bonds = self.player_bonds.entry(player_id.clone()).or_insert_with(HashMap::new);
+        let current_bond = player_bonds.entry(echo_id.clone()).or_insert(0.0);
+        *current_bond += amount;
+        *current_bond = current_bond.min(100.0); // Cap at 100
+
+        // Update the echo's bond tracking
+        if let Some(echo) = self.echoes.get_mut(&echo_id) {
+            echo.bond_levels.insert(player_id, *current_bond);
+        }
+
+        *current_bond
     }
 }
 
-// API handlers
-async fn get_service_info(State(state): State<EchoEngineState>) -> Json<ServiceInfo> {
+async fn health_check(State(state): State<SharedEchoState>) -> impl IntoResponse {
+    let echo_state = state.read().unwrap();
     Json(ServiceInfo {
-        name: "echo-engine".to_string(),
-        version: env!("CARGO_PKG_VERSION").to_string(),
-        status: ServiceStatus::Healthy,
-        uptime_seconds: state.start_time.elapsed().as_secs(),
+        name: "Echo Engine".to_string(),
+        version: "0.1.0".to_string(),
+        status: "healthy".to_string(),
+        active_echoes: echo_state.echoes.len(),
     })
 }
 
-async fn get_all_echoes(State(state): State<EchoEngineState>) -> Json<serde_json::Value> {
-    let echoes = state.echoes.read().await;
-    let data: Vec<_> = echoes
-        .values()
-        .map(|echo| {
-            serde_json::json!({
-                "id": echo.id.0,
-                "type": format!("{:?}", echo.echo_type),
-                "personality": echo.personality,
-                "location": echo.current_location,
-                "total_bonds": echo.player_bonds.len(),
-            })
-        })
-        .collect();
-    
-    Json(serde_json::json!({
-        "echoes": data,
-        "total_interactions": *state.interactions.read().await,
-    }))
-}
+async fn get_echo_info(
+    Path(echo_id): Path<String>,
+    State(state): State<SharedEchoState>,
+) -> impl IntoResponse {
+    let echo_state = state.read().unwrap();
+    let echo_id = EchoId(echo_id);
 
-async fn interact_with_echo(
-    State(state): State<EchoEngineState>,
-    Json(request): Json<serde_json::Value>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    let player_id = request.get("player_id")
-        .and_then(|v| v.as_str())
-        .ok_or(StatusCode::BAD_REQUEST)?;
-    let echo_id = request.get("echo_id")
-        .and_then(|v| v.as_str())
-        .ok_or(StatusCode::BAD_REQUEST)?;
-    
-    let player_uuid = uuid::Uuid::parse_str(player_id)
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let player_id = PlayerId(player_uuid);
-    let echo_id = EchoId(echo_id.to_string());
-    
-    match state.interact_with_echo(player_id, echo_id).await {
-        Ok((bond_level, response)) => Ok(Json(serde_json::json!({
-            "success": true,
-            "bond_level": bond_level,
-            "response": response,
+    match echo_state.get_echo(&echo_id) {
+        Some(echo) => (StatusCode::OK, Json(serde_json::json!({
+            "echo_id": echo_id.0,
+            "echo_type": echo.echo_type,
+            "current_region": echo.current_region,
+            "active_teachings": echo.active_teachings,
+            "total_bonds": echo.bond_levels.len()
         }))),
-        Err(_) => Err(StatusCode::NOT_FOUND),
+        None => (StatusCode::NOT_FOUND, Json(serde_json::json!({
+            "error": "Echo not found"
+        }))),
     }
 }
 
+async fn interact_with_echo(
+    State(state): State<SharedEchoState>,
+    Json(request): Json<BondRequest>,
+) -> impl IntoResponse {
+    let player_id = PlayerId(request.player_id);
+    let echo_id = EchoId(request.echo_id);
+
+    let mut echo_state = state.write().unwrap();
+
+    // Check if echo exists
+    if !echo_state.echoes.contains_key(&echo_id) {
+        return (StatusCode::NOT_FOUND, Json(serde_json::json!({
+            "error": "Echo not found"
+        })));
+    }
+
+    // Calculate bond increase based on interaction type
+    let bond_increase = match request.interaction_type.as_str() {
+        "help_others" => 5.0,
+        "solve_puzzle" => 3.0,
+        "creative_act" => 4.0,
+        "brave_action" => 6.0,
+        "discovery" => 3.5,
+        _ => 1.0,
+    };
+
+    let new_bond_level = echo_state.increase_bond(player_id.clone(), echo_id.clone(), bond_increase);
+
+    // Determine abilities unlocked based on bond level
+    let abilities_unlocked = match new_bond_level {
+        level if level >= 25.0 && level < 30.0 => vec!["basic_melody".to_string()],
+        level if level >= 50.0 && level < 55.0 => vec!["intermediate_harmony".to_string()],
+        level if level >= 75.0 && level < 80.0 => vec!["advanced_symphony".to_string()],
+        _ => vec![],
+    };
+
+    let message = format!(
+        "Your bond with {} has increased to {:.1}. {}",
+        echo_id.0,
+        new_bond_level,
+        if !abilities_unlocked.is_empty() {
+            "New abilities unlocked!"
+        } else {
+            "Keep strengthening your bond to unlock new abilities."
+        }
+    );
+
+    (StatusCode::OK, Json(BondResponse {
+        echo_id: echo_id.0,
+        new_bond_level,
+        abilities_unlocked,
+        message,
+    }))
+}
+
+async fn request_teaching(
+    State(state): State<SharedEchoState>,
+    Json(request): Json<TeachingRequest>,
+) -> impl IntoResponse {
+    let player_id = PlayerId(request.player_id);
+    let echo_id = EchoId(request.echo_id);
+
+    let echo_state = state.read().unwrap();
+
+    // Check if echo exists
+    let echo = match echo_state.get_echo(&echo_id) {
+        Some(echo) => echo,
+        None => return (StatusCode::NOT_FOUND, Json(serde_json::json!({
+            "error": "Echo not found"
+        }))),
+    };
+
+    // Check bond level requirement
+    let bond_level = echo_state.get_bond_level(&player_id, &echo_id);
+    let required_bond = match request.skill_requested.as_str() {
+        "basic_melody" => 25.0,
+        "intermediate_harmony" => 50.0,
+        "advanced_symphony" => 75.0,
+        _ => 10.0,
+    };
+
+    if bond_level < required_bond {
+        return (StatusCode::OK, Json(TeachingResponse {
+            success: false,
+            skill_learned: None,
+            requirements_met: false,
+            message: format!(
+                "Your bond level ({:.1}) is too low. Required: {:.1}",
+                bond_level, required_bond
+            ),
+        }));
+    }
+
+    // Check if echo can teach this skill
+    if !echo.active_teachings.contains(&request.skill_requested) {
+        return (StatusCode::OK, Json(TeachingResponse {
+            success: false,
+            skill_learned: None,
+            requirements_met: true,
+            message: format!("{} cannot teach this skill.", echo_id.0),
+        }));
+    }
+
+    (StatusCode::OK, Json(TeachingResponse {
+        success: true,
+        skill_learned: Some(request.skill_requested.clone()),
+        requirements_met: true,
+        message: format!(
+            "{} has taught you {}! Practice it well, Songweaver.",
+            echo_id.0, request.skill_requested
+        ),
+    }))
+}
+
 async fn get_player_bonds(
-    State(state): State<EchoEngineState>,
     Path(player_id): Path<String>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    let player_uuid = uuid::Uuid::parse_str(&player_id)
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let player_id = PlayerId(player_uuid);
-    
-    let echoes = state.echoes.read().await;
-    let bonds: Vec<_> = echoes
-        .values()
-        .filter_map(|echo| {
-            echo.player_bonds.get(&player_id).map(|level| {
-                serde_json::json!({
-                    "echo_id": echo.id.0,
-                    "echo_type": format!("{:?}", echo.echo_type),
-                    "bond_level": level,
-                })
-            })
-        })
-        .collect();
-    
-    Ok(Json(serde_json::json!({
-        "player_id": player_id.0.to_string(),
-        "bonds": bonds,
+    State(state): State<SharedEchoState>,
+) -> impl IntoResponse {
+    let player_id = PlayerId(player_id);
+    let echo_state = state.read().unwrap();
+
+    let bonds = echo_state.player_bonds
+        .get(&player_id)
+        .cloned()
+        .unwrap_or_default();
+
+    (StatusCode::OK, Json(serde_json::json!({
+        "player_id": player_id.0,
+        "bonds": bonds
     })))
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
-    
-    info!("Starting Echo Engine Service...");
-    
-    let state = EchoEngineState::new();
-    
-    // Build router
+
+    let state = Arc::new(RwLock::new(EchoEngineState::new()));
+
     let app = Router::new()
-        .route("/health", get(|| async { "OK" }))
-        .route("/info", get(get_service_info))
-        .route("/echoes", get(get_all_echoes))
+        .route("/health", get(health_check))
+        .route("/echo/:echo_id", get(get_echo_info))
         .route("/interact", post(interact_with_echo))
+        .route("/teach", post(request_teaching))
         .route("/bonds/:player_id", get(get_player_bonds))
+        .layer(
+            ServiceBuilder::new()
+                .layer(CorsLayer::permissive())
+                .into_inner(),
+        )
         .with_state(state);
-    
-    let addr = "0.0.0.0:3003";
-    info!("Echo Engine listening on {}", addr);
-    
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3004));
+    println!("Echo Engine listening on {}", addr);
+
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    axum::serve(listener, app).await?;
+
+    Ok(())
 }

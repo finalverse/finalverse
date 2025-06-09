@@ -89,6 +89,6 @@ pub trait FinalverseService: Send + Sync + 'static {
 // Event bus trait for inter-service communication
 #[async_trait::async_trait]
 pub trait EventBus: Send + Sync {
-    async fn publish(&self, event: FinalverseEvent) -> Result<(), FinalverseError>;
-    async fn subscribe(&self, service_name: &str) -> Result<tokio::sync::mpsc::Receiver<FinalverseEvent>, FinalverseError>;
+    async fn publish(&self, event: FinalverseEvent) -> Result<()>;
+    async fn subscribe(&self, service_name: &str) -> Result<tokio::sync::mpsc::Receiver<FinalverseEvent>>;
 }
