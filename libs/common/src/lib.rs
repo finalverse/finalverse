@@ -1,5 +1,11 @@
 // libs/common/src/lib.rs
 
+pub mod events;
+pub mod types;
+
+pub use events::*;
+pub use types::*;
+
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
