@@ -1,11 +1,13 @@
-// client/mock-client/src/main.rs - Updated version
+// client/mock-client/src/main.rs - Fixed version
 
-mod enhanced_client;
+//mod enhanced_client;
+pub mod enhanced_client;
 
 use enhanced_client::EnhancedClient;
 use finalverse_common::*;
 use finalverse_protocol::*;
 use std::io::{self, Write};
+use tracing::info;
 
 fn print_main_menu() {
     println!("\n╔════════════════════════════════════════╗");
@@ -25,6 +27,7 @@ fn print_main_menu() {
     println!("║ 9. Interact with AI NPC                ║");
     println!("║ 10. Perform advanced melody            ║");
     println!("║ 11. Initiate symphony (group event)    ║");
+    println!("║ 12. Select/Change region               ║");
     println!("║                                        ║");
     println!("║ 0. Exit                                ║");
     println!("╚════════════════════════════════════════╝");
@@ -33,16 +36,30 @@ fn print_main_menu() {
 }
 
 async fn select_region(client: &mut EnhancedClient) -> anyhow::Result<()> {
-    let response = client.client
+    let response = match client.client
         .get(&format!("{}/regions", client.service_urls["world"]))
         .send()
-        .await?;
+        .await {
+        Ok(resp) => resp,
+        Err(e) => {
+            println!("❌ Failed to connect to World Engine: {}", e);
+            println!("   Using default region: Terra Nova");
+            client.current_region = Some(RegionId(uuid::Uuid::new_v4()));
+            return Ok(());
+        }
+    };
     
     if response.status().is_success() {
         let data: serde_json::Value = response.json().await?;
         
         println!("\n🌍 Available Regions:");
         if let Some(regions) = data["regions"].as_array() {
+            if regions.is_empty() {
+                println!("   No regions available. Creating default region...");
+                client.current_region = Some(RegionId(uuid::Uuid::new_v4()));
+                return Ok(());
+            }
+            
             for (i, region) in regions.iter().enumerate() {
                 println!("{}. {} (Harmony: {:.1}%, Weather: {})",
                     i + 1,
@@ -63,9 +80,18 @@ async fn select_region(client: &mut EnhancedClient) -> anyhow::Result<()> {
                     let region_id = regions[index - 1]["id"].as_str().unwrap();
                     client.current_region = Some(RegionId(uuid::Uuid::parse_str(region_id)?));
                     println!("✅ Selected region: {}", regions[index - 1]["name"]);
+                    return Ok(());
                 }
             }
+            
+            // Default to first region if invalid selection
+            let region_id = regions[0]["id"].as_str().unwrap();
+            client.current_region = Some(RegionId(uuid::Uuid::parse_str(region_id)?));
+            println!("✅ Selected default region: {}", regions[0]["name"]);
         }
+    } else {
+        println!("❌ Failed to get regions. Using default.");
+        client.current_region = Some(RegionId(uuid::Uuid::new_v4()));
     }
     
     Ok(())
@@ -73,7 +99,11 @@ async fn select_region(client: &mut EnhancedClient) -> anyhow::Result<()> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    // Simple logging without complex formatting
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .with_level(false)
+        .init();
     
     println!("╔════════════════════════════════════════╗");
     println!("║     🌟 Welcome to Finalverse! 🌟       ║");
@@ -91,9 +121,19 @@ async fn main() -> anyhow::Result<()> {
     println!("\n✨ Welcome, {}!", player_name);
     println!("Your unique ID: {}", client.player_id.0);
     
-    // Select initial region
-    println!("\nFirst, let's choose your starting region...");
-    select_region(&mut client).await?;
+    // Check if services are running
+    println!("\nChecking services...");
+    let services_online = client.check_services_silent().await;
+    if !services_online {
+        println!("⚠️  Some services are offline. Some features may not work.");
+    }
+    
+    // Try to select initial region
+    println!("\nConnecting to the world...");
+    if let Err(e) = select_region(&mut client).await {
+        println!("⚠️  Could not connect to world: {}", e);
+        println!("   Some features will be limited.");
+    }
     
     loop {
         print_main_menu();
@@ -110,17 +150,23 @@ async fn main() -> anyhow::Result<()> {
                 io::stdout().flush().unwrap();
                 let mut melody = String::new();
                 io::stdin().read_line(&mut melody)?;
-                let _ = client.perform_melody(melody.trim()).await;
+                if let Err(e) = client.perform_melody(melody.trim()).await {
+                    println!("❌ Failed to perform melody: {}", e);
+                }
             }
             "3" => {
-                let _ = client.view_world_state().await;
+                if let Err(e) = client.view_world_state().await {
+                    println!("❌ Failed to view world state: {}", e);
+                }
             }
             "4" => {
                 print!("Enter Echo name (lumi/kai/terra/ignis): ");
                 io::stdout().flush().unwrap();
                 let mut echo = String::new();
                 io::stdin().read_line(&mut echo)?;
-                let _ = client.interact_with_echo(echo.trim()).await;
+                if let Err(e) = client.interact_with_echo(echo.trim()).await {
+                    println!("❌ Failed to interact with Echo: {}", e);
+                }
                 
                 // Update bond level
                 if let Ok(bond_level) = client.update_echo_bond(echo.trim()).await {
@@ -135,17 +181,27 @@ async fn main() -> anyhow::Result<()> {
                 }
             }
             "5" => {
-                let _ = client.view_progression().await;
-                let _ = client.view_detailed_stats().await;
+                if let Err(e) = client.view_progression().await {
+                    println!("❌ Failed to view progression: {}", e);
+                }
+                if let Err(e) = client.view_detailed_stats().await {
+                    println!("❌ Failed to view stats: {}", e);
+                }
             }
             "6" => {
-                let _ = client.view_chronicle().await;
+                if let Err(e) = client.view_chronicle().await {
+                    println!("❌ Failed to view chronicle: {}", e);
+                }
             }
             "7" => {
-                let _ = client.request_quest().await;
+                if let Err(e) = client.request_quest().await {
+                    println!("❌ Failed to request quest: {}", e);
+                }
             }
             "8" => {
-                let _ = client.view_ecosystem().await;
+                if let Err(e) = client.view_ecosystem().await {
+                    println!("❌ Failed to view ecosystem: {}", e);
+                }
             }
             "9" => {
                 print!("Enter NPC name: ");
@@ -158,7 +214,9 @@ async fn main() -> anyhow::Result<()> {
                 let mut emotion = String::new();
                 io::stdin().read_line(&mut emotion)?;
                 
-                let _ = client.interact_with_ai_npc(npc_name.trim(), emotion.trim()).await;
+                if let Err(e) = client.interact_with_ai_npc(npc_name.trim(), emotion.trim()).await {
+                    println!("❌ Failed to interact with NPC: {}", e);
+                }
             }
             "10" => {
                 println!("\nAvailable advanced melodies:");
@@ -171,7 +229,9 @@ async fn main() -> anyhow::Result<()> {
                 let mut melody_id = String::new();
                 io::stdin().read_line(&mut melody_id)?;
                 
-                let _ = client.perform_advanced_melody(melody_id.trim()).await;
+                if let Err(e) = client.perform_advanced_melody(melody_id.trim()).await {
+                    println!("❌ Failed to perform advanced melody: {}", e);
+                }
             }
             "11" => {
                 println!("\nAvailable symphonies:");
@@ -183,7 +243,14 @@ async fn main() -> anyhow::Result<()> {
                 let mut symphony = String::new();
                 io::stdin().read_line(&mut symphony)?;
                 
-                let _ = client.perform_symphony(symphony.trim()).await;
+                if let Err(e) = client.perform_symphony(symphony.trim()).await {
+                    println!("❌ Failed to perform symphony: {}", e);
+                }
+            }
+            "12" => {
+                if let Err(e) = select_region(&mut client).await {
+                    println!("❌ Failed to change region: {}", e);
+                }
             }
             "0" => {
                 println!("\n✨ May the Song guide your path, {}!", player_name);
@@ -193,11 +260,10 @@ async fn main() -> anyhow::Result<()> {
             _ => println!("Invalid option"),
         }
         
-        // Auto-save progress
-        if let Some(region_id) = &client.current_region {
-            // Grant some resonance for actions
+        // Auto-save progress (only if harmony service is available)
+        if client.current_region.is_some() {
             let _ = client.client
-                .post(&format!("{}/grant", client.service_urls["harmony"]))
+                .post(&format!("{}/grant", client.service_urls.get("harmony").unwrap_or(&"http://localhost:3006".to_string())))
                 .json(&serde_json::json!({
                     "player_id": client.player_id.0.to_string(),
                     "creative": 1,
@@ -216,30 +282,65 @@ async fn main() -> anyhow::Result<()> {
 }
 
 // Import the basic client functions
+use reqwest;
+use uuid::Uuid;
 
 impl EnhancedClient {
     pub async fn check_services(&self) {
         println!("\n🔍 Checking service status...");
         
         let services = vec![
-            ("Song Engine", "song"),
-            ("World Engine", "world"),
-            ("Echo Engine", "echo"),
-            ("AI Orchestra", "ai"),
-            ("Story Engine", "story"),
-            ("Harmony Service", "harmony"),
+            ("Song Engine", "song", "3001"),
+            ("World Engine", "world", "3002"),
+            ("Echo Engine", "echo", "3003"),
+            ("AI Orchestra", "ai", "3004"),
+            ("Story Engine", "story", "3005"),
+            ("Harmony Service", "harmony", "3006"),
         ];
         
-        for (name, key) in services {
-            match self.client.get(&format!("{}/info", self.service_urls[key])).send().await {
+        for (name, key, port) in services {
+            let url = self.service_urls.get(key)
+                .cloned()
+                .unwrap_or_else(|| format!("http://localhost:{}", port));
+            
+            match self.client.get(&format!("{}/info", url)).send().await {
                 Ok(resp) => {
                     if let Ok(info) = resp.json::<ServiceInfo>().await {
                         println!("✅ {}: {:?} (uptime: {}s)", name, info.status, info.uptime_seconds);
+                    } else {
+                        println!("⚠️  {}: Running but info unavailable", name);
                     }
                 }
                 Err(_) => println!("❌ {}: Offline", name),
             }
         }
+    }
+    
+    pub async fn check_services_silent(&self) -> bool {
+        let mut all_online = true;
+        let services = vec![
+            ("song", "3001"),
+            ("world", "3002"),
+            ("echo", "3003"),
+            ("ai", "3004"),
+        ];
+        
+        for (key, port) in services {
+            let url = self.service_urls.get(key)
+                .cloned()
+                .unwrap_or_else(|| format!("http://localhost:{}", port));
+            
+            match self.client.get(&format!("{}/health", url)).send().await {
+                Ok(resp) => {
+                    if !resp.status().is_success() {
+                        all_online = false;
+                    }
+                }
+                Err(_) => all_online = false,
+            }
+        }
+        
+        all_online
     }
     
     pub async fn perform_melody(&self, melody_type: &str) -> anyhow::Result<()> {
@@ -273,7 +374,7 @@ impl EnhancedClient {
                 result.resonance_gained.restoration
             );
         } else {
-            println!("❌ Failed to perform melody");
+            return Err(anyhow::anyhow!("Server returned error: {}", response.status()));
         }
         
         Ok(())
@@ -296,6 +397,13 @@ impl EnhancedClient {
                     println!("   - Harmony: {:.1}%", region["harmony_level"]);
                     println!("   - Weather: {:?}", region["weather"]);
                     println!("   - Active Players: {}", region["active_players"]);
+                    
+                    // Check if this is our current region
+                    if let Some(current) = &self.current_region {
+                        if region["id"].as_str() == Some(&current.0.to_string()) {
+                            println!("   📍 You are here!");
+                        }
+                    }
                 }
             }
         }
@@ -321,7 +429,7 @@ impl EnhancedClient {
             println!("   {}", result["response"]);
             println!("   Bond Level: {}/100", result["bond_level"]);
         } else {
-            println!("❌ Failed to interact with Echo");
+            return Err(anyhow::anyhow!("Server returned error: {}", response.status()));
         }
         
         Ok(())

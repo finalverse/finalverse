@@ -36,6 +36,7 @@ struct WorldEngineState {
     regions: Arc<RwLock<std::collections::HashMap<RegionId, Region>>>,
     cosmic_time: Arc<RwLock<u64>>, // In-game time
     start_time: std::time::Instant,
+    ecosystems: Arc<RwLock<std::collections::HashMap<RegionId, ecosystem::Ecosystem>>>,
 }
 
 impl WorldEngineState {
@@ -66,6 +67,7 @@ impl WorldEngineState {
             regions: Arc::new(RwLock::new(initial_regions)),
             cosmic_time: Arc::new(RwLock::new(0)),
             start_time: std::time::Instant::now(),
+            ecosystems: Arc::new(Default::default()),
         }
     }
     
@@ -178,6 +180,53 @@ async fn cosmic_metabolism_task(state: WorldEngineState) {
     }
 }
 
+// Handle ecosystem queries
+async fn get_region_ecosystem(
+    State(state): State<WorldEngineState>,
+    Path(region_id): Path<String>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let region_uuid = uuid::Uuid::parse_str(&region_id)
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let region_id = RegionId(region_uuid);
+    
+    // For MVP, generate a simple ecosystem response
+    let regions = state.regions.read().await;
+    let region = regions.get(&region_id)
+        .ok_or(StatusCode::NOT_FOUND)?;
+    
+    // Create sample ecosystem data
+    let notable_creatures = vec![
+        serde_json::json!({
+            "species": "Star-Horned Stag",
+            "x": 100.0,
+            "z": 200.0,
+            "behavior": "Foraging"
+        }),
+        serde_json::json!({
+            "species": "Melody Bird",
+            "x": 250.0,
+            "z": 150.0,
+            "behavior": "Singing"
+        }),
+        serde_json::json!({
+            "species": "Grotto Turtle",
+            "x": 50.0,
+            "z": 300.0,
+            "behavior": "Resting"
+        }),
+    ];
+    
+    Ok(Json(serde_json::json!({
+        "region_id": region_id.0.to_string(),
+        "biodiversity_index": 0.75,
+        "creature_count": 12,
+        "flora_count": 25,
+        "harmony_influence": region.harmony_level / 100.0,
+        "notable_creatures": notable_creatures,
+        "ecosystem_health": if region.harmony_level > 70.0 { "Thriving" } else if region.harmony_level > 40.0 { "Stable" } else { "Declining" }
+    })))
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
@@ -197,6 +246,7 @@ async fn main() {
         .route("/regions", get(get_all_regions))
         .route("/regions/:id", get(get_region))
         .route("/harmony", post(update_harmony))
+        .route("/regions/:id/ecosystem", get(get_region_ecosystem))
         .with_state(state);
     
     let addr = "0.0.0.0:3002";

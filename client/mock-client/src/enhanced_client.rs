@@ -5,6 +5,7 @@ use finalverse_protocol::*;
 use reqwest;
 use serde_json;
 use std::collections::HashMap;
+use tracing::info;
 use uuid::Uuid;
 
 pub struct EnhancedClient {
@@ -19,12 +20,20 @@ pub struct EnhancedClient {
 impl EnhancedClient {
     pub fn new(player_name: String) -> Self {
         let mut service_urls = HashMap::new();
-        service_urls.insert("song".to_string(), "http://localhost:3001".to_string());
-        service_urls.insert("world".to_string(), "http://localhost:3002".to_string());
-        service_urls.insert("echo".to_string(), "http://localhost:3003".to_string());
-        service_urls.insert("ai".to_string(), "http://localhost:3004".to_string());
-        service_urls.insert("story".to_string(), "http://localhost:3005".to_string());
-        service_urls.insert("harmony".to_string(), "http://localhost:3006".to_string());
+        
+        // Check if we're using docker or local development
+        let base_url = if std::env::var("USE_DOCKER").is_ok() {
+            "http://localhost"
+        } else {
+            "http://localhost"
+        };
+        
+        service_urls.insert("song".to_string(), format!("{}:3001", base_url));
+        service_urls.insert("world".to_string(), format!("{}:3002", base_url));
+        service_urls.insert("echo".to_string(), format!("{}:3003", base_url));
+        service_urls.insert("ai".to_string(), format!("{}:3004", base_url));
+        service_urls.insert("story".to_string(), format!("{}:3005", base_url));
+        service_urls.insert("harmony".to_string(), format!("{}:3006", base_url));
         
         let mut echo_bonds = HashMap::new();
         echo_bonds.insert(EchoType::Lumi, 0);
@@ -267,6 +276,15 @@ impl EnhancedClient {
         if response.status().is_success() {
             let result: serde_json::Value = response.json().await?;
             let bond_level = result["bond_level"].as_u64().unwrap_or(0) as u32;
+            
+            // Update local tracking
+            let echo_type = match echo_name.to_lowercase().as_str() {
+                "lumi" => EchoType::Lumi,
+                "kai" => EchoType::KAI,
+                "terra" => EchoType::Terra,
+                "ignis" => EchoType::Ignis,
+                _ => EchoType::Lumi,
+            };
             
             Ok(bond_level)
         } else {
