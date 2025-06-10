@@ -1,10 +1,8 @@
-# docker-compose.yml - Updated version with new services
-# version: '3.8'
 
 services:
-  # Data Layer
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15
+    container_name: finalverse-postgres
     environment:
       POSTGRES_DB: finalverse
       POSTGRES_USER: finalverse
@@ -12,200 +10,67 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - finalverse-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U finalverse"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
+    container_name: finalverse-redis
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - ./data/redis:/data
+    networks:
+      - finalverse-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
+      interval: 10s
+      timeout: 3s
       retries: 5
 
-  # Vector database for AI embeddings
   qdrant:
     image: qdrant/qdrant:latest
+    container_name: finalverse-qdrant
     ports:
       - "6333:6333"
+      - "6334:6334"
     volumes:
-      - qdrant_data:/qdrant/storage
-    environment:
-      QDRANT__SERVICE__GRPC_PORT: 6334
+      - ./data/qdrant:/qdrant/storage
+    networks:
+      - finalverse-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # MinIO for object storage (S3 compatible)
   minio:
     image: minio/minio:latest
+    container_name: finalverse-minio
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio_data:/data
+      - ./data/minio:/data
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
+    networks:
+      - finalverse-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
 
-  # API Gateway (using Envoy)
-  api-gateway:
-    image: envoyproxy/envoy:v1.28-latest
-    ports:
-      - "8080:8080"
-      - "9901:9901"
-    volumes:
-      - ./config/envoy.yaml:/etc/envoy/envoy.yaml
-    command: ["-c", "/etc/envoy/envoy.yaml"]
-    depends_on:
-      - song-engine
-      - world-engine
-      - echo-engine
-      - ai-orchestra
-      - story-engine
-      - harmony-service
-
-  # Core Services
-  song-engine:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.service
-      args:
-        SERVICE: song-engine
-    ports:
-      - "3001:3001"
-    environment:
-      DATABASE_URL: postgres://finalverse:finalverse_secret@postgres:5432/finalverse
-      REDIS_URL: redis://redis:6379
-      RUST_LOG: info
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  world-engine:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.service
-      args:
-        SERVICE: world-engine
-    ports:
-      - "3002:3002"
-    environment:
-      DATABASE_URL: postgres://finalverse:finalverse_secret@postgres:5432/finalverse
-      REDIS_URL: redis://redis:6379
-      RUST_LOG: info
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  echo-engine:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.service
-      args:
-        SERVICE: echo-engine
-    ports:
-      - "3003:3003"
-    environment:
-      DATABASE_URL: postgres://finalverse:finalverse_secret@postgres:5432/finalverse
-      REDIS_URL: redis://redis:6379
-      RUST_LOG: info
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  ai-orchestra:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.service
-      args:
-        SERVICE: ai-orchestra
-    ports:
-      - "3004:3004"
-    environment:
-      DATABASE_URL: postgres://finalverse:finalverse_secret@postgres:5432/finalverse
-      REDIS_URL: redis://redis:6379
-      QDRANT_URL: http://qdrant:6333
-      RUST_LOG: info
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      qdrant:
-        condition: service_started
-
-  story-engine:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.service
-      args:
-        SERVICE: story-engine
-    ports:
-      - "3005:3005"
-    environment:
-      DATABASE_URL: postgres://finalverse:finalverse_secret@postgres:5432/finalverse
-      REDIS_URL: redis://redis:6379
-      AI_SERVICE_URL: http://ai-orchestra:3004
-      RUST_LOG: info
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      ai-orchestra:
-        condition: service_started
-
-  harmony-service:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.service
-      args:
-        SERVICE: harmony-service
-    ports:
-      - "3006:3006"
-    environment:
-      DATABASE_URL: postgres://finalverse:finalverse_secret@postgres:5432/finalverse
-      REDIS_URL: redis://redis:6379
-      RUST_LOG: info
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  websocket-gateway:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.service
-      args:
-        SERVICE: websocket-gateway
-    ports:
-      - "3007:3007"
-    environment:
-      RUST_LOG: info
-    depends_on:
-      - redis
-
-volumes:
-  postgres_data:
-  redis_data:
-  qdrant_data:
-  minio_data:
+networks:
+  finalverse-network:
+    driver: bridge
+    name: finalverse-network

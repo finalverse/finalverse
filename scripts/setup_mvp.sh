@@ -33,7 +33,6 @@ echo "✅ All services built successfully!"
 # Create docker-compose.yml for data layer
 echo "🐳 Creating Docker services configuration..."
 cat > docker-compose.yml << 'EOF'
-version: '3.8'
 
 services:
   postgres:

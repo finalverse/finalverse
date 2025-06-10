@@ -1,4 +1,58 @@
 #!/bin/bash
+# quick_setup.sh - One-time setup for Finalverse project structure
+
+set -e
+
+echo "🎵 Finalverse Quick Setup"
+echo "========================"
+
+# Check if we're in the right place
+if [ ! -f "Cargo.toml" ]; then
+    echo "❌ Please run this from your Finalverse project root (where Cargo.toml is)"
+    exit 1
+fi
+
+PROJ_HOME="$(pwd)"
+echo "📁 Project root: $PROJ_HOME"
+
+# Create scripts directory if it doesn't exist
+mkdir -p scripts
+
+# Check for port conflicts and offer to clean them
+echo "🔍 Checking for port conflicts..."
+ports_in_use=()
+for port in 3000 3001 3002 3003 3004 5432 6379 6333 9000 9001; do
+    if lsof -ti:$port >/dev/null 2>&1; then
+        ports_in_use+=($port)
+    fi
+done
+
+if [ ${#ports_in_use[@]} -gt 0 ]; then
+    echo "⚠️  The following ports are in use: ${ports_in_use[*]}"
+    echo "These ports are needed for Finalverse services."
+    read -p "Would you like to kill processes on these ports? (y/n): " -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        for port in "${ports_in_use[@]}"; do
+            echo "🔫 Killing processes on port $port..."
+            lsof -ti:$port | xargs kill -9 2>/dev/null || true
+        done
+        echo "✅ Ports cleaned"
+    else
+        echo "⚠️  You may encounter port conflicts. You can run './scripts/finalverse.sh clean-ports' later."
+    fi
+fi
+
+# Clean up any existing Docker containers/networks
+echo "🧹 Cleaning up existing Docker resources..."
+docker-compose down -v 2>/dev/null || true
+docker network rm finalverse-network 2>/dev/null || true
+
+# Copy the main finalverse.sh script to scripts directory
+echo "📝 Creating management scripts..."
+
+# Create the main finalverse.sh script in scripts/
+cat > scripts/finalverse.sh << 'EOF'
+#!/bin/bash
 set -e
 
 # Determine project structure
@@ -353,3 +407,160 @@ case "${1:-help}" in
         show_help
         ;;
 esac
+EOF
+
+chmod +x scripts/finalverse.sh
+
+# Create a proper docker-compose.yml in project root
+echo "🐳 Creating Docker Compose configuration..."
+
+cat > docker-compose.yml << 'EOF'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: finalverse-postgres
+    environment:
+      POSTGRES_DB: finalverse
+      POSTGRES_USER: finalverse
+      POSTGRES_PASSWORD: finalverse_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - finalverse-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finalverse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: finalverse-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - finalverse-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: finalverse-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    networks:
+      - finalverse-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  minio:
+    image: minio/minio:latest
+    container_name: finalverse-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./data/minio:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    networks:
+      - finalverse-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+networks:
+  finalverse-network:
+    driver: bridge
+    name: finalverse-network
+EOF
+
+# Create necessary directories
+echo "📁 Creating directory structure..."
+mkdir -p {data/{postgres,redis,qdrant,minio},logs,config}
+
+# Create a simple README for the scripts
+cat > scripts/README.md << 'EOF'
+# Finalverse Scripts
+
+## Main Script: finalverse.sh
+
+The main development helper script with commands:
+
+- `build` - Build all Rust services
+- `start` - Start all services
+- `stop` - Stop all services  
+- `test` - Test connectivity
+- `status` - Show status
+- `logs [service]` - View logs
+- `clean-ports` - Clean port conflicts
+
+## Usage
+
+```bash
+# Build everything
+./scripts/finalverse.sh build
+
+# Start all services
+./scripts/finalverse.sh start
+
+# Test connectivity 
+./scripts/finalverse.sh test
+
+# View logs
+./scripts/finalverse.sh logs
+
+# Stop everything
+./scripts/finalverse.sh stop
+```
+
+## Services
+
+- WebSocket Gateway: Port 3000
+- AI Orchestra: Port 3001
+- Song Engine: Port 3002
+- Story Engine: Port 3003
+- Echo Engine: Port 3004
+
+## Data Services
+
+- PostgreSQL: Port 5432
+- Redis: Port 6379
+- Qdrant: Port 6333
+- MinIO: Ports 9000/9001
+EOF
+
+echo ""
+echo "✅ Finalverse setup complete!"
+echo ""
+echo "📁 Project structure:"
+echo "   $PROJ_HOME/"
+echo "   ├── scripts/finalverse.sh    # Main management script"
+echo "   ├── docker-compose.yml      # Data services"
+echo "   ├── data/                   # Persistent data"
+echo "   └── logs/                   # Service logs"
+echo ""
+echo "🎮 Next steps:"
+echo "   1. Build services:  ./scripts/finalverse.sh build"
+echo "   2. Start services:  ./scripts/finalverse.sh start"
+echo "   3. Test services:   ./scripts/finalverse.sh test"
+echo ""
+echo "🎵 The Song of Creation awaits! 🌟"
