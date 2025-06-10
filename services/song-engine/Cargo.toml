@@ -19,5 +19,5 @@ serde_json.workspace = true
 uuid.workspace = true
 finalverse-health.workspace = true
 finalverse-service-registry.workspace = true
-tower = "0.5.2"
-tower-http = "0.6.6"
+tower.workspace = true
+tower-http = { workspace = true, features = ["cors"] }

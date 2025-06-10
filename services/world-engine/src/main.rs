@@ -248,13 +248,14 @@ async fn main() {
     
     // Build router
     let app = Router::new()
+        .with_state(state.clone())
         .merge(monitor.clone().axum_routes())
         .route("/info", get(get_service_info))
         .route("/regions", get(get_all_regions))
         .route("/regions/:id", get(get_region))
         .route("/harmony", post(update_harmony))
         .route("/regions/:id/ecosystem", get(get_region_ecosystem))
-        .with_state(state);
+        ;
     
     let addr = "0.0.0.0:3002";
     info!("World Engine listening on {}", addr);

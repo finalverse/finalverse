@@ -407,6 +407,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .await;
 
     let app = Router::new()
+        .with_state(state.clone())
         .merge(monitor.clone().axum_routes())
         .route("/api/quest/generate", post(generate_quest))
         .route("/api/chronicle/update", post(update_chronicle))
@@ -416,8 +417,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             ServiceBuilder::new()
                 .layer(CorsLayer::permissive())
                 .into_inner(),
-        )
-        .with_state(state);
+        );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3005));
     println!("Story Engine listening on {}", addr);
