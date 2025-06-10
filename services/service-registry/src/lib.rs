@@ -16,7 +16,7 @@ pub struct ServiceInstance {
     pub port: u16,
     pub health_check_url: String,
     pub metadata: HashMap<String, String>,
-    #[serde(skip)]
+    #[serde(skip_serializing, skip_deserializing)]
     pub last_heartbeat: Instant,
 }
 
@@ -54,17 +54,19 @@ impl ServiceRegistry {
     pub async fn register(&self, registration: ServiceRegistration) -> String {
         let id = format!("{}-{}", registration.name, uuid::Uuid::new_v4());
         
+        let health_check_url = format!(
+            "http://{}:{}{}",
+            registration.host,
+            registration.port,
+            registration.health_check_path
+        );
+
         let instance = ServiceInstance {
             id: id.clone(),
             name: registration.name.clone(),
             host: registration.host,
             port: registration.port,
-            health_check_url: format!(
-                "http://{}:{}{}",
-                registration.host,
-                registration.port,
-                registration.health_check_path
-            ),
+            health_check_url,
             metadata: registration.metadata,
             last_heartbeat: Instant::now(),
         };
