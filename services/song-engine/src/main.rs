@@ -388,7 +388,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let monitor = Arc::new(HealthMonitor::new("song-engine", env!("CARGO_PKG_VERSION")));
     let registry = LocalServiceRegistry::new();
     registry
-        .register_service("song-engine".to_string(), "http://localhost:3002".to_string())
+        .register_service("song-engine".to_string(), "http://localhost:3001".to_string())
         .await;
 
     let app = Router::new()
@@ -404,7 +404,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         )
         .with_state(state);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3002));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3001));
     println!("Song Engine listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
