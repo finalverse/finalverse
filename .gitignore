@@ -6,7 +6,6 @@ Cargo.lock
 *.log
 /data
 /logs
-/script/data/
-/script/logs
 *.pid
 /.pids
+/.idea
