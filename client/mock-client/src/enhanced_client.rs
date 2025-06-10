@@ -34,6 +34,11 @@ impl EnhancedClient {
         service_urls.insert("ai".to_string(), format!("{}:3004", base_url));
         service_urls.insert("story".to_string(), format!("{}:3005", base_url));
         service_urls.insert("harmony".to_string(), format!("{}:3006", base_url));
+        service_urls.insert("asset".to_string(), format!("{}:3007", base_url));
+        service_urls.insert("community".to_string(), format!("{}:3008", base_url));
+        service_urls.insert("silence".to_string(), format!("{}:3009", base_url));
+        service_urls.insert("procedural".to_string(), format!("{}:3010", base_url));
+        service_urls.insert("behavior".to_string(), format!("{}:3011", base_url));
         
         let mut echo_bonds = HashMap::new();
         echo_bonds.insert(EchoType::Lumi, 0);

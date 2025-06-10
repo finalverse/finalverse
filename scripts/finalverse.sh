@@ -65,7 +65,11 @@ start_services() {
     if [ -f "target/release/websocket-gateway" ]; then
         services_found+=("websocket-gateway")
     fi
-    
+
+    if [ -f "target/release/api-gateway" ]; then
+        services_found+=("api-gateway")
+    fi
+
     if [ -f "target/release/ai-orchestra" ]; then
         services_found+=("ai-orchestra")
     fi
@@ -73,13 +77,41 @@ start_services() {
     if [ -f "target/release/song-engine" ]; then
         services_found+=("song-engine")
     fi
-    
+
     if [ -f "target/release/story-engine" ]; then
         services_found+=("story-engine")
     fi
-    
+
     if [ -f "target/release/echo-engine" ]; then
         services_found+=("echo-engine")
+    fi
+
+    if [ -f "target/release/world-engine" ]; then
+        services_found+=("world-engine")
+    fi
+
+    if [ -f "target/release/harmony-service" ]; then
+        services_found+=("harmony-service")
+    fi
+
+    if [ -f "target/release/asset-service" ]; then
+        services_found+=("asset-service")
+    fi
+
+    if [ -f "target/release/community-service" ]; then
+        services_found+=("community-service")
+    fi
+
+    if [ -f "target/release/silence-service" ]; then
+        services_found+=("silence-service")
+    fi
+
+    if [ -f "target/release/procedural-gen" ]; then
+        services_found+=("procedural-gen")
+    fi
+
+    if [ -f "target/release/behavior-ai" ]; then
+        services_found+=("behavior-ai")
     fi
     
     if [ ${#services_found[@]} -eq 0 ]; then
@@ -147,10 +179,18 @@ start_services() {
     echo ""
     echo "🌐 Service URLs:"
     [ -f "target/release/websocket-gateway" ] && echo "  📡 WebSocket: ws://localhost:3000/ws"
-    [ -f "target/release/ai-orchestra" ] && echo "  🤖 AI Orchestra: http://localhost:3001/health"
-    [ -f "target/release/song-engine" ] && echo "  🎵 Song Engine: http://localhost:3002/health"
-    [ -f "target/release/story-engine" ] && echo "  📖 Story Engine: http://localhost:3003/health"
-    [ -f "target/release/echo-engine" ] && echo "  🔮 Echo Engine: http://localhost:3004/health"
+    [ -f "target/release/api-gateway" ] && echo "  🚪 API Gateway: http://localhost:8080/health"
+    [ -f "target/release/ai-orchestra" ] && echo "  🤖 AI Orchestra: http://localhost:3004/health"
+    [ -f "target/release/song-engine" ] && echo "  🎵 Song Engine: http://localhost:3001/health"
+    [ -f "target/release/world-engine" ] && echo "  🌍 World Engine: http://localhost:3002/health"
+    [ -f "target/release/story-engine" ] && echo "  📖 Story Engine: http://localhost:3005/health"
+    [ -f "target/release/echo-engine" ] && echo "  🔮 Echo Engine: http://localhost:3003/health"
+    [ -f "target/release/harmony-service" ] && echo "  🎼 Harmony Service: http://localhost:3006/health"
+    [ -f "target/release/asset-service" ] && echo "  📦 Asset Service: http://localhost:3007/health"
+    [ -f "target/release/community-service" ] && echo "  👥 Community: http://localhost:3008/health"
+    [ -f "target/release/silence-service" ] && echo "  🔇 Silence Service: http://localhost:3009/health"
+    [ -f "target/release/procedural-gen" ] && echo "  ⚙️  Procedural Gen: http://localhost:3010/health"
+    [ -f "target/release/behavior-ai" ] && echo "  🧠 Behavior AI: http://localhost:3011/health"
 }
 
 stop_services() {
@@ -223,10 +263,18 @@ test_services() {
     # Test each game service
     services=(
         "websocket-gateway:3000:WebSocket Gateway"
-        "ai-orchestra:3001:AI Orchestra"
-        "song-engine:3002:Song Engine"
-        "story-engine:3003:Story Engine"
-        "echo-engine:3004:Echo Engine"
+        "api-gateway:8080:API Gateway"
+        "ai-orchestra:3004:AI Orchestra"
+        "song-engine:3001:Song Engine"
+        "world-engine:3002:World Engine"
+        "echo-engine:3003:Echo Engine"
+        "story-engine:3005:Story Engine"
+        "harmony-service:3006:Harmony Service"
+        "asset-service:3007:Asset Service"
+        "community-service:3008:Community"
+        "silence-service:3009:Silence Service"
+        "procedural-gen:3010:Procedural Gen"
+        "behavior-ai:3011:Behavior AI"
     )
     
     for service_info in "${services[@]}"; do

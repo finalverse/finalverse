@@ -62,6 +62,26 @@ port = 3006
 resonance_decay_rate = 0.05  # per day
 attunement_thresholds = [100, 500, 1000, 5000, 10000]
 
+[services.asset_service]
+host = "0.0.0.0"
+port = 3007
+
+[services.community]
+host = "0.0.0.0"
+port = 3008
+
+[services.silence_service]
+host = "0.0.0.0"
+port = 3009
+
+[services.procedural_gen]
+host = "0.0.0.0"
+port = 3010
+
+[services.behavior_ai]
+host = "0.0.0.0"
+port = 3011
+
 [game]
 # Core game settings
 starting_resonance = { creative = 10, exploration = 10, restoration = 10 }
