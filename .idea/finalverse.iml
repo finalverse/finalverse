@@ -10,7 +10,7 @@
       <sourceFolder url="file://$MODULE_DIR$/services/api-gateway/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/services/asset-service/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/services/behavior-ai/src" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/services/community-service/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/services/community/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/services/echo-engine/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/services/harmony-service/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/services/procedural-gen/src" isTestSource="false" />

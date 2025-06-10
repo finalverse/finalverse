@@ -8,6 +8,10 @@ use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use tokio::time::interval;
 
+fn default_instant() -> Instant {
+    Instant::now()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceInstance {
     pub id: String,
@@ -16,7 +20,11 @@ pub struct ServiceInstance {
     pub port: u16,
     pub health_check_url: String,
     pub metadata: HashMap<String, String>,
-    #[serde(skip)]
+    #[serde(
+        skip_serializing,
+        skip_deserializing,
+        default = "default_instant"
+    )]
     pub last_heartbeat: Instant,
 }
 
