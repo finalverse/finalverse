@@ -238,12 +238,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await;
 
     let app = Router::new()
-        .with_state(state.clone())
-        .merge(monitor.clone().axum_routes())
         .route("/api/generate", post(generate_text))
         .route("/api/quest", post(generate_quest))
         .route("/api/dialogue", post(generate_dialogue))
         .route("/api/world-description", post(generate_world_description))
+        .with_state(state.clone())
+        .merge(monitor.clone().axum_routes())
         .layer(
             ServiceBuilder::new()
                 .layer(CorsLayer::permissive())

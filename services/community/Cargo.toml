@@ -8,3 +8,5 @@ finalverse-common = { path = "../../libs/common" }
 finalverse-protocol = { path = "../../libs/protocol" }
 finalverse-health.workspace = true
 finalverse-service-registry.workspace = true
+axum.workspace = true
+tokio.workspace = true

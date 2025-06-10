@@ -407,12 +407,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .await;
 
     let app = Router::new()
-        .with_state(state.clone())
-        .merge(monitor.clone().axum_routes())
         .route("/api/quest/generate", post(generate_quest))
         .route("/api/chronicle/update", post(update_chronicle))
         .route("/api/chronicle/:player_id", get(get_player_chronicle))
         .route("/api/quest/:quest_id", get(get_quest))
+        .with_state(state.clone())
+        .merge(monitor.clone().axum_routes())
         .layer(
             ServiceBuilder::new()
                 .layer(CorsLayer::permissive())

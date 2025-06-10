@@ -392,12 +392,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .await;
 
     let app = Router::new()
-        .with_state(state.clone())
-        .merge(monitor.clone().axum_routes())
         .route("/api/melody/perform", post(perform_melody))
         .route("/api/harmony/check", post(check_harmony))
         .route("/api/harmony/global", get(get_global_harmony))
         .route("/api/events", post(process_song_event))
+        .with_state(state.clone())
+        .merge(monitor.clone().axum_routes())
         .layer(
             ServiceBuilder::new()
                 .layer(CorsLayer::permissive())

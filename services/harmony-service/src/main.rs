@@ -426,13 +426,13 @@ async fn main() {
     
     // Build router
     let app = Router::new()
-        .with_state(state.clone())
-        .merge(monitor.clone().axum_routes())
         .route("/info", get(get_service_info))
         .route("/progression/:player_id", get(get_player_progression))
         .route("/grant", post(grant_resonance))
         .route("/melodies/:player_id", get(get_available_melodies))
-        .route("/harmonies/:player_id", get(get_harmonies));
+        .route("/harmonies/:player_id", get(get_harmonies))
+        .with_state(state.clone())
+        .merge(monitor.clone().axum_routes());
     
     let addr = "0.0.0.0:3006";
     info!("Harmony Service listening on {}", addr);
