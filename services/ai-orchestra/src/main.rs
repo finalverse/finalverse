@@ -234,7 +234,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let monitor = Arc::new(HealthMonitor::new("ai-orchestra", env!("CARGO_PKG_VERSION")));
     let registry = LocalServiceRegistry::new();
     registry
-        .register_service("ai-orchestra".to_string(), "http://localhost:3001".to_string())
+        .register_service("ai-orchestra".to_string(), "http://localhost:3004".to_string())
         .await;
 
     let app = Router::new()
@@ -250,7 +250,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .with_state(state);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3001));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3004));
     println!("AI Orchestra listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;

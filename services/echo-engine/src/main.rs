@@ -335,7 +335,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let monitor = Arc::new(HealthMonitor::new("echo-engine", env!("CARGO_PKG_VERSION")));
     let registry = LocalServiceRegistry::new();
     registry
-        .register_service("echo-engine".to_string(), "http://localhost:3004".to_string())
+        .register_service("echo-engine".to_string(), "http://localhost:3003".to_string())
         .await;
 
     let app = Router::new()
@@ -351,7 +351,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         )
         .with_state(state);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3004));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3003));
     println!("Echo Engine listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
