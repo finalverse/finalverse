@@ -21,6 +21,8 @@ use tokio;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
+use finalverse_health::HealthMonitor;
+use finalverse_service_registry::LocalServiceRegistry;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
@@ -280,16 +282,6 @@ impl StoryEngineState {
     }
 }
 
-async fn health_check(State(state): State<SharedStoryState>) -> impl IntoResponse {
-    let story_state = state.read().await;
-    Json(ServiceInfo {
-        name: "Story Engine".to_string(),
-        version: "0.1.0".to_string(),
-        status: "healthy".to_string(),
-        active_chronicles: story_state.player_chronicles.len(),
-        active_quests: story_state.active_quests.len(),
-    })
-}
 
 async fn generate_quest(
     State(state): State<SharedStoryState>,
@@ -408,8 +400,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     let state = Arc::new(RwLock::new(StoryEngineState::new()));
 
+    let monitor = Arc::new(HealthMonitor::new("story-engine", env!("CARGO_PKG_VERSION")));
+    let registry = LocalServiceRegistry::new();
+    registry
+        .register_service("story-engine".to_string(), "http://localhost:3003".to_string())
+        .await;
+
     let app = Router::new()
-        .route("/health", get(health_check))
+        .merge(monitor.clone().axum_routes())
         .route("/api/quest/generate", post(generate_quest))
         .route("/api/chronicle/update", post(update_chronicle))
         .route("/api/chronicle/:player_id", get(get_player_chronicle))

@@ -24,6 +24,8 @@ use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 use reqwest;
+use finalverse_health::HealthMonitor;
+use finalverse_service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WSMessage {
@@ -236,22 +238,20 @@ async fn broadcast_harmony_update(state: &SharedGameState, region: &RegionId, le
     }
 }
 
-async fn health_check() -> impl IntoResponse {
-    Json(ServiceInfo {
-        name: "WebSocket Gateway".to_string(),
-        version: "0.1.0".to_string(),
-        status: "healthy".to_string(),
-    })
-}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
     let state = Arc::new(RwLock::new(GameState::new()));
+    let monitor = Arc::new(HealthMonitor::new("websocket-gateway", env!("CARGO_PKG_VERSION")));
+    let registry = LocalServiceRegistry::new();
+    registry
+        .register_service("websocket-gateway".to_string(), "http://localhost:3000".to_string())
+        .await;
 
     let app = Router::new()
-        .route("/health", get(health_check))
+        .merge(monitor.clone().axum_routes())
         .route("/ws", get(websocket_handler))
         .layer(
             ServiceBuilder::new()

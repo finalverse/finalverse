@@ -5,6 +5,8 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use finalverse_health::HealthMonitor;
+use finalverse_service_registry::LocalServiceRegistry;
 use serde::{Deserialize, Serialize};
 use std::{
     net::SocketAddr,
@@ -86,15 +88,6 @@ impl AIState {
     }
 }
 
-async fn health_check(State(state): State<SharedAIState>) -> impl IntoResponse {
-    let ai_state = state.read().unwrap();
-    Json(ServiceInfo {
-        name: "AI Orchestra".to_string(),
-        version: "0.1.0".to_string(),
-        status: "healthy".to_string(),
-        active_sessions: ai_state.active_sessions,
-    })
-}
 
 async fn generate_text(
     State(state): State<SharedAIState>,
@@ -237,11 +230,15 @@ async fn generate_world_description(
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
-
     let state = Arc::new(RwLock::new(AIState::new()));
+    let monitor = Arc::new(HealthMonitor::new("ai-orchestra", env!("CARGO_PKG_VERSION")));
+    let registry = LocalServiceRegistry::new();
+    registry
+        .register_service("ai-orchestra".to_string(), "http://localhost:3001".to_string())
+        .await;
 
     let app = Router::new()
-        .route("/health", get(health_check))
+        .merge(monitor.clone().axum_routes())
         .route("/api/generate", post(generate_text))
         .route("/api/quest", post(generate_quest))
         .route("/api/dialogue", post(generate_dialogue))

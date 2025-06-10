@@ -20,6 +20,8 @@ use tokio;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
+use finalverse_health::HealthMonitor;
+use finalverse_service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone)]
 pub struct SongEngineState {
@@ -223,15 +225,6 @@ impl SongEngineState {
     }
 }
 
-async fn health_check(State(state): State<SharedSongState>) -> impl IntoResponse {
-    let song_state = state.read().unwrap();
-    Json(ServiceInfo {
-        name: "Song Engine".to_string(),
-        version: "0.1.0".to_string(),
-        status: "healthy".to_string(),
-        global_harmony: song_state.global_harmony,
-    })
-}
 
 async fn perform_melody(
     State(state): State<SharedSongState>,
@@ -392,9 +385,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
     let state = Arc::new(RwLock::new(SongEngineState::new()));
+    let monitor = Arc::new(HealthMonitor::new("song-engine", env!("CARGO_PKG_VERSION")));
+    let registry = LocalServiceRegistry::new();
+    registry
+        .register_service("song-engine".to_string(), "http://localhost:3002".to_string())
+        .await;
 
     let app = Router::new()
-        .route("/health", get(health_check))
+        .merge(monitor.clone().axum_routes())
         .route("/api/melody/perform", post(perform_melody))
         .route("/api/harmony/check", post(check_harmony))
         .route("/api/harmony/global", get(get_global_harmony))

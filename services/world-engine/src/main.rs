@@ -13,6 +13,8 @@ use finalverse_common::*;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
+use finalverse_health::HealthMonitor;
+use finalverse_service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone)]
 struct Region {
@@ -234,6 +236,11 @@ async fn main() {
     info!("Starting World Engine Service...");
     
     let state = WorldEngineState::new();
+    let monitor = Arc::new(HealthMonitor::new("world-engine", env!("CARGO_PKG_VERSION")));
+    let registry = LocalServiceRegistry::new();
+    registry
+        .register_service("world-engine".to_string(), "http://localhost:3002".to_string())
+        .await;
     
     // Start background task
     let bg_state = state.clone();
@@ -241,7 +248,7 @@ async fn main() {
     
     // Build router
     let app = Router::new()
-        .route("/health", get(|| async { "OK" }))
+        .merge(monitor.clone().axum_routes())
         .route("/info", get(get_service_info))
         .route("/regions", get(get_all_regions))
         .route("/regions/:id", get(get_region))

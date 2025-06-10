@@ -21,5 +21,7 @@ tracing-subscriber.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
+finalverse-health.workspace = true
+finalverse-service-registry.workspace = true
 reqwest = { version = "0.12", features = ["json"] }
 tower = "0.5.2"

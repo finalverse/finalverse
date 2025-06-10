@@ -20,6 +20,8 @@ use tokio;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
+use finalverse_health::HealthMonitor;
+use finalverse_service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone)]
 pub struct EchoEngineState {
@@ -161,15 +163,6 @@ impl EchoEngineState {
     }
 }
 
-async fn health_check(State(state): State<SharedEchoState>) -> impl IntoResponse {
-    let echo_state = state.read().unwrap();
-    Json(ServiceInfo {
-        name: "Echo Engine".to_string(),
-        version: "0.1.0".to_string(),
-        status: "healthy".to_string(),
-        active_echoes: echo_state.echoes.len(),
-    })
-}
 
 async fn get_echo_info(
     Path(echo_id): Path<String>,
@@ -339,9 +332,14 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
     let state = Arc::new(RwLock::new(EchoEngineState::new()));
+    let monitor = Arc::new(HealthMonitor::new("echo-engine", env!("CARGO_PKG_VERSION")));
+    let registry = LocalServiceRegistry::new();
+    registry
+        .register_service("echo-engine".to_string(), "http://localhost:3004".to_string())
+        .await;
 
     let app = Router::new()
-        .route("/health", get(health_check))
+        .merge(monitor.clone().axum_routes())
         .route("/echo/:echo_id", get(get_echo_info))
         .route("/interact", post(interact_with_echo))
         .route("/teach", post(request_teaching))

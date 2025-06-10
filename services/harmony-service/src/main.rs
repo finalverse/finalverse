@@ -14,6 +14,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
+use finalverse_health::HealthMonitor;
+use finalverse_service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct PlayerProgression {
@@ -416,10 +418,15 @@ async fn main() {
     // Start event handler
     let event_state = state.clone();
     tokio::spawn(handle_events(event_state));
+    let monitor = Arc::new(HealthMonitor::new("harmony-service", env!("CARGO_PKG_VERSION")));
+    let registry = LocalServiceRegistry::new();
+    registry
+        .register_service("harmony-service".to_string(), "http://localhost:3006".to_string())
+        .await;
     
     // Build router
     let app = Router::new()
-        .route("/health", get(|| async { "OK" }))
+        .merge(monitor.clone().axum_routes())
         .route("/info", get(get_service_info))
         .route("/progression/:player_id", get(get_player_progression))
         .route("/grant", post(grant_resonance))
