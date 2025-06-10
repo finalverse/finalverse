@@ -102,12 +102,18 @@ start_services() {
         # Start each service in a window
         window=0
         for service in "${services_found[@]}"; do
+            if [ -f "target/release/$service" ]; then
+                cmd="target/release/$service"
+            else
+                cmd="cargo run --bin $service"
+            fi
+
             if [ $window -eq 0 ]; then
                 tmux rename-window -t finalverse:0 "$service"
-                tmux send-keys -t finalverse:0 "RUST_LOG=info cargo run --bin $service" C-m
+                tmux send-keys -t finalverse:0 "RUST_LOG=info $cmd" C-m
             else
                 tmux new-window -t finalverse:$window -n "$service"
-                tmux send-keys -t finalverse:$window "RUST_LOG=info cargo run --bin $service" C-m
+                tmux send-keys -t finalverse:$window "RUST_LOG=info $cmd" C-m
             fi
             window=$((window + 1))
             sleep 2
@@ -123,7 +129,12 @@ start_services() {
         
         for service in "${services_found[@]}"; do
             log_info "Starting $service..."
-            RUST_LOG=info cargo run --bin $service > logs/$service.log 2>&1 &
+            if [ -f "target/release/$service" ]; then
+                cmd="target/release/$service"
+            else
+                cmd="cargo run --bin $service"
+            fi
+            RUST_LOG=info $cmd > logs/$service.log 2>&1 &
             echo $! > logs/$service.pid
             sleep 2
         done

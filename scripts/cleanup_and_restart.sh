@@ -180,13 +180,8 @@ echo -e "${GREEN}✅ Build completed${NC}"
 echo ""
 echo -e "${BLUE}🎮 Step 7: Starting Finalverse services...${NC}"
 
-# Copy the new orchestrator script
-if [ -f "scripts/finalverse-orchestrator.sh" ]; then
-    chmod +x scripts/finalverse-orchestrator.sh
-    ./scripts/finalverse-orchestrator.sh start
-else
-    ./scripts/finalverse.sh start
-fi
+# Start the services using the helper script
+./scripts/finalverse.sh start
 
 echo ""
 echo -e "${BLUE}✨ Step 8: Initializing world data...${NC}"
@@ -250,7 +245,7 @@ echo ""
 echo -e "${BLUE}🧪 Step 9: Running health checks...${NC}"
 
 # Run comprehensive health check
-./scripts/finalverse-orchestrator.sh status || ./scripts/finalverse.sh test
+./scripts/finalverse.sh status || ./scripts/finalverse.sh test
 
 echo ""
 echo -e "${GREEN}🎉 Finalverse has been completely cleaned and restarted!${NC}"
@@ -259,6 +254,6 @@ echo "📋 Next steps:"
 echo "  1. Open the dashboard: http://localhost:8080/dashboard (or open dashboard.html)"
 echo "  2. Test with the web client: open Client_WebSocket.html"
 echo "  3. Test with the CLI client: cargo run --bin mock-client"
-echo "  4. Monitor logs: ./scripts/finalverse-orchestrator.sh logs"
+echo "  4. Monitor logs: ./scripts/finalverse.sh logs"
 echo ""
 echo "🎵 The Song of Creation begins anew! 🌟"
