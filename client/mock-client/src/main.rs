@@ -296,6 +296,11 @@ impl EnhancedClient {
             ("AI Orchestra", "ai", "3004"),
             ("Story Engine", "story", "3005"),
             ("Harmony Service", "harmony", "3006"),
+            ("Asset Service", "asset", "3007"),
+            ("Community", "community", "3008"),
+            ("Silence Service", "silence", "3009"),
+            ("Procedural Gen", "procedural", "3010"),
+            ("Behavior AI", "behavior", "3011"),
         ];
         
         for (name, key, port) in services {
@@ -323,6 +328,13 @@ impl EnhancedClient {
             ("world", "3002"),
             ("echo", "3003"),
             ("ai", "3004"),
+            ("story", "3005"),
+            ("harmony", "3006"),
+            ("asset", "3007"),
+            ("community", "3008"),
+            ("silence", "3009"),
+            ("procedural", "3010"),
+            ("behavior", "3011"),
         ];
         
         for (key, port) in services {

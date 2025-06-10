@@ -24,11 +24,11 @@ Finalverse is an AI‑driven metaverse where players and intelligent agents co�
 │ • AI Orchestra      – :3004        │
 │ • Story Engine      – :3005        │
 │ • Harmony Service   – :3006        │
-│ • asset-service     – :3007        │
-│ • community-service – :3008        │
-│ • AI Orchestra      – :3009        │
-│ • Story Engine      – :3010        │
-│ • Harmony Service   – :3011        │
+│ • Asset Service     – :3007        │
+│ • Community         – :3008        │
+│ • Silence Service   – :3009        │
+│ • Procedural Gen    – :3010        │
+│ • Behavior AI       – :3011        │
 └────────────────┬───────────────────┘
                  │
 ┌────────────────▼───────────────────┐

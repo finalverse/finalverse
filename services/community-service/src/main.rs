@@ -5,10 +5,10 @@ use std::{net::SocketAddr, sync::Arc};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let monitor = Arc::new(HealthMonitor::new("community-service", env!("CARGO_PKG_VERSION")));
+    let monitor = Arc::new(HealthMonitor::new("community", env!("CARGO_PKG_VERSION")));
     let registry = LocalServiceRegistry::new();
     registry
-        .register_service("community-service".to_string(), "http://localhost:3008".to_string())
+        .register_service("community".to_string(), "http://localhost:3008".to_string())
         .await;
 
     let app = Router::new().merge(monitor.clone().axum_routes());

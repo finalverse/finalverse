@@ -16,7 +16,7 @@ pub struct ServiceInstance {
     pub port: u16,
     pub health_check_url: String,
     pub metadata: HashMap<String, String>,
-    #[serde(skip_serializing, skip_deserializing)]
+    #[serde(skip)]
     pub last_heartbeat: Instant,
 }
 
@@ -296,7 +296,7 @@ impl LocalServiceRegistry {
         services.insert("story-engine".to_string(), "http://localhost:3005".to_string());
         services.insert("harmony-service".to_string(), "http://localhost:3006".to_string());
         services.insert("asset-service".to_string(), "http://localhost:3007".to_string());
-        services.insert("community-service".to_string(), "http://localhost:3008".to_string());
+        services.insert("community".to_string(), "http://localhost:3008".to_string());
         services.insert("silence-service".to_string(), "http://localhost:3009".to_string());
         services.insert("procedural-gen".to_string(), "http://localhost:3010".to_string());
         services.insert("behavior-ai".to_string(), "http://localhost:3011".to_string());
