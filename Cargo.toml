@@ -10,7 +10,7 @@ members = [
     "services/echo-engine",
     "services/harmony-service",
     "services/silence-service",
-    "services/community-service",
+    "services/community",
     "services/asset-service",
     "services/websocket-gateway",
     "services/service-registry",

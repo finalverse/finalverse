@@ -48,11 +48,11 @@ All services expose `/health` and `/info` endpoints and are automatically regist
 1. **Prepare the environment**
    ```bash
    ./scripts/setup_mvp.sh       # builds services and starts the data layer
-   ./scripts/finalverse.sh start
+   ./fv start                   # alias for scripts/finalverse.sh
    ```
 2. **Verify services**
    ```bash
-   ./scripts/finalverse.sh test
+   ./fv test
    ```
 3. **Run the CLI client**
    ```bash
@@ -64,7 +64,7 @@ The upcoming **FinalStorm** 3D client will connect through the WebSocket gateway
 ## Development Workflow
 
 - Each service lives under `services/` and shares common types in `libs/`.
-- After modifying a service run `cargo build -p <service>` and restart it via `./scripts/finalverse.sh start-service <service>`.
+- After modifying a service run `cargo build -p <service>` and restart it via `./fv start-service <service>`.
 - Use `./scripts/monitor_services.sh` to tail logs during development.
 
 ## Contributing

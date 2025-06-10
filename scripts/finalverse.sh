@@ -98,8 +98,8 @@ start_services() {
         services_found+=("asset-service")
     fi
 
-    if [ -f "target/release/community-service" ]; then
-        services_found+=("community-service")
+    if [ -f "target/release/community" ]; then
+        services_found+=("community")
     fi
 
     if [ -f "target/release/silence-service" ]; then
@@ -187,7 +187,7 @@ start_services() {
     [ -f "target/release/echo-engine" ] && echo "  🔮 Echo Engine: http://localhost:3003/health"
     [ -f "target/release/harmony-service" ] && echo "  🎼 Harmony Service: http://localhost:3006/health"
     [ -f "target/release/asset-service" ] && echo "  📦 Asset Service: http://localhost:3007/health"
-    [ -f "target/release/community-service" ] && echo "  👥 Community: http://localhost:3008/health"
+    [ -f "target/release/community" ] && echo "  👥 Community: http://localhost:3008/health"
     [ -f "target/release/silence-service" ] && echo "  🔇 Silence Service: http://localhost:3009/health"
     [ -f "target/release/procedural-gen" ] && echo "  ⚙️  Procedural Gen: http://localhost:3010/health"
     [ -f "target/release/behavior-ai" ] && echo "  🧠 Behavior AI: http://localhost:3011/health"
@@ -271,7 +271,7 @@ test_services() {
         "story-engine:3005:Story Engine"
         "harmony-service:3006:Harmony Service"
         "asset-service:3007:Asset Service"
-        "community-service:3008:Community"
+        "community:3008:Community"
         "silence-service:3009:Silence Service"
         "procedural-gen:3010:Procedural Gen"
         "behavior-ai:3011:Behavior AI"

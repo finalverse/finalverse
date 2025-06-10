@@ -1,5 +1,5 @@
 [package]
-name = "community-service"
+name = "community"
 version.workspace = true
 edition.workspace = true
 
