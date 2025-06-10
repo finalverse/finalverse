@@ -8,14 +8,15 @@ use axum::{
 use finalverse_common::{
     events::FinalverseEvent,
     types::{PlayerId, Quest, QuestType, QuestObjective, QuestReward, RewardType},
-    FinalverseError, Result,
 };
+use finalverse_common::error::{FinalverseError, Result};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     net::SocketAddr,
-    sync::{Arc, RwLock},
+    sync::Arc,
 };
+use tokio::sync::RwLock;
 use tokio;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
@@ -184,7 +185,7 @@ impl StoryEngineState {
 
         if response.status().is_success() {
             let ai_response: serde_json::Value = response.json().await
-                .map_err(|e| FinalverseError::SerializationError(e))?;
+                .map_err(|e| FinalverseError::NetworkError(e))?;
 
             // Extract narrative from AI response and create quest
             let narrative = ai_response["quest_narrative"]
@@ -280,7 +281,7 @@ impl StoryEngineState {
 }
 
 async fn health_check(State(state): State<SharedStoryState>) -> impl IntoResponse {
-    let story_state = state.read().unwrap();
+    let story_state = state.read().await;
     Json(ServiceInfo {
         name: "Story Engine".to_string(),
         version: "0.1.0".to_string(),
@@ -299,7 +300,7 @@ async fn generate_quest(
     let quest_type = request.quest_type.unwrap_or_else(|| "harmony".to_string());
 
     let quest = {
-        let story_state = state.read().unwrap();
+        let story_state = state.read().await;
         match story_state.generate_quest_with_ai(&request.context, &difficulty, &quest_type).await {
             Ok(quest) => quest,
             Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
@@ -310,7 +311,7 @@ async fn generate_quest(
 
     // Store the quest
     {
-        let mut story_state = state.write().unwrap();
+        let mut story_state = state.write().await;
         story_state.active_quests.insert(quest.id.clone(), quest.clone());
     }
 
@@ -333,7 +334,7 @@ async fn update_chronicle(
     let witnesses = request.witnesses.unwrap_or_default();
 
     let (new_achievements, story_progression) = {
-        let mut story_state = state.write().unwrap();
+        let mut story_state = state.write().await;
         let initial_achievement_count = story_state.get_or_create_chronicle(player_id.clone()).achievements.len();
 
         story_state.add_memorable_moment(&player_id, request.description, emotional_impact, witnesses);
@@ -377,7 +378,7 @@ async fn get_player_chronicle(
     let player_id = PlayerId(player_id);
 
     let chronicle = {
-        let mut story_state = state.write().unwrap();
+        let mut story_state = state.write().await;
         story_state.get_or_create_chronicle(player_id).clone()
     };
 
@@ -388,7 +389,7 @@ async fn get_quest(
     Path(quest_id): Path<String>,
     State(state): State<SharedStoryState>,
 ) -> impl IntoResponse {
-    let story_state = state.read().unwrap();
+    let story_state = state.read().await;
 
     match story_state.active_quests.get(&quest_id) {
         Some(quest) => {

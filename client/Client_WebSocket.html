@@ -5,362 +5,637 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finalverse WebSocket Test Client</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
-            background: #1a1a1a;
-            color: #e0e0e0;
-        }
-        
-        .container {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
+            height: calc(100vh - 40px);
         }
-        
+
         .panel {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
             padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
         }
-        
-        h1 {
-            color: #4a9eff;
+
+        .panel h2 {
+            margin-bottom: 20px;
+            color: #ffd700;
             text-align: center;
+            font-size: 1.5em;
         }
-        
-        h2 {
-            color: #7ab8ff;
-            margin-top: 0;
-        }
-        
+
         .status {
             padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: bold;
             text-align: center;
+        }
+
+        .status.connected {
+            background: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+        }
+
+        .status.disconnected {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+        }
+
+        .controls {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group h3 {
+            color: #87ceeb;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .input-row:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            min-width: 100px;
+            font-size: 0.9em;
+            color: #ddd;
+        }
+
+        input, select, button {
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9em;
+        }
+
+        input::placeholder {
+            color: #aaa;
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
             font-weight: bold;
         }
-        
-        .connected {
-            background: #2d5a2d;
-            color: #90ee90;
-        }
-        
-        .disconnected {
-            background: #5a2d2d;
-            color: #ff9090;
-        }
-        
-        .controls {
-            margin: 20px 0;
-        }
-        
-        button {
-            background: #4a9eff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 10px;
-            margin-bottom: 10px;
-        }
-        
+
         button:hover {
-            background: #3a8eef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
-        
+
         button:disabled {
-            background: #666;
+            opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
-        
-        .messages {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 4px;
-            padding: 10px;
-            height: 400px;
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .log-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #log {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 15px;
             overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.4;
         }
-        
-        .message {
+
+        .log-entry {
             margin-bottom: 8px;
-            padding: 8px;
-            border-radius: 4px;
-            background: #333;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
-        .message.harmony {
-            border-left: 4px solid #4a9eff;
+
+        .log-time {
+            color: #87ceeb;
+            font-weight: bold;
         }
-        
-        .message.presence {
-            border-left: 4px solid #9eff4a;
+
+        .log-message {
+            margin-left: 10px;
         }
-        
-        .message.event {
-            border-left: 4px solid #ff9e4a;
+
+        .log-error { color: #ff6b6b; }
+        .log-success { color: #51cf66; }
+        .log-info { color: #74c0fc; }
+        .log-warning { color: #ffd43b; }
+
+        .clear-log {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
         }
-        
-        .message.error {
-            border-left: 4px solid #ff4a4a;
-        }
-        
-        .timestamp {
-            color: #888;
-            font-size: 0.8em;
-        }
-        
-        .player-info {
-            background: #333;
+
+        .stats {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
             padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
         }
-        
-        input[type="number"] {
-            background: #333;
-            color: #e0e0e0;
-            border: 1px solid #555;
-            padding: 5px;
-            border-radius: 4px;
-            width: 80px;
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .highlight {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>🌟 Finalverse WebSocket Test Client</h1>
-    
     <div class="container">
+        <!-- Controls Panel -->
         <div class="panel">
-            <h2>Connection Status</h2>
-            <div id="status" class="status disconnected">Disconnected</div>
+            <h2>🎵 Finalverse Control Panel</h2>
             
-            <div class="player-info">
-                <strong>Player ID:</strong> <span id="playerId">Not connected</span>
+            <div id="status" class="status disconnected">
+                🔴 Disconnected
             </div>
-            
-            <div class="controls">
-                <button onclick="connect()">Connect</button>
-                <button onclick="disconnect()">Disconnect</button>
+
+            <div class="stats">
+                <div class="stats-row">
+                    <span>Messages Sent:</span>
+                    <span class="highlight" id="sentCount">0</span>
+                </div>
+                <div class="stats-row">
+                    <span>Messages Received:</span>
+                    <span class="highlight" id="receivedCount">0</span>
+                </div>
+                <div class="stats-row">
+                    <span>Connection Time:</span>
+                    <span class="highlight" id="connectionTime">--:--:--</span>
+                </div>
             </div>
-            
-            <h2>Actions</h2>
+
             <div class="controls">
-                <h3>Movement</h3>
-                <label>X: <input type="number" id="posX" value="100"></label>
-                <label>Y: <input type="number" id="posY" value="50"></label>
-                <label>Z: <input type="number" id="posZ" value="200"></label>
-                <button onclick="sendPosition()">Update Position</button>
-                
-                <h3>Melodies</h3>
-                <button onclick="performMelody('healing')">Healing Melody</button>
-                <button onclick="performMelody('creation')">Creation Melody</button>
-                <button onclick="performMelody('discovery')">Discovery Melody</button>
-                <button onclick="performMelody('courage')">Courage Melody</button>
-                
-                <h3>Subscriptions</h3>
-                <button onclick="subscribe(['terra-nova', 'whispering-wilds'])">Subscribe to Regions</button>
+                <!-- Connection Control -->
+                <div class="control-group">
+                    <h3>📡 Connection</h3>
+                    <div class="input-row">
+                        <label>Server:</label>
+                        <input type="text" id="serverUrl" value="ws://localhost:3000/ws" placeholder="WebSocket URL">
+                    </div>
+                    <div class="action-buttons">
+                        <button id="connectBtn" onclick="connect()">Connect</button>
+                        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+                    </div>
+                </div>
+
+                <!-- Player Actions -->
+                <div class="control-group">
+                    <h3>🚶 Player Movement</h3>
+                    <div class="input-row">
+                        <label>X:</label>
+                        <input type="number" id="posX" value="100" step="0.1">
+                        <label>Y:</label>
+                        <input type="number" id="posY" value="50" step="0.1">
+                        <label>Z:</label>
+                        <input type="number" id="posZ" value="200" step="0.1">
+                    </div>
+                    <button onclick="sendPosition()">Update Position</button>
+                </div>
+
+                <!-- Songweaving -->
+                <div class="control-group">
+                    <h3>🎼 Songweaving</h3>
+                    <div class="input-row">
+                        <label>Type:</label>
+                        <select id="harmonyType">
+                            <option value="restoration">Restoration</option>
+                            <option value="creative">Creative</option>
+                            <option value="exploration">Exploration</option>
+                            <option value="protection">Protection</option>
+                        </select>
+                    </div>
+                    <div class="input-row">
+                        <label>Power:</label>
+                        <input type="range" id="melodyPower" min="1" max="10" value="5">
+                        <span id="powerValue">5</span>
+                    </div>
+                    <button onclick="performMelody()">🎵 Perform Melody</button>
+                </div>
+
+                <!-- Echo Interaction -->
+                <div class="control-group">
+                    <h3>✨ Echo Interaction</h3>
+                    <div class="input-row">
+                        <label>Echo:</label>
+                        <select id="echoSelect">
+                            <option value="lumi">Lumi (Hope)</option>
+                            <option value="kai">KAI (Logic)</option>
+                            <option value="terra">Terra (Growth)</option>
+                            <option value="ignis">Ignis (Courage)</option>
+                        </select>
+                    </div>
+                    <div class="input-row">
+                        <label>Action:</label>
+                        <select id="interactionType">
+                            <option value="help_others">Help Others</option>
+                            <option value="solve_puzzle">Solve Puzzle</option>
+                            <option value="creative_act">Creative Act</option>
+                            <option value="brave_action">Brave Action</option>
+                            <option value="discovery">Discovery</option>
+                        </select>
+                    </div>
+                    <button onclick="interactWithEcho()">🤝 Interact</button>
+                </div>
+
+                <!-- Subscriptions -->
+                <div class="control-group">
+                    <h3>📻 Region Subscriptions</h3>
+                    <div class="input-row">
+                        <label>Regions:</label>
+                        <input type="text" id="regions" value="terra-nova,whispering-wilds" placeholder="region1,region2">
+                    </div>
+                    <button onclick="subscribe()">🔔 Subscribe</button>
+                </div>
             </div>
         </div>
-        
-        <div class="panel">
-            <h2>Real-Time Messages</h2>
-            <div id="messages" class="messages"></div>
-            <button onclick="clearMessages()">Clear Messages</button>
+
+        <!-- Log Panel -->
+        <div class="panel log-panel">
+            <h2>📜 Event Log</h2>
+            <div id="log"></div>
+            <button class="clear-log" onclick="clearLog()">🗑️ Clear Log</button>
         </div>
     </div>
-    
+
     <script>
         let ws = null;
+        let isConnected = false;
         let playerId = null;
-        
-        function updateStatus(connected) {
-            const status = document.getElementById('status');
-            if (connected) {
-                status.className = 'status connected';
-                status.textContent = 'Connected';
-            } else {
-                status.className = 'status disconnected';
-                status.textContent = 'Disconnected';
+        let sentCount = 0;
+        let receivedCount = 0;
+        let connectionStartTime = null;
+
+        // Update power slider display
+        document.getElementById('melodyPower').addEventListener('input', function() {
+            document.getElementById('powerValue').textContent = this.value;
+        });
+
+        function updateConnectionTime() {
+            if (connectionStartTime) {
+                const elapsed = Math.floor((Date.now() - connectionStartTime) / 1000);
+                const hours = Math.floor(elapsed / 3600);
+                const minutes = Math.floor((elapsed % 3600) / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('connectionTime').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
         }
-        
-        function addMessage(type, content) {
-            const messages = document.getElementById('messages');
-            const message = document.createElement('div');
-            message.className = `message ${type}`;
+
+        function updateStats() {
+            document.getElementById('sentCount').textContent = sentCount;
+            document.getElementById('receivedCount').textContent = receivedCount;
+            updateConnectionTime();
+        }
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
             
-            const timestamp = new Date().toLocaleTimeString();
-            message.innerHTML = `
-                <span class="timestamp">${timestamp}</span>
-                <div>${content}</div>
+            const typeClass = type === 'error' ? 'log-error' : 
+                            type === 'success' ? 'log-success' :
+                            type === 'warning' ? 'log-warning' : 'log-info';
+            
+            entry.innerHTML = `
+                <span class="log-time">${time}</span>
+                <span class="log-message ${typeClass}">${message}</span>
             `;
             
-            messages.appendChild(message);
-            messages.scrollTop = messages.scrollHeight;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
         }
-        
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            log('Log cleared', 'info');
+        }
+
+        function updateUI() {
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const status = document.getElementById('status');
+            
+            if (isConnected) {
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                status.className = 'status connected';
+                status.innerHTML = '🟢 Connected to Finalverse';
+            } else {
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                status.className = 'status disconnected';
+                status.innerHTML = '🔴 Disconnected';
+                document.getElementById('connectionTime').textContent = '--:--:--';
+            }
+            
+            updateStats();
+        }
+
         function connect() {
-            if (ws) {
-                ws.close();
-            }
+            const serverUrl = document.getElementById('serverUrl').value;
             
-            ws = new WebSocket('ws://localhost:3007/ws');
-            
-            ws.onopen = () => {
-                updateStatus(true);
-                addMessage('event', 'Connected to Finalverse WebSocket Gateway');
-            };
-            
-            ws.onmessage = (event) => {
-                try {
-                    const msg = JSON.parse(event.data);
-                    handleMessage(msg);
-                } catch (e) {
-                    console.error('Failed to parse message:', e);
-                }
-            };
-            
-            ws.onerror = (error) => {
-                addMessage('error', `WebSocket error: ${error}`);
-            };
-            
-            ws.onclose = () => {
-                updateStatus(false);
-                addMessage('event', 'Disconnected from server');
-                playerId = null;
-                document.getElementById('playerId').textContent = 'Not connected';
-            };
-        }
-        
-        function handleMessage(msg) {
-            switch (msg.type) {
-                case 'Welcome':
-                    playerId = msg.player_id;
-                    document.getElementById('playerId').textContent = playerId;
-                    addMessage('event', `Welcome! Your player ID is: ${playerId}`);
-                    break;
+            try {
+                ws = new WebSocket(serverUrl);
+                
+                ws.onopen = function(event) {
+                    isConnected = true;
+                    connectionStartTime = Date.now();
+                    log('🎵 Connected to Finalverse WebSocket Gateway', 'success');
+                    updateUI();
                     
-                case 'HarmonyUpdate':
-                    addMessage('harmony', `Harmony Update - Region: ${msg.region_id}, Level: ${msg.harmony_level.toFixed(1)}%`);
-                    break;
-                    
-                case 'PlayerPresence':
-                    addMessage('presence', `Player ${msg.player_id.substring(0, 8)}... is ${msg.action} at (${msg.position.x}, ${msg.position.y}, ${msg.position.z})`);
-                    break;
-                    
-                case 'WeatherChange':
-                    addMessage('event', `Weather changed in ${msg.region_id}: ${msg.weather}`);
-                    break;
-                    
-                case 'EventNotification':
-                    addMessage('event', `Event: ${JSON.stringify(msg.event)}`);
-                    break;
-                    
-                case 'Error':
-                    addMessage('error', `Error: ${msg.message}`);
-                    break;
-                    
-                default:
-                    addMessage('event', `Unknown message type: ${msg.type}`);
+                    // Start connection time updater
+                    setInterval(updateConnectionTime, 1000);
+                };
+                
+                ws.onmessage = function(event) {
+                    receivedCount++;
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleMessage(data);
+                    } catch (e) {
+                        log(`📨 Raw message: ${event.data}`, 'info');
+                    }
+                    updateStats();
+                };
+                
+                ws.onclose = function(event) {
+                    isConnected = false;
+                    connectionStartTime = null;
+                    log(`🔌 Connection closed: ${event.code} - ${event.reason || 'Unknown reason'}`, 'warning');
+                    updateUI();
+                };
+                
+                ws.onerror = function(error) {
+                    log(`❌ WebSocket error: ${error.message || 'Connection failed'}`, 'error');
+                };
+                
+            } catch (error) {
+                log(`❌ Failed to connect: ${error.message}`, 'error');
             }
         }
-        
+
         function disconnect() {
             if (ws) {
                 ws.close();
                 ws = null;
             }
         }
-        
+
+        function sendMessage(message) {
+            if (!isConnected || !ws) {
+                log('❌ Not connected to server', 'error');
+                return false;
+            }
+            
+            try {
+                ws.send(JSON.stringify(message));
+                sentCount++;
+                updateStats();
+                return true;
+            } catch (error) {
+                log(`❌ Failed to send message: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        function handleMessage(data) {
+            switch (data.type || Object.keys(data)[0]) {
+                case 'Connected':
+                    playerId = data.player_id;
+                    log(`👤 Assigned Player ID: ${playerId}`, 'success');
+                    break;
+                    
+                case 'WorldUpdate':
+                    log(`🌍 World Update - ${data.region}: Harmony ${data.harmony_level}%`, 'info');
+                    break;
+                    
+                case 'EventNotification':
+                    log(`📢 Event: ${data.event.event_type || 'Unknown event'}`, 'info');
+                    break;
+                    
+                case 'Error':
+                    log(`❌ Server Error: ${data.message}`, 'error');
+                    break;
+                    
+                default:
+                    if (data.player_id) {
+                        log(`👤 Player message: ${JSON.stringify(data)}`, 'info');
+                    } else {
+                        log(`📨 Unknown message: ${JSON.stringify(data)}`, 'warning');
+                    }
+            }
+        }
+
         function sendPosition() {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                alert('Not connected to server');
-                return;
+            const x = parseFloat(document.getElementById('posX').value);
+            const y = parseFloat(document.getElementById('posY').value);
+            const z = parseFloat(document.getElementById('posZ').value);
+            
+            const message = {
+                type: 'PlayerMovement',
+                player_id: playerId,
+                position: { x, y, z },
+                timestamp: new Date().toISOString()
+            };
+            
+            if (sendMessage(message)) {
+                log(`🚶 Position updated: (${x}, ${y}, ${z})`, 'success');
             }
-            
-            const position = {
-                x: parseFloat(document.getElementById('posX').value),
-                y: parseFloat(document.getElementById('posY').value),
-                z: parseFloat(document.getElementById('posZ').value)
-            };
-            
-            const msg = {
-                type: 'PlayerUpdate',
-                position: position
-            };
-            
-            ws.send(JSON.stringify(msg));
-            addMessage('presence', `Sent position update: (${position.x}, ${position.y}, ${position.z})`);
         }
-        
-        function performMelody(melodyType) {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                alert('Not connected to server');
-                return;
+
+        function performMelody() {
+            const harmonyType = document.getElementById('harmonyType').value;
+            const power = parseInt(document.getElementById('melodyPower').value);
+            const x = parseFloat(document.getElementById('posX').value);
+            const y = parseFloat(document.getElementById('posY').value);
+            const z = parseFloat(document.getElementById('posZ').value);
+            
+            // Generate a simple melody based on power level
+            const notes = [];
+            for (let i = 0; i < power; i++) {
+                notes.push({
+                    frequency: 440 + (i * 55), // A4 and harmonics
+                    duration: 0.5,
+                    intensity: 0.8
+                });
             }
             
-            const position = {
-                x: parseFloat(document.getElementById('posX').value),
-                y: parseFloat(document.getElementById('posY').value),
-                z: parseFloat(document.getElementById('posZ').value)
+            const message = {
+                SongweavingPerformed: {
+                    melody: {
+                        notes: notes,
+                        tempo: 120.0,
+                        harmony_type: harmonyType
+                    },
+                    target: { x, y, z }
+                }
             };
             
-            let melody;
-            switch (melodyType) {
-                case 'healing':
-                    melody = { Healing: { power: 10.0 } };
-                    break;
-                case 'creation':
-                    melody = { Creation: { pattern: "star" } };
-                    break;
-                case 'discovery':
-                    melody = { Discovery: { range: 50.0 } };
-                    break;
-                case 'courage':
-                    melody = { Courage: { intensity: 15.0 } };
-                    break;
+            if (sendMessage(message)) {
+                log(`🎵 Performed ${harmonyType} melody at (${x}, ${y}, ${z}) with power ${power}`, 'success');
             }
-            
-            const msg = {
-                type: 'MelodyPerformed',
-                melody: melody,
-                target: position
-            };
-            
-            ws.send(JSON.stringify(msg));
-            addMessage('event', `Performed ${melodyType} melody at (${position.x}, ${position.y}, ${position.z})`);
         }
-        
-        function subscribe(channels) {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                alert('Not connected to server');
-                return;
-            }
+
+        function interactWithEcho() {
+            const echoId = document.getElementById('echoSelect').value;
+            const interactionType = document.getElementById('interactionType').value;
             
-            const msg = {
+            const message = {
+                EchoInteraction: {
+                    echo_id: echoId,
+                    interaction_type: interactionType
+                }
+            };
+            
+            if (sendMessage(message)) {
+                log(`✨ Interacted with ${echoId}: ${interactionType}`, 'success');
+            }
+        }
+
+        function subscribe() {
+            const regionsText = document.getElementById('regions').value;
+            const regions = regionsText.split(',').map(r => r.trim()).filter(r => r);
+            
+            const message = {
                 type: 'Subscribe',
-                channels: channels
+                channels: regions
             };
             
-            ws.send(JSON.stringify(msg));
-            addMessage('event', `Subscribed to channels: ${channels.join(', ')}`);
+            if (sendMessage(message)) {
+                log(`🔔 Subscribed to regions: ${regions.join(', ')}`, 'success');
+            }
         }
-        
-        function clearMessages() {
-            document.getElementById('messages').innerHTML = '';
+
+        // Random position generator for testing
+        function randomPosition() {
+            document.getElementById('posX').value = (Math.random() * 1000 - 500).toFixed(1);
+            document.getElementById('posY').value = (Math.random() * 100).toFixed(1);
+            document.getElementById('posZ').value = (Math.random() * 1000 - 500).toFixed(1);
         }
-        
-        // Auto-connect on load
-        window.onload = () => {
-            // connect();
-        };
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case 'Enter':
+                        e.preventDefault();
+                        if (isConnected) {
+                            sendPosition();
+                        } else {
+                            connect();
+                        }
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        if (isConnected) {
+                            performMelody();
+                        }
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        randomPosition();
+                        break;
+                }
+            }
+        });
+
+        // Auto-reconnect functionality
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+
+        function autoReconnect() {
+            if (!isConnected && reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                log(`🔄 Auto-reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts}`, 'info');
+                setTimeout(() => {
+                    connect();
+                }, 2000 * reconnectAttempts); // Exponential backoff
+            }
+        }
+
+        // Initialize UI
+        updateUI();
+        log('🎮 Finalverse WebSocket Test Client Ready', 'info');
+        log('💡 Shortcuts: Ctrl+Enter (Connect/Move), Ctrl+Space (Melody), Ctrl+R (Random Position)', 'info');
+
+        // Auto-connect on page load (optional)
+        // connect();
     </script>
 </body>
 </html>

@@ -19,6 +19,6 @@ serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
 chrono.workspace = true
-reqwest = { version = "0.11", features = ["json"] }
+reqwest.workspace = true
 tower = "0.5.2"
 tower-http = "0.6.6"
