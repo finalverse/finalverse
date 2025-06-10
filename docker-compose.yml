@@ -2,7 +2,6 @@
 services:
   postgres:
     image: postgres:15
-    container_name: finalverse-postgres
     environment:
       POSTGRES_DB: finalverse
       POSTGRES_USER: finalverse
@@ -11,8 +10,6 @@ services:
       - "5432:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
-    networks:
-      - finalverse-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U finalverse"]
       interval: 10s
@@ -21,13 +18,10 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: finalverse-redis
     ports:
       - "6379:6379"
     volumes:
       - ./data/redis:/data
-    networks:
-      - finalverse-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -36,14 +30,11 @@ services:
 
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: finalverse-qdrant
     ports:
       - "6333:6333"
       - "6334:6334"
     volumes:
       - ./data/qdrant:/qdrant/storage
-    networks:
-      - finalverse-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
       interval: 30s
@@ -52,7 +43,6 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: finalverse-minio
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -62,8 +52,6 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
-    networks:
-      - finalverse-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
@@ -71,6 +59,5 @@ services:
       retries: 3
 
 networks:
-  finalverse-network:
-    driver: bridge
+  default:
     name: finalverse-network
