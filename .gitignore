@@ -5,6 +5,8 @@ Cargo.lock
 .DS_Store
 *.log
 /data
+/logs
 /script/data/
 /script/logs
 *.pid
+/.pids

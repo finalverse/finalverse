@@ -1,0 +1,16 @@
+[package]
+name = "finalverse-health"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+async-trait.workspace = true
+chrono.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+warp = "0.3"
+
+[dev-dependencies]
+tokio-test = "0.4"

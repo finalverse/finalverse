@@ -1,0 +1,91 @@
+# config/finalverse.toml - Main configuration file
+
+[general]
+environment = "development"
+log_level = "info"
+enable_metrics = true
+enable_tracing = true
+
+[data]
+postgres_url = "postgres://finalverse:finalverse_secret@localhost/finalverse"
+redis_url = "redis://localhost:6379"
+qdrant_url = "http://localhost:6333"
+minio_url = "http://localhost:9000"
+
+[services.api_gateway]
+host = "0.0.0.0"
+port = 8080
+enable_cors = true
+rate_limit = 1000  # requests per minute
+
+[services.websocket_gateway]
+host = "0.0.0.0"
+port = 3000
+max_connections = 10000
+heartbeat_interval = 30  # seconds
+
+[services.song_engine]
+host = "0.0.0.0"
+port = 3001
+harmony_update_interval = 5  # seconds
+melody_cooldown = 2  # seconds
+
+[services.world_engine]
+host = "0.0.0.0"
+port = 3002
+region_update_interval = 10  # seconds
+weather_update_interval = 300  # seconds
+ecosystem_tick_rate = 60  # seconds
+
+[services.echo_engine]
+host = "0.0.0.0"
+port = 3003
+bond_decay_rate = 0.1  # per day
+max_bond_level = 100
+
+[services.ai_orchestra]
+host = "0.0.0.0"
+port = 3004
+enable_local_llm = false
+llm_provider = "openai"  # or "anthropic", "local"
+max_context_length = 4096
+
+[services.story_engine]
+host = "0.0.0.0"
+port = 3005
+quest_generation_cooldown = 300  # seconds
+chronicle_retention_days = 365
+
+[services.harmony_service]
+host = "0.0.0.0"
+port = 3006
+resonance_decay_rate = 0.05  # per day
+attunement_thresholds = [100, 500, 1000, 5000, 10000]
+
+[game]
+# Core game settings
+starting_resonance = { creative = 10, exploration = 10, restoration = 10 }
+base_melody_power = 10.0
+symphony_participant_minimum = 5
+world_event_frequency = 3600  # seconds
+
+[ai]
+# AI behavior settings
+npc_memory_retention = 30  # days
+creature_behavior_complexity = "medium"  # low, medium, high
+procedural_generation_seed = 42
+enable_dynamic_storytelling = true
+
+[performance]
+# Performance tuning
+cache_ttl = 300  # seconds
+database_pool_size = 20
+worker_threads = 8
+enable_compression = true
+
+[security]
+# Security settings
+enable_rate_limiting = true
+enable_auth = true
+jwt_secret = "change-me-in-production"
+session_timeout = 86400  # seconds

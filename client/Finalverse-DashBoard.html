@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalverse Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a2a 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+        
+        .header .subtitle {
+            color: #888;
+            font-size: 1.2em;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+        
+        .card h2 {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            color: #a78bfa;
+        }
+        
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .service-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .service-item.online {
+            border-color: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+        
+        .service-item.offline {
+            border-color: #ef4444;
+            opacity: 0.6;
+        }
+        
+        .service-item h3 {
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: blink 2s infinite;
+        }
+        
+        .status-indicator.online {
+            background: #10b981;
+        }
+        
+        .status-indicator.offline {
+            background: #ef4444;
+            animation: none;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+        
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #818cf8;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin-top: 20px;
+        }
+        
+        .log-viewer {
+            background: #000;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .log-entry.info { color: #60a5fa; }
+        .log-entry.success { color: #10b981; }
+        .log-entry.warning { color: #f59e0b; }
+        .log-entry.error { color: #ef4444; }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .world-map {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            height: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .region {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .region:hover {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+        
+        .region.high-harmony {
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.6) 0%, rgba(16, 185, 129, 0.1) 70%);
+            border: 2px solid #10b981;
+        }
+        
+        .region.medium-harmony {
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.6) 0%, rgba(245, 158, 11, 0.1) 70%);
+            border: 2px solid #f59e0b;
+        }
+        
+        .region.low-harmony {
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.6) 0%, rgba(239, 68, 68, 0.1) 70%);
+            border: 2px solid #ef4444;
+        }
+        
+        .player-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .player-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .echo-bonds {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .echo-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .echo-card h4 {
+            margin-bottom: 10px;
+        }
+        
+        .bond-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .bond-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>🎵 Finalverse Dashboard</h1>
+            <p class="subtitle">Real-time monitoring of the Song of Creation</p>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="refreshData()">Refresh Data</button>
+            <button class="btn btn-secondary" onclick="toggleAutoRefresh()">Auto Refresh: <span id="autoRefreshStatus">ON</span></button>
+            <button class="btn btn-secondary" onclick="showServiceDetails()">Service Details</button>
+            <button class="btn btn-secondary" onclick="exportMetrics()">Export Metrics</button>
+        </div>
+        
+        <div class="grid">
+            <!-- Service Status Card -->
+            <div class="card">
+                <h2>🔧 Service Status</h2>
+                <div class="service-grid" id="serviceGrid">
+                    <!-- Services will be populated here -->
+                </div>
+            </div>
+            
+            <!-- World Harmony Card -->
+            <div class="card">
+                <h2>🌍 World Harmony</h2>
+                <div class="metric">
+                    <span>Global Harmony</span>
+                    <span class="metric-value" id="globalHarmony">78.5%</span>
+                </div>
+                <div class="metric">
+                    <span>Active Regions</span>
+                    <span class="metric-value" id="activeRegions">12</span>
+                </div>
+                <div class="metric">
+                    <span>Silence Threat Level</span>
+                    <span class="metric-value" id="silenceThreat">Low</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="harmonyChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Player Activity Card -->
+            <div class="card">
+                <h2>👥 Player Activity</h2>
+                <div class="metric">
+                    <span>Online Players</span>
+                    <span class="metric-value" id="onlinePlayers">0</span>
+                </div>
+                <div class="metric">
+                    <span>Active Songweavers</span>
+                    <span class="metric-value" id="activeSongweavers">0</span>
+                </div>
+                <div class="metric">
+                    <span>Melodies/Hour</span>
+                    <span class="metric-value" id="melodiesPerHour">0</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Echo Bonds Card -->
+            <div class="card">
+                <h2>✨ Echo Bonds</h2>
+                <div class="echo-bonds">
+                    <div class="echo-card">
+                        <h4>🌟 Lumi</h4>
+                        <div class="bond-bar">
+                            <div class="bond-fill" id="lumiBond" style="width: 45%"></div>
+                        </div>
+                        <small>45% Average Bond</small>
+                    </div>
+                    <div class="echo-card">
+                        <h4>🤖 KAI</h4>
+                        <div class="bond-bar">
+                            <div class="bond-fill" id="kaiBond" style="width: 38%"></div>
+                        </div>
+                        <small>38% Average Bond</small>
+                    </div>
+                    <div class="echo-card">
+                        <h4>🌿 Terra</h4>
+                        <div class="bond-bar">
+                            <div class="bond-fill" id="terraBond" style="width: 52%"></div>
+                        </div>
+                        <small>52% Average Bond</small>
+                    </div>
+                    <div class="echo-card">
+                        <h4>🔥 Ignis</h4>
+                        <div class="bond-bar">
+                            <div class="bond-fill" id="ignisBond" style="width: 41%"></div>
+                        </div>
+                        <small>41% Average Bond</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- World Map -->
+        <div class="card">
+            <h2>🗺️ World Overview</h2>
+            <div class="world-map" id="worldMap">
+                <!-- Regions will be positioned here -->
+            </div>
+        </div>
+        
+        <!-- System Logs -->
+        <div class="card">
+            <h2>📜 System Logs</h2>
+            <div class="log-viewer" id="logViewer">
+                <!-- Logs will appear here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:8080';
+        const WS_URL = 'ws://localhost:3000/ws';
+        let autoRefresh = true;
+        let ws = null;
+        
+        // Services to monitor
+        const services = [
+            { name: 'API Gateway', port: 8080, key: 'api-gateway' },
+            { name: 'WebSocket', port: 3000, key: 'websocket-gateway' },
+            { name: 'Song Engine', port: 3001, key: 'song-engine' },
+            { name: 'World Engine', port: 3002, key: 'world-engine' },
+            { name: 'Echo Engine', port: 3003, key: 'echo-engine' },
+            { name: 'AI Orchestra', port: 3004, key: 'ai-orchestra' },
+            { name: 'Story Engine', port: 3005, key: 'story-engine' },
+            { name: 'Harmony Service', port: 3006, key: 'harmony-service' }
+        ];
+        
+        // Initialize charts
+        const harmonyCtx = document.getElementById('harmonyChart').getContext('2d');
+        const harmonyChart = new Chart(harmonyCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Global Harmony',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Silence Level',
+                    data: [],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#e0e0e0' }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { color: '#888' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    x: {
+                        ticks: { color: '#888' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+        
+        const activityCtx = document.getElementById('activityChart').getContext('2d');
+        const activityChart = new Chart(activityCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Healing', 'Creation', 'Discovery', 'Courage'],
+                datasets: [{
+                    label: 'Melodies Performed',
+                    data: [45, 38, 52, 41],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.6)',
+                        'rgba(96, 165, 250, 0.6)',
+                        'rgba(167, 139, 250, 0.6)',
+                        'rgba(239, 68, 68, 0.6)'
+                    ],
+                    borderColor: [
+                        '#10b981',
+                        '#60a5fa',
+                        '#a78bfa',
+                        '#ef4444'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#e0e0e0' }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#888' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    x: {
+                        ticks: { color: '#888' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+        
+        // Check service status
+        async function checkServiceStatus() {
+            const serviceGrid = document.getElementById('serviceGrid');
+            serviceGrid.innerHTML = '';
+            
+            for (const service of services) {
+                const serviceItem = document.createElement('div');
+                serviceItem.className = 'service-item';
+                
+                try {
+                    const response = await fetch(`http://localhost:${service.port}/health`, {
+                        method: 'GET',
+                        mode: 'no-cors'
+                    });
+                    
+                    // For no-cors, we can't read the response, but if it doesn't throw, the service is up
+                    serviceItem.classList.add('online');
+                    serviceItem.innerHTML = `
+                        <h3>${service.name}</h3>
+                        <p><span class="status-indicator online"></span>Online</p>
+                        <small>Port ${service.port}</small>
+                    `;
+                } catch (error) {
+                    serviceItem.classList.add('offline');
+                    serviceItem.innerHTML = `
+                        <h3>${service.name}</h3>
+                        <p><span class="status-indicator offline"></span>Offline</p>
+                        <small>Port ${service.port}</small>
+                    `;
+                }
+                
+                serviceGrid.appendChild(serviceItem);
+            }
+        }
+        
+        // Update world map
+        function updateWorldMap() {
+            const worldMap = document.getElementById('worldMap');
+            worldMap.innerHTML = '';
+            
+            const regions = [
+                { name: 'Terra Nova', x: 20, y: 30, harmony: 'high' },
+                { name: 'Aethelgard', x: 60, y: 20, harmony: 'medium' },
+                { name: 'Technos Prime', x: 40, y: 60, harmony: 'high' },
+                { name: 'Whispering Wilds', x: 80, y: 50, harmony: 'low' }
+            ];
+            
+            regions.forEach(region => {
+                const regionEl = document.createElement('div');
+                regionEl.className = `region ${region.harmony}-harmony`;
+                regionEl.style.left = `${region.x}%`;
+                regionEl.style.top = `${region.y}%`;
+                regionEl.innerHTML = `<span>${region.name}</span>`;
+                regionEl.onclick = () => showRegionDetails(region.name);
+                worldMap.appendChild(regionEl);
+            });
+        }
+        
+        // Add log entry
+        function addLog(message, type = 'info') {
+            const logViewer = document.getElementById('logViewer');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logViewer.appendChild(logEntry);
+            logViewer.scrollTop = logViewer.scrollHeight;
+            
+            // Keep only last 100 entries
+            while (logViewer.children.length > 100) {
+                logViewer.removeChild(logViewer.firstChild);
+            }
+        }
+        
+        // Update metrics with random data (replace with real API calls)
+        function updateMetrics() {
+            // Simulate data updates
+            document.getElementById('globalHarmony').textContent = 
+                (75 + Math.random() * 10).toFixed(1) + '%';
+            document.getElementById('onlinePlayers').textContent = 
+                Math.floor(50 + Math.random() * 50);
+            document.getElementById('activeSongweavers').textContent = 
+                Math.floor(20 + Math.random() * 30);
+            document.getElementById('melodiesPerHour').textContent = 
+                Math.floor(100 + Math.random() * 200);
+            
+            // Update harmony chart
+            const now = new Date().toLocaleTimeString();
+            harmonyChart.data.labels.push(now);
+            harmonyChart.data.datasets[0].data.push(75 + Math.random() * 10);
+            harmonyChart.data.datasets[1].data.push(15 + Math.random() * 10);
+            
+            // Keep only last 10 data points
+            if (harmonyChart.data.labels.length > 10) {
+                harmonyChart.data.labels.shift();
+                harmonyChart.data.datasets.forEach(dataset => dataset.data.shift());
+            }
+            
+            harmonyChart.update();
+            
+            // Update activity chart
+            activityChart.data.datasets[0].data = [
+                Math.floor(40 + Math.random() * 20),
+                Math.floor(35 + Math.random() * 20),
+                Math.floor(45 + Math.random() * 20),
+                Math.floor(38 + Math.random() * 20)
+            ];
+            activityChart.update();
+        }
+        
+        // WebSocket connection
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket(WS_URL);
+                
+                ws.onopen = () => {
+                    addLog('Connected to WebSocket Gateway', 'success');
+                };
+                
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleWebSocketMessage(data);
+                    } catch (e) {
+                        console.error('Failed to parse WebSocket message:', e);
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    addLog('WebSocket error', 'error');
+                };
+                
+                ws.onclose = () => {
+                    addLog('WebSocket disconnected', 'warning');
+                    // Reconnect after 5 seconds
+                    setTimeout(connectWebSocket, 5000);
+                };
+            } catch (error) {
+                addLog('Failed to connect to WebSocket', 'error');
+            }
+        }
+        
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'player_connected':
+                    addLog(`Player ${data.player_name} connected`, 'info');
+                    break;
+                case 'melody_performed':
+                    addLog(`${data.player_name} performed ${data.melody_type} melody`, 'success');
+                    break;
+                case 'harmony_changed':
+                    addLog(`World harmony changed by ${data.change}`, 'info');
+                    break;
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        }
+        
+        // Control functions
+        function refreshData() {
+            checkServiceStatus();
+            updateMetrics();
+            updateWorldMap();
+            addLog('Data refreshed', 'info');
+        }
+        
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            document.getElementById('autoRefreshStatus').textContent = autoRefresh ? 'ON' : 'OFF';
+            addLog(`Auto refresh ${autoRefresh ? 'enabled' : 'disabled'}`, 'info');
+        }
+        
+        function showServiceDetails() {
+            // Would open a modal with detailed service information
+            addLog('Service details view opened', 'info');
+        }
+        
+        function exportMetrics() {
+            // Would export current metrics to CSV/JSON
+            addLog('Metrics exported', 'success');
+        }
+        
+        function showRegionDetails(regionName) {
+            addLog(`Viewing details for ${regionName}`, 'info');
+        }
+        
+        // Initialize dashboard
+        async function init() {
+            addLog('Initializing Finalverse Dashboard', 'info');
+            
+            // Initial data load
+            await checkServiceStatus();
+            updateMetrics();
+            updateWorldMap();
+            
+            // Connect to WebSocket
+            connectWebSocket();
+            
+            // Set up auto refresh
+            setInterval(() => {
+                if (autoRefresh) {
+                    checkServiceStatus();
+                    updateMetrics();
+                }
+            }, 5000);
+            
+            addLog('Dashboard initialized successfully', 'success');
+        }
+        
+        // Start the dashboard
+        init();
+    </script>
+</body>
+</html>
