@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use warp::{Filter, Rejection, Reply};
+use axum::{routing::get, Router, Json, http::StatusCode, response::IntoResponse};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HealthStatus {
@@ -227,6 +228,41 @@ impl HealthMonitor {
         };
         
         health.or(info)
+    }
+
+    /// Create Axum routes for health and info endpoints.
+    pub fn axum_routes(self: Arc<Self>) -> Router {
+        let health_route = {
+            let monitor = Arc::clone(&self);
+            get(move || {
+                let monitor = Arc::clone(&monitor);
+                async move {
+                    let status = monitor.get_status().await;
+                    let status_code = match status.status {
+                        ServiceStatus::Healthy | ServiceStatus::Degraded => StatusCode::OK,
+                        ServiceStatus::Unhealthy => StatusCode::SERVICE_UNAVAILABLE,
+                    };
+                    (status_code, Json(status))
+                }
+            })
+        };
+
+        let info_route = {
+            let monitor = Arc::clone(&self);
+            get(move || {
+                let monitor = Arc::clone(&monitor);
+                async move {
+                    let status = monitor.get_status().await;
+                    Json(ServiceInfo {
+                        name: status.service,
+                        version: status.version,
+                        uptime_seconds: status.uptime_seconds,
+                    })
+                }
+            })
+        };
+
+        Router::new().route("/health", health_route).route("/info", info_route)
     }
 }
 

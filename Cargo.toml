@@ -13,6 +13,7 @@ members = [
     "services/community-service",
     "services/asset-service",
     "services/websocket-gateway",
+    "services/service-registry",
     
     # AI Infrastructure
     "services/ai-orchestra",
@@ -23,6 +24,7 @@ members = [
     "libs/common",
     "libs/protocol",
     "libs/ai-common",
+    "libs/health",
     
     # Client
     "client/mock-client",
@@ -69,6 +71,10 @@ thiserror = "1.0"
 uuid = { version = "1.6", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8"
+
+# Finalverse internal crates
+finalverse-health = { path = "libs/health" }
+finalverse-service-registry = { path = "services/service-registry" }
 
 # QUIC/Networking
 quinn = "0.10"
