@@ -39,11 +39,11 @@ license = "MIT"
 
 [workspace.dependencies]
 # Async runtime
-tokio = { version = "1.35", features = ["full"] }
+tokio = { version = "1.45.1", features = ["full"] }
 async-trait = "0.1"
 
 # Web framework
-axum = "0.7"
+axum = "0.7.9"
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 reqwest = "0.12"

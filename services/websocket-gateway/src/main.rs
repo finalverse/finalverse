@@ -251,14 +251,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await;
 
     let app = Router::new()
+        .with_state(state.clone())
         .merge(monitor.clone().axum_routes())
         .route("/ws", get(websocket_handler))
         .layer(
             ServiceBuilder::new()
                 .layer(CorsLayer::permissive())
                 .into_inner(),
-        )
-        .with_state(state);
+        );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("WebSocket Gateway listening on {}", addr);

@@ -21,7 +21,7 @@ uuid.workspace = true
 finalverse-health.workspace = true
 finalverse-service-registry.workspace = true
 rand.workspace = true
-reqwest = { version = "0.12", features = ["json"] }
-async-trait = "0.1.88"
-tower = "0.5.2"
-tower-http = { version = "0.6.6", features = ["cors"] }
+reqwest = { workspace = true, features = ["json"] }
+async-trait.workspace = true
+tower.workspace = true
+tower-http = { workspace = true, features = ["cors"] }
