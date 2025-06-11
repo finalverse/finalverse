@@ -36,6 +36,7 @@ use tokio::{
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 use finalverse_plugin::{discover_plugins, LoadedPlugin, ServicePlugin};
 use finalverse_service_registry::LocalServiceRegistry;
+mod mesh;
 use crate::{ServiceInfo, ServiceStatus, LogEntry, LogLevel, ServerCommand, ServerResponse};
 use tonic::transport::Server as GrpcServer;
 
@@ -682,6 +683,8 @@ async fn main() -> Result<()> {
     for p in &plugins {
         p.instance.init(&registry).await?;
     }
+
+    mesh::spawn_refresh_task();
 
     // gRPC server aggregating plugin services
     let grpc_port: u16 = std::env::var("FINALVERSE_GRPC_PORT")
