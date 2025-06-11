@@ -73,10 +73,11 @@ log_format = "json"
 
 [network]
 host = "127.0.0.1"
-port = 9090
-websocket_port = 9091
-grpc_port = 50052
-public_url = "http://localhost:9090"
+api_port = 9090
+realtime_port = 9091
+metrics_port = 9001
+public_api_url = "http://localhost:9090"
+public_realtime_url = "ws://localhost:9091"
 cors_origins = ["*"]
 max_connections = 5000
 connection_timeout_secs = 30
@@ -84,7 +85,7 @@ connection_timeout_secs = 30
         
         let config = ConfigLoader::load_from_string(config_str).unwrap();
         assert_eq!(config.general.server_name, "Test Server");
-        assert_eq!(config.network.port, 9090);
+        assert_eq!(config.network.api_port, 9090);
         assert!(config.general.debug_mode);
     }
     
