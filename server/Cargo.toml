@@ -16,3 +16,4 @@ serde.workspace = true
 tokio.workspace = true
 tokio-tungstenite = "0.26.2"
 reqwest.workspace = true
+finalverse-plugin = { path = "../services/plugin" }
