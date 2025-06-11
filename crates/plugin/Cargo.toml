@@ -10,6 +10,8 @@ tonic.workspace = true
 async-trait.workspace = true
 tracing.workspace = true
 libloading = { workspace = true, optional = true }
+service-registry.workspace = true
+anyhow.workspace = true
 
 [features]
 dynamic = ["libloading"]
