@@ -141,5 +141,6 @@ FINALVERSE_DEFAULT_LLM=openai
 
 # Performance Settings
 FINALVERSE_WORKER_THREADS=8
-"#.to_string()
+"#
+        .to_string()
 }
