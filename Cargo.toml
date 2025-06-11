@@ -28,6 +28,11 @@ members = [
     
     # Client
     "client/mock-client",
+
+    # server
+    "server",
+    "cli",
+    "config",
     
 ]
 
@@ -35,12 +40,13 @@ members = [
 version = "0.1.0"
 edition = "2021"
 authors = ["Finalverse Team"]
-license = "MIT"
+license = "Copyright Finalverse Inc."
 
 [workspace.dependencies]
 # Async runtime
 tokio = { version = "1.45.1", features = ["full"] }
 async-trait = "0.1"
+tokio-tungstenite = "0.21"
 
 # Web framework
 axum = "0.7.9"
@@ -73,8 +79,14 @@ chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8"
 
 # Finalverse internal crates
+finalverse-common = { path = "libs/common" }
 finalverse-health = { path = "libs/health" }
+finalverse-protocol = { path = "libs/protocol" }
+finalverse-ai-common = { path = "libs/ai-common" }
 finalverse-service-registry = { path = "services/service-registry" }
+finalverse-server = { path = "server" }
+finalverse-config = { path = "config" }
+finalverse-cli = { path = "cli" }
 
 # QUIC/Networking
 quinn = "0.10"
@@ -83,3 +95,9 @@ rustls = "0.21"
 # AI/ML
 candle-core = "0.3"
 ort = "1.16" # ONNX Runtime
+
+# config
+toml = "0.8"
+num_cpus = "1.16"
+clap = { version = "4.4", features = ["derive"] }
+rustyline = "13.0"

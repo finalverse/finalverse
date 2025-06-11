@@ -1,0 +1,16 @@
+[package]
+name = "finalverse-config"
+version = "0.1.0"
+edition = "2021"
+authors = ["Finalverse Team"]
+description = "Configuration management for Finalverse server"
+license = "MIT"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+toml.workspace = true
+thiserror.workspace = true
+num_cpus.workspace = true
+
+[dev-dependencies]
+tempfile = "3.8"

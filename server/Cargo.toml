@@ -1,0 +1,16 @@
+[package]
+name = "finalverse-server"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+clap = { version = "4.5.40", features = ["derive"] }
+crossterm = "0.29.0"
+ratatui = "0.29.0"
+serde.workspace = true
+tokio.workspace = true
+tokio-tungstenite = "0.26.2"

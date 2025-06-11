@@ -21,6 +21,12 @@
       <sourceFolder url="file://$MODULE_DIR$/services/websocket-gateway/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/libs/health/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/services/service-registry/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/cli/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/config/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/finalverse-cli/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/finalverse-config/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/finalverse-server/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/server/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
