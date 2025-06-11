@@ -404,7 +404,7 @@ test_services() {
     
     echo ""
     echo -e "${CYAN}🌐 WebSocket Test:${NC}"
-    echo "  Open Client_WebSocket.html in your browser"
+    echo "  Open webViewer.html in your browser"
     echo "  Connect to: ws://localhost:3000/ws"
 }
 

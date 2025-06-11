@@ -63,8 +63,8 @@ cargo run --bin websocket-gateway
 ```
 
 2. **Test the features**:
-- Open the WebSocket HTML client in a browser
-- Use the enhanced mock client to see AI-generated content
+ - Open the webViewer HTML app in a browser
+ - Use the txtViewer client to see AI-generated content
 - Watch real-time updates as you play
 
 These advanced features transform Finalverse from a static world into a living, breathing universe where:

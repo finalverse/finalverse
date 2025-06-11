@@ -1,4 +1,4 @@
-// client/mock-client/src/connection_test.rs
+// client/txtViewer/src/connection_test.rs
 // A simple test to verify direct connections work
 
 use reqwest;

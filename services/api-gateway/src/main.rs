@@ -1,7 +1,7 @@
 use axum::{routing::{get, post}, Router, Json};
 use serde::{Deserialize, Serialize};
 use health::HealthMonitor;
-use finalverse_service_registry::LocalServiceRegistry;
+use service_registry::LocalServiceRegistry;
 use std::{net::SocketAddr, sync::Arc};
 
 #[tokio::main]

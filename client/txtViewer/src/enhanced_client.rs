@@ -1,4 +1,4 @@
-// client/mock-client/src/enhanced_client.rs
+// client/txtViewer/src/enhanced_client.rs
 
 use fv_common::*;
 use protocol::*;

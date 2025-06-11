@@ -35,7 +35,7 @@ use tokio::{
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 use plugin::{discover_plugins, LoadedPlugin, ServicePlugin};
-use finalverse_service_registry::LocalServiceRegistry;
+use service_registry::LocalServiceRegistry;
 mod mesh;
 use crate::{ServiceInfo, ServiceStatus, LogEntry, LogLevel, ServerCommand, ServerResponse};
 use tonic::transport::Server as GrpcServer;

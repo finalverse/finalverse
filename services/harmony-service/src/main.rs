@@ -16,7 +16,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
 use health::HealthMonitor;
-use finalverse_service_registry::LocalServiceRegistry;
+use service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct PlayerProgression {

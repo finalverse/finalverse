@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 #[cfg(feature = "dynamic")]
 use libloading::{Library, Symbol};
 
-use finalverse_service_registry::LocalServiceRegistry;
+use service_registry::LocalServiceRegistry;
 use anyhow::Result;
 
 /// Trait implemented by optional service plugins.

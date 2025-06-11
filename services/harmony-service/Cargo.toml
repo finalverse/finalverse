@@ -22,4 +22,4 @@ serde_json.workspace = true
 uuid.workspace = true
 chrono.workspace = true
 health.workspace = true
-finalverse-service-registry.workspace = true
+service-registry.workspace = true

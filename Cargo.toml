@@ -31,7 +31,7 @@ members = [
     "crates/world-engine",
     
     # Client
-    "client/mock-client",
+    "client/txtViewer",
     "crates/events",
 
     # server
@@ -88,7 +88,7 @@ fv-common = { path = "crates/fv-core" }
 health = { path = "crates/health" }
 protocol = { path = "crates/protocol" }
 ai-common = { path = "crates/ai-common" }
-finalverse-service-registry = { path = "services/service-registry" }
+service-registry = { path = "services/service-registry" }
 events = { path = "crates/events" }
 finalverse-server = { path = "server" }
 config-core = { path = "crates/config-core" }

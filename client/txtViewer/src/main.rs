@@ -1,4 +1,4 @@
-// client/mock-client/src/main.rs - Fixed version
+// client/txtViewer/src/main.rs - Final text-based viewer
 
 //mod enhanced_client;
 pub mod enhanced_client;
@@ -8,6 +8,7 @@ use fv_common::*;
 use protocol::*;
 use std::io::{self, Write};
 use tracing::info;
+use crossterm::{execute, cursor::MoveTo, terminal::{Clear, ClearType}};
 
 fn print_main_menu() {
     println!("\n╔════════════════════════════════════════╗");
@@ -34,6 +35,23 @@ fn print_main_menu() {
     println!("╚════════════════════════════════════════╝");
     print!("Choose action: ");
     io::stdout().flush().unwrap();
+}
+
+fn print_status(client: &EnhancedClient) {
+    println!("╔════════ Player Status ═════════╗");
+    println!("Name: {}", client.player_name);
+    println!("Location: ({:.1}, {:.1}, {:.1})", client.position.x, client.position.y, client.position.z);
+    if let Some(region) = &client.current_region {
+        println!("Region: {}", region.0);
+    } else {
+        println!("Region: Unknown");
+    }
+    println!("Echo Bonds: L:{} K:{} T:{} I:{}", 
+        client.echo_bonds.get(&EchoType::Lumi).unwrap_or(&0),
+        client.echo_bonds.get(&EchoType::KAI).unwrap_or(&0),
+        client.echo_bonds.get(&EchoType::Terra).unwrap_or(&0),
+        client.echo_bonds.get(&EchoType::Ignis).unwrap_or(&0));
+    println!("╚════════════════════════════════╝\n");
 }
 
 async fn select_region(client: &mut EnhancedClient) -> anyhow::Result<()> {
@@ -137,6 +155,8 @@ async fn main() -> anyhow::Result<()> {
     }
     
     loop {
+        execute!(io::stdout(), Clear(ClearType::All), MoveTo(0,0)).unwrap();
+        print_status(&client);
         print_main_menu();
         
         let mut input = String::new();

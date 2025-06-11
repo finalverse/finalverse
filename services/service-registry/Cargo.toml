@@ -1,5 +1,5 @@
 [package]
-name = "finalverse-service-registry"
+name = "service-registry"
 version.workspace = true
 edition.workspace = true
 
