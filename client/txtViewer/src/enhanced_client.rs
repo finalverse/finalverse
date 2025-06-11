@@ -2,11 +2,49 @@
 
 use fv_common::*;
 use protocol::*;
+use serde::{Deserialize, Serialize};
 use reqwest;
 use serde_json;
 use std::collections::HashMap;
 use tracing::info;
 use uuid::Uuid;
+
+#[derive(Serialize)]
+struct NoteRequest {
+    frequency: f32,
+    duration: f32,
+    intensity: f32,
+}
+
+#[derive(Serialize)]
+struct MelodyRequest {
+    notes: Vec<NoteRequest>,
+    tempo: f32,
+    harmony_type: String,
+}
+
+#[derive(Serialize)]
+struct CoordinatesRequest {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
+#[derive(Serialize)]
+struct PerformMelodyRequest {
+    player_id: String,
+    melody: MelodyRequest,
+    target_location: CoordinatesRequest,
+}
+
+#[derive(Deserialize)]
+struct PerformMelodyResponse {
+    success: bool,
+    resonance_gained: f32,
+    harmony_impact: f32,
+    message: String,
+    effects: Vec<String>,
+}
 
 pub struct EnhancedClient {
     pub player_id: PlayerId,
@@ -211,18 +249,29 @@ impl EnhancedClient {
             }
         }
         
-        // Perform the melody
-        let melody = match melody_id {
-            "healing_touch" => Melody::Healing { power: 15.0 },
-            "light_of_hope" => Melody::Discovery { range: 75.0 },
-            "forge_of_will" => Melody::Creation { pattern: "masterwork".to_string() },
-            _ => Melody::Courage { intensity: 20.0 },
+        // Prepare a simple melody request. The client does not yet construct
+        // full melodies, so we send placeholder note data based on the ID.
+        let (harmony_type, power) = match melody_id {
+            "healing_touch" => ("restoration", 15.0),
+            "light_of_hope" => ("exploration", 20.0),
+            "forge_of_will" => ("creative", 25.0),
+            _ => ("courage", 10.0),
         };
-        
-        let request = grpc::PerformMelodyRequest {
+
+        let notes = vec![NoteRequest {
+            frequency: 440.0,
+            duration: power / 10.0,
+            intensity: 1.0,
+        }];
+
+        let request = PerformMelodyRequest {
             player_id: self.player_id.0.to_string(),
-            melody,
-            target: Coordinates { x: 100.0, y: 50.0, z: 200.0 },
+            melody: MelodyRequest {
+                notes,
+                tempo: 120.0,
+                harmony_type: harmony_type.to_string(),
+            },
+            target_location: CoordinatesRequest { x: 100.0, y: 50.0, z: 200.0 },
         };
         
         let response = self.client

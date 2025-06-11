@@ -5,10 +5,48 @@ pub mod enhanced_client;
 
 use enhanced_client::EnhancedClient;
 use fv_common::*;
+use serde::{Serialize, Deserialize};
 use protocol::*;
 use std::io::{self, Write};
 use tracing::info;
 use crossterm::{execute, cursor::MoveTo, terminal::{Clear, ClearType}};
+
+#[derive(Serialize)]
+struct NoteRequest {
+    frequency: f32,
+    duration: f32,
+    intensity: f32,
+}
+
+#[derive(Serialize)]
+struct MelodyRequest {
+    notes: Vec<NoteRequest>,
+    tempo: f32,
+    harmony_type: String,
+}
+
+#[derive(Serialize)]
+struct CoordinatesRequest {
+    x: f32,
+    y: f32,
+    z: f32,
+}
+
+#[derive(Serialize)]
+struct PerformMelodyRequest {
+    player_id: String,
+    melody: MelodyRequest,
+    target_location: CoordinatesRequest,
+}
+
+#[derive(Deserialize)]
+struct PerformMelodyResponse {
+    success: bool,
+    resonance_gained: f32,
+    harmony_impact: f32,
+    message: String,
+    effects: Vec<String>,
+}
 
 fn print_main_menu() {
     println!("\n╔════════════════════════════════════════╗");
@@ -392,18 +430,28 @@ impl EnhancedClient {
     }
     
     pub async fn perform_melody(&self, melody_type: &str) -> anyhow::Result<()> {
-        let melody = match melody_type {
-            "healing" => Melody::Healing { power: 10.0 },
-            "creation" => Melody::Creation { pattern: "star".to_string() },
-            "discovery" => Melody::Discovery { range: 50.0 },
-            "courage" => Melody::Courage { intensity: 15.0 },
+        let (harmony_type, power) = match melody_type {
+            "healing" => ("restoration", 10.0),
+            "creation" => ("creative", 20.0),
+            "discovery" => ("exploration", 15.0),
+            "courage" => ("courage", 12.0),
             _ => return Err(anyhow::anyhow!("Unknown melody type")),
         };
-        
-        let request = grpc::PerformMelodyRequest {
+
+        let notes = vec![NoteRequest {
+            frequency: 440.0,
+            duration: power / 10.0,
+            intensity: 1.0,
+        }];
+
+        let request = PerformMelodyRequest {
             player_id: self.player_id.0.to_string(),
-            melody,
-            target: Coordinates { x: 100.0, y: 50.0, z: 200.0 },
+            melody: MelodyRequest {
+                notes,
+                tempo: 120.0,
+                harmony_type: harmony_type.to_string(),
+            },
+            target_location: CoordinatesRequest { x: 100.0, y: 50.0, z: 200.0 },
         };
         
         let response = self.client
@@ -413,14 +461,8 @@ impl EnhancedClient {
             .await?;
         
         if response.status().is_success() {
-            let result: grpc::PerformMelodyResponse = response.json().await?;
+            let _result: PerformMelodyResponse = response.json().await?;
             println!("\n🎵 Melody performed!");
-            println!("   Harmony changed by: {:.1}", result.harmony_change);
-            println!("   Resonance gained - Creative: {}, Exploration: {}, Restoration: {}", 
-                result.resonance_gained.creative,
-                result.resonance_gained.exploration,
-                result.resonance_gained.restoration
-            );
         } else {
             return Err(anyhow::anyhow!("Server returned error: {}", response.status()));
         }

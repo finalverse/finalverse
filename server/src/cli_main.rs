@@ -1,12 +1,15 @@
 // finalverse-cli/src/main.rs
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use colored::*;
-use rustyline::{Editor, Result as RLResult};
+use rustyline::{error::ReadlineError, DefaultEditor};
 use serde_json;
 use std::collections::HashMap;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use futures_util::{SinkExt, StreamExt};
+use futures_util::stream::SplitSink;
+use tokio_tungstenite::{WebSocketStream, MaybeTlsStream};
+use tokio::net::TcpStream;
 
 use finalverse_server::{ServerCommand, ServerResponse, ServiceInfo, LogEntry};
 
@@ -73,7 +76,7 @@ enum Commands {
 
 pub struct FinalverseCli {
     server_url: String,
-    ws_stream: Option<tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>>,
+    ws: Option<SplitSink<WebSocketStream<MaybeTlsStream<TcpStream>>, Message>>, 
 }
 
 impl FinalverseCli {
@@ -81,7 +84,6 @@ impl FinalverseCli {
         Self {
             server_url,
             ws: None,
-            runtime: tokio::runtime::Runtime::new().unwrap(),
         }
     }
 
@@ -254,7 +256,7 @@ impl FinalverseCli {
         Ok(())
     }
 
-    fn print_help(&self) {
+fn print_help(&self) {
         println!("Available commands:");
         println!("  help              - Show this help message");
         println!("  exit/quit         - Exit the CLI");
@@ -265,4 +267,31 @@ impl FinalverseCli {
         println!("  event <type>      - Trigger an event");
         println!("  raw <json>        - Send raw JSON command");
     }
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    let mut client = FinalverseCli::new(cli.server);
+    client.connect().await?;
+
+    match cli.command {
+        Some(Commands::Interactive) | None if cli.interactive => {
+            client.interactive_mode().await?;
+        }
+        Some(Commands::Exec { command }) => {
+            client.send_command(&command).await?;
+        }
+        Some(Commands::Shutdown) => {
+            client
+                .send_command(&serde_json::json!({"type": "shutdown"}).to_string())
+                .await?;
+        }
+        _ => {
+            eprintln!("Selected command not implemented in CLI yet");
+        }
+    }
+
+    Ok(())
 }
