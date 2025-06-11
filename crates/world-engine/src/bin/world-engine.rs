@@ -1,6 +1,9 @@
 //! Binary for running the World Engine service.
 
-use crate::{ecosystem, ActionType, MetabolismSimulator, Observer, PlayerAction, RegionState};
+use crate::{
+    ecosystem, ActionType, MetabolismSimulator, Observer, PlayerAction,
+    RegionState as MetabolismRegionState,
+};
 
 use axum::{
     extract::{Path, State},
@@ -9,7 +12,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use fv_common::*;
+use fv_common::{RegionId, PlayerId, ServiceInfo, ServiceStatus};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
@@ -73,7 +76,7 @@ impl WorldEngineState {
             for region in initial_regions.values() {
                 meta.world_map.insert(
                     region.name.clone(),
-                    RegionState {
+                    MetabolismRegionState {
                         harmony: region.harmony_level,
                         dissonance: 0.0,
                         resources: 50.0,

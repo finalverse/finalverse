@@ -34,10 +34,12 @@ use tokio::{
     time::interval,
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
-use plugin::{discover_plugins, LoadedPlugin, ServicePlugin};
+use plugin::{discover_plugins, LoadedPlugin};
 use service_registry::LocalServiceRegistry;
 mod mesh;
-use crate::{ServiceInfo, ServiceStatus, LogEntry, LogLevel, ServerCommand, ServerResponse};
+use finalverse_server::{
+    ServiceInfo, ServiceStatus, LogEntry, LogLevel, ServerCommand, ServerResponse,
+};
 use tonic::transport::Server as GrpcServer;
 
 #[derive(Parser)]
@@ -697,12 +699,14 @@ async fn main() -> Result<()> {
         grpc_builder = instance.register_grpc(grpc_builder);
     }
     let grpc_addr = format!("0.0.0.0:{}", grpc_port).parse()?;
-    // Keep plugins alive while server runs
-    let _plugin_guard = plugins;
+    let mut grpc_server = grpc_builder;
+    // Keep plugins alive while server runs by moving them into the task
     tokio::spawn(async move {
-        if let Err(e) = grpc_builder.serve(grpc_addr).await {
+        let _plugins = plugins; // prevent drop until task ends
+        if let Err(e) = grpc_server.serve(grpc_addr).await {
             eprintln!("gRPC server error: {e}");
         }
+        drop(_plugins);
     });
 
     // Start background tasks
