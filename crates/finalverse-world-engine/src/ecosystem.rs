@@ -1,4 +1,4 @@
-// services/world-engine/src/ecosystem.rs
+//! Ecosystem definitions for the World Engine.
 
 use finalverse_common::*;
 use serde::{Deserialize, Serialize};
