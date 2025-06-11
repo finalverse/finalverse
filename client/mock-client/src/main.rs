@@ -4,8 +4,8 @@
 pub mod enhanced_client;
 
 use enhanced_client::EnhancedClient;
-use finalverse_common::*;
-use finalverse_protocol::*;
+use fv_common::*;
+use protocol::*;
 use std::io::{self, Write};
 use tracing::info;
 
@@ -28,6 +28,7 @@ fn print_main_menu() {
     println!("║ 10. Perform advanced melody            ║");
     println!("║ 11. Initiate symphony (group event)    ║");
     println!("║ 12. Select/Change region               ║");
+    println!("║ 13. Move to coordinates                ║");
     println!("║                                        ║");
     println!("║ 0. Exit                                ║");
     println!("╚════════════════════════════════════════╝");
@@ -250,6 +251,21 @@ async fn main() -> anyhow::Result<()> {
             "12" => {
                 if let Err(e) = select_region(&mut client).await {
                     println!("❌ Failed to change region: {}", e);
+                }
+            }
+            "13" => {
+                print!("Enter X Y Z: ");
+                io::stdout().flush().unwrap();
+                let mut coords = String::new();
+                io::stdin().read_line(&mut coords)?;
+                let parts: Vec<f64> = coords
+                    .split_whitespace()
+                    .filter_map(|s| s.parse().ok())
+                    .collect();
+                if parts.len() == 3 {
+                    client.move_to(parts[0], parts[1], parts[2]);
+                } else {
+                    println!("Invalid coordinates");
                 }
             }
             "0" => {

@@ -1,5 +1,5 @@
 [package]
-name = "finalverse-ai-common"
+name = "ai-common"
 version.workspace = true
 edition.workspace = true
 

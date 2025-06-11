@@ -16,7 +16,7 @@ serde.workspace = true
 tokio.workspace = true
 tokio-tungstenite.workspace = true
 reqwest.workspace = true
-finalverse-plugin.workspace = true
+plugin.workspace = true
 once_cell.workspace = true
 
 [[bin]]

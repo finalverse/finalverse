@@ -1,5 +1,5 @@
 [package]
-name = "finalverse-config"
+name = "config-core"
 version.workspace = true
 edition.workspace = true
 authors = ["Finalverse Team"]
@@ -17,11 +17,11 @@ tracing-subscriber.workspace = true
 anyhow.workspace = true
 
 [lib]
-name = "finalverse_config"
+name = "config_core"
 path = "src/lib.rs"
 
 [[bin]]
-name = "finalverse-config"
+name = "config-core"
 path = "src/main.rs"
 
 [dev-dependencies]

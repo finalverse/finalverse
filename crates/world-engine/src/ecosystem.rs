@@ -1,6 +1,6 @@
 //! Ecosystem definitions for the World Engine.
 
-use finalverse_common::*;
+use fv_common::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;

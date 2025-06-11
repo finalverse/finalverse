@@ -1,7 +1,7 @@
 // client/mock-client/src/enhanced_client.rs
 
-use finalverse_common::*;
-use finalverse_protocol::*;
+use fv_common::*;
+use protocol::*;
 use reqwest;
 use serde_json;
 use std::collections::HashMap;
@@ -15,6 +15,7 @@ pub struct EnhancedClient {
     pub client: reqwest::Client,
     pub current_region: Option<RegionId>,
     pub echo_bonds: HashMap<EchoType, u32>,
+    pub position: Coordinates,
 }
 
 impl EnhancedClient {
@@ -53,6 +54,7 @@ impl EnhancedClient {
             client: reqwest::Client::new(),
             current_region: None,
             echo_bonds,
+            position: Coordinates { x: 0.0, y: 0.0, z: 0.0 },
         }
     }
     
@@ -380,5 +382,10 @@ impl EnhancedClient {
         }
         
         Ok(())
+    }
+
+    pub fn move_to(&mut self, x: f64, y: f64, z: f64) {
+        self.position = Coordinates { x, y, z };
+        println!("\n📍 You moved to ({:.1}, {:.1}, {:.1})", x, y, z);
     }
 }

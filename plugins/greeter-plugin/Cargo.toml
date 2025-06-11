@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-finalverse-plugin.workspace = true
+plugin.workspace = true
 async-trait.workspace = true
 tonic.workspace = true
 axum.workspace = true

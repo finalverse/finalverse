@@ -5,7 +5,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use finalverse_common::{
+use fv_common::{
     events::{SongEvent, HarmonyEvent},
     types::{Coordinates, Melody, PlayerId, RegionId, HarmonyType, Note},
     FinalverseError, Result,
@@ -20,7 +20,7 @@ use tokio;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
-use finalverse_health::HealthMonitor;
+use health::HealthMonitor;
 use finalverse_service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone)]

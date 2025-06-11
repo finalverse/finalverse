@@ -1,7 +1,7 @@
 // services/story-engine/src/quest_system.rs
 // Dynamic quest generation and management system
 
-use finalverse_common::*;
+use fv_common::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;

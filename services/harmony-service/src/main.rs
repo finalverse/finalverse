@@ -7,14 +7,15 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use finalverse_common::*;
-use finalverse_protocol::{event_bus::InMemoryEventBus, *};
+use events::{GameEventBus, NatsEventBus};
+use fv_common::*;
+use protocol::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
-use finalverse_health::HealthMonitor;
+use health::HealthMonitor;
 use finalverse_service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -407,12 +408,11 @@ async fn handle_events(state: HarmonyServiceState) {
 }
 
 #[tokio::main]
-async fn main() {
-    tracing_subscriber::fmt::init();
+async fn main() -> anyhow::Result<()> {
     
     info!("Starting Harmony Service...");
     
-    let event_bus = Arc::new(InMemoryEventBus::new());
+    let event_bus = Arc::new(NatsEventBus::new("nats://127.0.0.1:4222").await?);
     let state = HarmonyServiceState::new(event_bus);
     
     // Start event handler
@@ -439,4 +439,5 @@ async fn main() {
     
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
+    Ok(())
 }

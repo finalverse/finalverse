@@ -9,8 +9,8 @@ name = "story-engine"
 path = "src/main.rs"
 
 [dependencies]
-finalverse-common.workspace = true
-finalverse-protocol.workspace = true
+fv-common.workspace = true
+protocol.workspace = true
 axum.workspace = true
 tokio.workspace = true
 tracing.workspace = true
@@ -18,7 +18,7 @@ tracing-subscriber.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
-finalverse-health.workspace = true
+health.workspace = true
 finalverse-service-registry.workspace = true
 chrono.workspace = true
 reqwest.workspace = true
