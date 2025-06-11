@@ -1,6 +1,6 @@
-// services/world-engine/src/main.rs
+//! Binary for running the World Engine service.
 
-pub mod ecosystem;
+use crate::{ecosystem, ActionType, MetabolismSimulator, Observer, PlayerAction, RegionState};
 
 use axum::{
     extract::{Path, State},
@@ -39,6 +39,7 @@ struct WorldEngineState {
     cosmic_time: Arc<RwLock<u64>>, // In-game time
     start_time: std::time::Instant,
     ecosystems: Arc<RwLock<std::collections::HashMap<RegionId, ecosystem::Ecosystem>>>,
+    observer: Arc<RwLock<Observer>>, 
 }
 
 impl WorldEngineState {
@@ -64,18 +65,42 @@ impl WorldEngineState {
         
         initial_regions.insert(terra_nova.id.clone(), terra_nova);
         initial_regions.insert(whispering_wilds.id.clone(), whispering_wilds);
-        
+
+        let mut observer = Observer::new(MetabolismSimulator::new(300));
+
+        {
+            let meta = &mut observer.metabolism;
+            for region in initial_regions.values() {
+                meta.world_map.insert(
+                    region.name.clone(),
+                    RegionState {
+                        harmony: region.harmony_level,
+                        dissonance: 0.0,
+                        resources: 50.0,
+                        political_tension: 0.0,
+                    },
+                );
+            }
+        }
+
         Self {
             regions: Arc::new(RwLock::new(initial_regions)),
             cosmic_time: Arc::new(RwLock::new(0)),
             start_time: std::time::Instant::now(),
             ecosystems: Arc::new(Default::default()),
+            observer: Arc::new(RwLock::new(observer)),
         }
     }
     
     async fn update_cosmic_metabolism(&self) {
         let mut time = self.cosmic_time.write().await;
         *time += 1;
+
+        // Advance regional metabolism
+        {
+            let mut obs = self.observer.write().await;
+            obs.metabolism.tick();
+        }
         
         // Update weather based on harmony levels
         let mut regions = self.regions.write().await;
@@ -172,6 +197,51 @@ async fn update_harmony(
     })))
 }
 
+#[derive(serde::Deserialize)]
+struct PlayerActionRequest {
+    player_id: String,
+    action_type: String,
+    region: String,
+}
+
+async fn post_player_action(
+    State(state): State<WorldEngineState>,
+    Json(req): Json<PlayerActionRequest>,
+) -> Result<Json<serde_json::Value>> {
+    let action_type = match req.action_type.as_str() {
+        "CompleteQuest" => ActionType::CompleteQuest,
+        "BuildStructure" => ActionType::BuildStructure,
+        "Ritual" => ActionType::Ritual,
+        "PvPConflict" => ActionType::PvPConflict,
+        _ => return Err(StatusCode::BAD_REQUEST.into()),
+    };
+
+    let action = PlayerAction {
+        player_id: req.player_id,
+        action_type,
+        region: req.region,
+    };
+    state.observer.write().await.interpret_action(action);
+    Ok(Json(serde_json::json!({ "success": true })))
+}
+
+async fn get_metabolism_state(
+    State(state): State<WorldEngineState>,
+    Path(region): Path<String>,
+) -> Result<Json<serde_json::Value>> {
+    let obs = state.observer.read().await;
+    if let Some(rs) = obs.metabolism.get_state(&region) {
+        Ok(Json(serde_json::json!({
+            "harmony": rs.harmony,
+            "dissonance": rs.dissonance,
+            "resources": rs.resources,
+            "political_tension": rs.political_tension,
+        })))
+    } else {
+        Err(StatusCode::NOT_FOUND.into())
+    }
+}
+
 // Background task to simulate world dynamics
 async fn cosmic_metabolism_task(state: WorldEngineState) {
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(10));
@@ -253,6 +323,8 @@ async fn main() {
         .route("/regions/:id", get(get_region))
         .route("/harmony", post(update_harmony))
         .route("/regions/:id/ecosystem", get(get_region_ecosystem))
+        .route("/action", post(post_player_action))
+        .route("/metabolism/:region", get(get_metabolism_state))
         .with_state(state.clone())
         .merge(monitor.clone().axum_routes())
         ;

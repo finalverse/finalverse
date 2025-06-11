@@ -5,7 +5,6 @@ members = [
     # Core Services
     "services/api-gateway",
     "services/song-engine",
-    "services/world-engine", 
     "services/story-engine",
     "services/echo-engine",
     "services/harmony-service",
@@ -29,6 +28,7 @@ members = [
     "crates/finalverse-ai-common",
     "crates/finalverse-health",
     "crates/finalverse-wasm-runtime",
+    "crates/finalverse-world-engine",
     
     # Client
     "client/mock-client",
@@ -91,6 +91,7 @@ finalverse-server = { path = "server" }
 finalverse-config = { path = "config" }
 finalverse-plugin = { path = "crates/finalverse-plugin" }
 finalverse-wasm-runtime = { path = "crates/finalverse-wasm-runtime" }
+finalverse-world-engine = { path = "crates/finalverse-world-engine" }
 
 # QUIC/Networking
 quinn = "0.10"
