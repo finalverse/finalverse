@@ -10,7 +10,7 @@ path = "src/main.rs"
 
 [dependencies]
 fv-common.workspace = true
-protocol.workspace = true
+finalverse-protocol.workspace = true
 axum.workspace = true
 tokio.workspace = true
 tracing.workspace = true
@@ -18,7 +18,7 @@ tracing-subscriber.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
-health.workspace = true
+fv-health.workspace = true
 service-registry.workspace = true
 chrono.workspace = true
 reqwest.workspace = true

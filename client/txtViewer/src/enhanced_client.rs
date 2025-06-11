@@ -1,7 +1,7 @@
 // client/txtViewer/src/enhanced_client.rs
 
 use fv_common::*;
-use protocol::*;
+use finalverse_protocol::*;
 use serde::{Deserialize, Serialize};
 use reqwest;
 use serde_json;

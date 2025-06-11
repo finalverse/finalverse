@@ -1,5 +1,5 @@
 use axum::{routing::get, Router, Json};
-use config_core::{load_default_config, GrpcServiceRegistry};
+use fv_config::{load_default_config, GrpcServiceRegistry};
 use std::sync::Arc;
 use std::net::SocketAddr;
 
@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     let addr: SocketAddr = std::env::var("FINALVERSE_CONFIG_ADDR")
         .unwrap_or_else(|_| "0.0.0.0:7070".to_string())
         .parse()?;
-    println!("config-core listening on {}", addr);
+    println!("fv-config listening on {}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
     Ok(())

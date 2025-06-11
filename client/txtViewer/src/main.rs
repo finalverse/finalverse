@@ -6,7 +6,7 @@ pub mod enhanced_client;
 use enhanced_client::EnhancedClient;
 use fv_common::*;
 use serde::{Serialize, Deserialize};
-use protocol::*;
+use finalverse_protocol::*;
 use std::io::{self, Write};
 use tracing::info;
 use crossterm::{execute, cursor::MoveTo, terminal::{Clear, ClearType}};

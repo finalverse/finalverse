@@ -5,7 +5,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use health::HealthMonitor;
+use fv_health::HealthMonitor;
 use service_registry::LocalServiceRegistry;
 use serde::{Deserialize, Serialize};
 use std::{
