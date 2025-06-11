@@ -24,7 +24,7 @@ use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 use reqwest;
-use health::HealthMonitor;
+use fv_health::HealthMonitor;
 use service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

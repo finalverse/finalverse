@@ -34,7 +34,7 @@ use tokio::{
     time::interval,
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
-use plugin::{discover_plugins, LoadedPlugin};
+use fv_plugin::{discover_plugins, LoadedPlugin};
 use service_registry::LocalServiceRegistry;
 mod mesh;
 use finalverse_server::{
@@ -693,20 +693,32 @@ async fn main() -> Result<()> {
         .ok()
         .and_then(|s| s.parse().ok())
         .unwrap_or(50051);
-    let mut grpc_builder = GrpcServer::builder();
-    for plugin in plugins.iter_mut() {
-        let instance = plugin.take_instance();
-        grpc_builder = instance.register_grpc(grpc_builder);
-    }
+    let grpc_plugins = plugins.clone();
     let grpc_addr = format!("0.0.0.0:{}", grpc_port).parse()?;
-    let mut grpc_server = grpc_builder;
-    // Keep plugins alive while server runs by moving them into the task
+
     tokio::spawn(async move {
-        let _plugins = plugins; // prevent drop until task ends
-        if let Err(e) = grpc_server.serve(grpc_addr).await {
-            eprintln!("gRPC server error: {e}");
+        // Build the gRPC server with all plugin services
+        let mut builder = GrpcServer::builder();
+
+        // Register each plugin's gRPC services
+        for plugin in grpc_plugins {
+            builder = plugin.instance.register_grpc(builder).await;
         }
-        drop(_plugins);
+
+        println!("🚀 Starting gRPC server on {}", grpc_addr);
+
+        // Create a dummy service if no plugins provide services
+        if builder
+            .add_service(tonic::transport::server::Routes::new())
+            .serve(grpc_addr)
+            .await
+            .is_err()
+        {
+            // If that fails, the plugins should have added services
+            if let Err(e) = builder.serve(grpc_addr).await {
+                eprintln!("❌ gRPC server error: {}", e);
+            }
+        }
     });
 
     // Start background tasks

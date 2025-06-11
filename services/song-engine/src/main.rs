@@ -20,7 +20,7 @@ use tokio;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
-use health::HealthMonitor;
+use fv_health::HealthMonitor;
 use service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone)]

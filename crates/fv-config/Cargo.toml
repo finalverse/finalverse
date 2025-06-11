@@ -1,10 +1,10 @@
 [package]
-name = "config-core"
+name = "fv-config"
 version.workspace = true
 edition.workspace = true
 authors = ["Finalverse Team"]
 description = "Configuration management for Finalverse server"
-license = "MIT"
+license = "Copyright Finalverse Inc."
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
@@ -17,11 +17,11 @@ tracing-subscriber.workspace = true
 anyhow.workspace = true
 
 [lib]
-name = "config_core"
+name = "fv_config"
 path = "src/lib.rs"
 
 [[bin]]
-name = "config-core"
+name = "fv-config"
 path = "src/main.rs"
 
 [dev-dependencies]

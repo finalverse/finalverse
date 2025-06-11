@@ -9,7 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 fv-common = { path = "../../crates/fv-core" }
-protocol = { path = "../../crates/protocol" }
+finalverse-protocol = { path = "../../crates/finalverse-protocol" }
 reqwest = { workspace = true, features = ["json"] }
 tokio.workspace = true
 tracing.workspace = true

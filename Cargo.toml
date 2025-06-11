@@ -14,7 +14,7 @@ members = [
     "services/websocket-gateway",
     "services/realtime-gateway",
     "services/service-registry",
-    "crates/plugin",
+    "crates/fv-plugin",
     "plugins/greeter-plugin",
     
     # AI Infrastructure
@@ -24,19 +24,19 @@ members = [
     
     # Shared Libraries
     "crates/fv-core",
-    "crates/protocol",
-    "crates/ai-common",
-    "crates/health",
+    "crates/finalverse-protocol",
+    "crates/fv-ai-common",
+    "crates/fv-health",
     "crates/wasm-runtime",
     "crates/world-engine",
     
     # Client
     "client/txtViewer",
-    "crates/events",
+    "crates/fv-events",
 
     # server
     "server",
-    "crates/config-core",
+    "crates/fv-config",
     
 ]
 
@@ -85,14 +85,14 @@ rand = "0.8"
 
 # Finalverse internal crates
 fv-common = { path = "crates/fv-core" }
-health = { path = "crates/health" }
-protocol = { path = "crates/protocol" }
-ai-common = { path = "crates/ai-common" }
+fv-health = { path = "crates/fv-health" }
+finalverse-protocol = { path = "crates/finalverse-protocol" }
+fv-ai-common = { path = "crates/fv-ai-common" }
 service-registry = { path = "services/service-registry" }
-events = { path = "crates/events" }
+fv-events = { path = "crates/fv-events" }
 finalverse-server = { path = "server" }
-config-core = { path = "crates/config-core" }
-plugin = { path = "crates/plugin" }
+fv-config = { path = "crates/fv-config" }
+fv-plugin = { path = "crates/fv-plugin" }
 wasm-runtime = { path = "crates/wasm-runtime" }
 world-engine = { path = "crates/world-engine" }
 

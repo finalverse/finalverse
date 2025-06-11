@@ -7,15 +7,15 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use events::{GameEventBus, NatsEventBus};
+use fv_events::{GameEventBus, NatsEventBus};
 use fv_common::*;
-use protocol::*;
+use finalverse_protocol::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
-use health::HealthMonitor;
+use fv_health::HealthMonitor;
 use service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
