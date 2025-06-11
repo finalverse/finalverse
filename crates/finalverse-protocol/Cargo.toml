@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-finalverse-common = { path = "../common" }
+finalverse-common.workspace = true
 serde.workspace = true
 async-trait.workspace = true
 tonic.workspace = true

@@ -9,8 +9,8 @@ name = "ai-orchestra"
 path = "src/main.rs"
 
 [dependencies]
-finalverse-common = { path = "../../libs/common" }
-finalverse-protocol = { path = "../../libs/protocol" }
+finalverse-common = { path = "../../crates/finalverse-core" }
+finalverse-protocol = { path = "../../crates/finalverse-protocol" }
 axum.workspace = true
 tokio.workspace = true
 tracing.workspace = true

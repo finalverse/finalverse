@@ -6,10 +6,10 @@ edition.workspace = true
 [dependencies]
 axum.workspace = true
 tokio.workspace = true
-tonic = "0.13.1"
-async-trait = "0.1.88"
-tracing = "0.1.41"
-libloading = { version = "0.7", optional = true }
+tonic.workspace = true
+async-trait.workspace = true
+tracing.workspace = true
+libloading = { workspace = true, optional = true }
 
 [features]
 dynamic = ["libloading"]

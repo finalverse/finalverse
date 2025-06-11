@@ -7,9 +7,9 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-finalverse-plugin = { path = "../../services/plugin" }
-async-trait = "0.1"
-tonic = "0.11"
-axum = "0.7"
-tracing = "0.1"
-finalverse-service-registry = { path = "../../services/service-registry" }
+finalverse-plugin.workspace = true
+async-trait.workspace = true
+tonic.workspace = true
+axum.workspace = true
+tracing.workspace = true
+finalverse-service-registry.workspace = true
