@@ -11,6 +11,18 @@ serde = { workspace = true, features = ["derive"] }
 toml.workspace = true
 thiserror.workspace = true
 num_cpus.workspace = true
+axum.workspace = true
+tokio.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
+
+[lib]
+name = "finalverse_config"
+path = "src/lib.rs"
+
+[[bin]]
+name = "finalverse-config"
+path = "src/main.rs"
 
 [dev-dependencies]
 tempfile = "3.8"

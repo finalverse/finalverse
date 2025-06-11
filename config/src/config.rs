@@ -2,6 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::net::SocketAddr;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FinalverseConfig {
@@ -15,6 +16,7 @@ pub struct FinalverseConfig {
     pub performance: PerformanceConfig,
     pub monitoring: MonitoringConfig,
     pub game: GameConfig,
+    pub grpc_services: GrpcServiceRegistry,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,6 +93,26 @@ pub struct ServiceEndpoint {
     pub timeout_ms: u64,
     pub max_retries: u32,
     pub circuit_breaker_threshold: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GrpcServiceRegistry {
+    pub services: HashMap<String, SocketAddr>,
+}
+
+impl GrpcServiceRegistry {
+    pub fn new(map: HashMap<String, SocketAddr>) -> Self {
+        Self { services: map }
+    }
+}
+
+impl Default for GrpcServiceRegistry {
+    fn default() -> Self {
+        let mut map = HashMap::new();
+        map.insert("song-engine".to_string(), "127.0.0.1:50051".parse().unwrap());
+        map.insert("story-engine".to_string(), "127.0.0.1:50052".parse().unwrap());
+        Self { services: map }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -351,6 +373,7 @@ impl Default for FinalverseConfig {
             performance: PerformanceConfig::default(),
             monitoring: MonitoringConfig::default(),
             game: GameConfig::default(),
+            grpc_services: GrpcServiceRegistry::default(),
         }
     }
 }

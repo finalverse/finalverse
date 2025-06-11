@@ -1,0 +1,20 @@
+[package]
+name = "finalverse-realtime-gateway"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+axum.workspace = true
+tokio.workspace = true
+futures = "0.3"
+libloading = { version = "0.7", optional = true }
+tracing.workspace = true
+async-trait = "0.1"
+anyhow.workspace = true
+
+[features]
+dynamic = ["libloading"]
+
+[[bin]]
+name = "finalverse-realtime-gateway"
+path = "src/main.rs"
