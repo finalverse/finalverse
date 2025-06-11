@@ -92,13 +92,7 @@ curl http://localhost:3001/health
 ./scripts/finalverse.sh start
 ```
 
-## Convenience Scripts
-
-For compatibility, these root-level scripts redirect to the main CLI:
-- `start_services.sh` → `./scripts/finalverse.sh start`
-- `stop_services.sh` → `./scripts/finalverse.sh stop`  
-- `test_services.sh` → `./scripts/finalverse.sh test`
-
+These helper scripts were removed. Use `./scripts/finalverse.sh <command>` directly.
 ## Troubleshooting
 
 1. **Services won't start**: Check if binaries exist with `ls target/release/`

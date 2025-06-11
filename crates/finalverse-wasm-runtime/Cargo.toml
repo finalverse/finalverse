@@ -1,0 +1,8 @@
+[package]
+name = "finalverse-wasm-runtime"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+wasmtime.workspace = true
+anyhow.workspace = true

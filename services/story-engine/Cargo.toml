@@ -9,8 +9,8 @@ name = "story-engine"
 path = "src/main.rs"
 
 [dependencies]
-finalverse-common = { path = "../../libs/common" }
-finalverse-protocol = { path = "../../libs/protocol" }
+finalverse-common.workspace = true
+finalverse-protocol.workspace = true
 axum.workspace = true
 tokio.workspace = true
 tracing.workspace = true

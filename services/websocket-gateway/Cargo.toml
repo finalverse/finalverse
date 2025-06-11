@@ -10,12 +10,12 @@ name = "websocket-gateway"
 path = "src/main.rs"
 
 [dependencies]
-finalverse-common = { path = "../../libs/common" }
-finalverse-protocol = { path = "../../libs/protocol" }
+finalverse-common.workspace = true
+finalverse-protocol.workspace = true
 axum = { workspace = true, features = ["ws"] }
 tokio = { workspace = true, features = ["full"] }
 tower-http = { workspace = true, features = ["cors"] }
-futures = "0.3"
+futures.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 serde.workspace = true

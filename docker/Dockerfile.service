@@ -9,7 +9,7 @@ WORKDIR /usr/src/finalverse
 
 # Copy workspace files
 COPY Cargo.toml ./
-COPY libs ./libs
+COPY crates ./crates
 COPY services ./services
 COPY client ./client
 
