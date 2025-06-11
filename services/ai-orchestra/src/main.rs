@@ -6,7 +6,7 @@ use axum::{
     Router,
 };
 use health::HealthMonitor;
-use finalverse_service_registry::LocalServiceRegistry;
+use service_registry::LocalServiceRegistry;
 use serde::{Deserialize, Serialize};
 use std::{
     net::SocketAddr,

@@ -34,7 +34,7 @@ impl ServicePlugin for GreeterPlugin {
         Router::new()
     }
 
-    async fn init(&self, _registry: &finalverse_service_registry::LocalServiceRegistry) -> anyhow::Result<()> {
+    async fn init(&self, _registry: &service_registry::LocalServiceRegistry) -> anyhow::Result<()> {
         info!("Initializing GreeterPlugin");
         Ok(())
     }

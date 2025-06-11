@@ -7,6 +7,6 @@ edition.workspace = true
 fv-common.workspace = true
 protocol.workspace = true
 health.workspace = true
-finalverse-service-registry.workspace = true
+service-registry.workspace = true
 axum.workspace = true
 tokio.workspace = true

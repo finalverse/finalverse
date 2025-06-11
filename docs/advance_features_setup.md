@@ -193,8 +193,8 @@ docker-compose up -d
 # 6. Start WebSocket gateway
 cargo run --bin websocket-gateway &
 
-# 7. Run enhanced client
-cargo run --bin mock-client
+# 7. Run txtViewer client
+cargo run --bin txtViewer
 ```
 
 ## 📊 Monitoring & Debugging

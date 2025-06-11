@@ -7,6 +7,6 @@ edition.workspace = true
 fv-common = { path = "../../crates/fv-core" }
 protocol = { path = "../../crates/protocol" }
 health.workspace = true
-finalverse-service-registry.workspace = true
+service-registry.workspace = true
 axum.workspace = true
 tokio.workspace = true

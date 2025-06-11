@@ -22,7 +22,7 @@ use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 use health::HealthMonitor;
-use finalverse_service_registry::LocalServiceRegistry;
+use service_registry::LocalServiceRegistry;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]

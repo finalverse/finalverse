@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finalverse WebSocket Test Client (Enhanced)</title>
+    <title>Finalverse Web Viewer</title>
     <style>
         body {
             font-family: 'Courier New', monospace;
@@ -128,8 +128,8 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>🎵 Finalverse WebSocket Test Client</h1>
-        <p>Enhanced diagnostics and testing suite</p>
+        <h1>🎵 Finalverse Web Viewer</h1>
+        <p>Interact with Finalverse services via WebSockets</p>
     </div>
 
     <div class="status">
@@ -144,6 +144,14 @@
         <div class="status-box" id="messageStats">
             <h3>📊 Message Stats</h3>
             <div id="statsInfo">Sent: 0 | Received: 0</div>
+        </div>
+        <div class="status-box" id="positionStatus">
+            <h3>🌍 Position</h3>
+            <div id="posInfo">(0,0,0)</div>
+        </div>
+        <div class="status-box" id="regionStatus">
+            <h3>📍 Region</h3>
+            <div id="regionInfo">Unknown</div>
         </div>
     </div>
 
@@ -260,8 +268,12 @@
         const playerInfo = document.getElementById('playerInfo');
         if (id && id !== 'undefined') {
             playerInfo.textContent = `Player ID: ${id}`;
+            document.getElementById('posInfo').textContent = '(0,0,0)';
+            document.getElementById('regionInfo').textContent = 'Unknown';
         } else {
             playerInfo.textContent = 'No player assigned';
+            document.getElementById('posInfo').textContent = '(0,0,0)';
+            document.getElementById('regionInfo').textContent = 'Unknown';
         }
     }
 
@@ -357,6 +369,7 @@
 
             case 'position_updated':
                 log(`🚶 Position updated: (${message.data.x}, ${message.data.y}, ${message.data.z})`, 'success');
+                document.getElementById('posInfo').textContent = `(${message.data.x}, ${message.data.y}, ${message.data.z})`;
                 break;
 
             case 'melody_performed':
@@ -369,6 +382,9 @@
 
             case 'region_subscribed':
                 log(`🔔 Subscribed to regions: ${message.data.regions.join(', ')}`, 'success');
+                if (message.data.regions && message.data.regions.length > 0) {
+                    document.getElementById('regionInfo').textContent = message.data.regions[0];
+                }
                 break;
 
             case 'pong':
@@ -549,7 +565,7 @@
     }, 1000);
 
     // Initialize
-    log('🎮 Finalverse WebSocket Test Client Ready', 'success');
+    log('🎮 Finalverse Web Viewer Ready', 'success');
     log('💡 Shortcuts: Ctrl+Enter (Connect/Move), Ctrl+Space (Melody), Ctrl+R (Random Position)', 'info');
 </script>
 </body>

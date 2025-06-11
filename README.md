@@ -56,7 +56,7 @@ All services expose `/health` and `/info` endpoints and are automatically regist
    ```
 3. **Run the CLI client**
    ```bash
-   cargo run --bin mock-client
+   cargo run --bin txtViewer
    ```
 
 The upcoming **FinalStorm** 3D client will connect through the WebSocket gateway (`:3000`) using the same service APIs.
