@@ -1,0 +1,12 @@
+[package]
+name = "finalverse-plugin"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+axum.workspace = true
+tokio.workspace = true
+
+[lib]
+name = "finalverse_plugin"
+path = "src/lib.rs"

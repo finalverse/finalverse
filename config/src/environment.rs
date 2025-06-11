@@ -23,14 +23,19 @@ pub fn apply_env_overrides(config: &mut FinalverseConfig) -> Result<()> {
         config.network.host = host;
     }
     
-    if let Ok(port) = env::var("FINALVERSE_PORT") {
-        config.network.port = port.parse()
-            .map_err(|_| ConfigError::Environment("Invalid FINALVERSE_PORT".to_string()))?;
+    if let Ok(port) = env::var("FINALVERSE_API_PORT") {
+        config.network.api_port = port.parse()
+            .map_err(|_| ConfigError::Environment("Invalid FINALVERSE_API_PORT".to_string()))?;
     }
-    
-    if let Ok(ws_port) = env::var("FINALVERSE_WS_PORT") {
-        config.network.websocket_port = ws_port.parse()
-            .map_err(|_| ConfigError::Environment("Invalid FINALVERSE_WS_PORT".to_string()))?;
+
+    if let Ok(rt_port) = env::var("FINALVERSE_REALTIME_PORT") {
+        config.network.realtime_port = rt_port.parse()
+            .map_err(|_| ConfigError::Environment("Invalid FINALVERSE_REALTIME_PORT".to_string()))?;
+    }
+
+    if let Ok(metrics_port) = env::var("FINALVERSE_METRICS_PORT") {
+        config.network.metrics_port = metrics_port.parse()
+            .map_err(|_| ConfigError::Environment("Invalid FINALVERSE_METRICS_PORT".to_string()))?;
     }
     
     // Database settings
@@ -117,8 +122,9 @@ FINALVERSE_LOG_LEVEL=info
 
 # Network Settings
 FINALVERSE_HOST=0.0.0.0
-FINALVERSE_PORT=8080
-FINALVERSE_WS_PORT=8081
+FINALVERSE_API_PORT=8080
+FINALVERSE_REALTIME_PORT=8081
+FINALVERSE_METRICS_PORT=9090
 
 # Database Settings
 FINALVERSE_DATABASE_URL=postgresql://finalverse:password@localhost/finalverse
@@ -135,5 +141,6 @@ FINALVERSE_DEFAULT_LLM=openai
 
 # Performance Settings
 FINALVERSE_WORKER_THREADS=8
-"#.to_string()
+"#
+        .to_string()
 }
