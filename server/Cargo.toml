@@ -21,3 +21,7 @@ finalverse-plugin = { path = "../services/plugin" }
 [[bin]]
 name = "finalverse-server"
 path = "src/main.rs"
+
+[lib]
+name = "finalverse_server"
+path = "src/lib.rs"
