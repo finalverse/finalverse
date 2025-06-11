@@ -107,15 +107,6 @@ impl ConfigValidator {
         
         Ok(())
     }
-            if endpoint.circuit_breaker_threshold < 0.0 || endpoint.circuit_breaker_threshold > 1.0 {
-                return Err(ConfigError::Validation(
-                    format!("{} circuit breaker threshold must be between 0.0 and 1.0", name)
-                ));
-            }
-        }
-        
-        Ok(())
-    }
     
     fn validate_ai(ai: &crate::config::AIConfig) -> Result<()> {
         // Validate LLM config
@@ -311,7 +302,7 @@ mod tests {
     #[test]
     fn test_validate_invalid_port() {
         let mut config = FinalverseConfig::default();
-        config.network.port = 0;
+        config.network.api_port = 0;
         assert!(ConfigValidator::validate(&config).is_err());
     }
     

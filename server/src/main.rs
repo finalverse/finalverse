@@ -30,7 +30,7 @@ use std::{
 };
 use tokio::{
     net::{TcpListener, TcpStream},
-    sync::{broadcast, mpsc, RwLock},
+    sync::{broadcast, mpsc, RwLock, Mutex as TokioMutex},
     time::interval,
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
@@ -116,7 +116,7 @@ pub struct ServerManager {
     processes: Arc<Mutex<HashMap<String, Child>>>,
     log_buffer: Arc<RwLock<VecDeque<LogEntry>>>,
     command_tx: mpsc::UnboundedSender<ServerCommand>,
-    command_rx: Arc<Mutex<mpsc::UnboundedReceiver<ServerCommand>>>,
+    command_rx: Arc<TokioMutex<mpsc::UnboundedReceiver<ServerCommand>>>,
     broadcast_tx: broadcast::Sender<ServerResponse>,
 }
 
@@ -130,7 +130,7 @@ impl ServerManager {
             processes: Arc::new(Mutex::new(HashMap::new())),
             log_buffer: Arc::new(RwLock::new(VecDeque::with_capacity(10000))),
             command_tx,
-            command_rx: Arc::new(Mutex::new(command_rx)),
+            command_rx: Arc::new(TokioMutex::new(command_rx)),
             broadcast_tx,
         }
     }
@@ -316,7 +316,7 @@ impl ServerManager {
         let broadcast_tx = self.broadcast_tx.clone();
 
         tokio::spawn(async move {
-            let mut rx = command_rx.lock().unwrap();
+            let mut rx = command_rx.lock().await;
             while let Some(command) = rx.recv().await {
                 match command {
                     ServerCommand::StartService(name) => {
