@@ -1,4 +1,4 @@
-// finalverse-server/src/main.rs
+// server/src/main.rs
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use clap::Parser;

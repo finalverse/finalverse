@@ -6,6 +6,9 @@ edition.workspace = true
 [dependencies]
 axum.workspace = true
 tokio.workspace = true
+tonic = "0.13.1"
+async-trait = "0.1.88"
+tracing = "0.1.41"
 
 [lib]
 name = "finalverse_plugin"

@@ -27,6 +27,7 @@
       <sourceFolder url="file://$MODULE_DIR$/finalverse-config/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/finalverse-server/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/server/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/services/plugin/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
