@@ -65,7 +65,9 @@ The upcoming **FinalStorm** 3D client will connect through the WebSocket gateway
 
 - Each service lives under `services/` and shares common types in `libs/`.
 - After modifying a service run `cargo build -p <service>` and restart it via `./fv start-service <service>`.
-- Use `./scripts/monitor_services.sh` to tail logs during development.
+- Use `./scripts/monitor_services.sh` to tail logs during development. The
+  server loads dynamic plugins from `FINALVERSE_PLUGIN_DIR` and exposes all
+  gRPC services on `FINALVERSE_GRPC_PORT`. See `.env.example` for defaults.
 
 ## Contributing
 

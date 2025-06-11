@@ -34,6 +34,9 @@ use tokio::{
     time::interval,
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
+use finalverse_plugin::{discover_plugins, LoadedPlugin, ServicePlugin};
+use finalverse_service_registry::LocalServiceRegistry;
+use tonic::transport::Server as GrpcServer;
 
 #[derive(Parser)]
 #[command(name = "finalverse-server")]
@@ -732,6 +735,32 @@ async fn main() -> Result<()> {
     // Create server manager
     let server_manager = Arc::new(ServerManager::new());
     server_manager.initialize().await?;
+
+    // Service registry and dynamic plugins
+    let registry = LocalServiceRegistry::new();
+    let mut plugins = discover_plugins().await;
+    for p in &plugins {
+        p.instance.init(&registry).await?;
+    }
+
+    // gRPC server aggregating plugin services
+    let grpc_port: u16 = std::env::var("FINALVERSE_GRPC_PORT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(50051);
+    let mut grpc_builder = GrpcServer::builder();
+    for plugin in plugins.iter_mut() {
+        let instance = plugin.take_instance();
+        grpc_builder = instance.register_grpc(grpc_builder);
+    }
+    let grpc_addr = format!("0.0.0.0:{}", grpc_port).parse()?;
+    // Keep plugins alive while server runs
+    let _plugin_guard = plugins;
+    tokio::spawn(async move {
+        if let Err(e) = grpc_builder.serve(grpc_addr).await {
+            eprintln!("gRPC server error: {e}");
+        }
+    });
 
     // Start background tasks
     server_manager.run_command_handler().await;

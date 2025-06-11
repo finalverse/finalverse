@@ -15,6 +15,7 @@ members = [
     "services/websocket-gateway",
     "services/service-registry",
     "services/plugin",
+    "plugins/greeter-plugin",
     
     # AI Infrastructure
     "services/ai-orchestra",

@@ -9,6 +9,10 @@ tokio.workspace = true
 tonic = "0.13.1"
 async-trait = "0.1.88"
 tracing = "0.1.41"
+libloading = { version = "0.7", optional = true }
+
+[features]
+dynamic = ["libloading"]
 
 [lib]
 name = "finalverse_plugin"
