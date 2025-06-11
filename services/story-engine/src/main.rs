@@ -5,11 +5,11 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use finalverse_common::{
+use fv_common::{
     events::FinalverseEvent,
     types::{PlayerId, Quest, QuestType, QuestObjective, QuestReward, RewardType},
 };
-use finalverse_common::error::{FinalverseError, Result};
+use fv_common::error::{FinalverseError, Result};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -21,7 +21,7 @@ use tokio;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
-use finalverse_health::HealthMonitor;
+use health::HealthMonitor;
 use finalverse_service_registry::LocalServiceRegistry;
 use chrono::{DateTime, Utc};
 

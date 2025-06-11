@@ -1,5 +1,5 @@
 [package]
-name = "finalverse-plugin"
+name = "plugin"
 version.workspace = true
 edition.workspace = true
 
@@ -15,5 +15,5 @@ libloading = { workspace = true, optional = true }
 dynamic = ["libloading"]
 
 [lib]
-name = "finalverse_plugin"
+name = "plugin"
 path = "src/lib.rs"

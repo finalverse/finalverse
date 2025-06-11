@@ -8,8 +8,8 @@ name = "mock-client"
 path = "src/main.rs"
 
 [dependencies]
-finalverse-common = { path = "../../crates/finalverse-core" }
-finalverse-protocol = { path = "../../crates/finalverse-protocol" }
+fv-common = { path = "../../crates/fv-core" }
+protocol = { path = "../../crates/protocol" }
 reqwest = { workspace = true, features = ["json"] }
 tokio.workspace = true
 tracing.workspace = true

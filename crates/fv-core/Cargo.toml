@@ -1,5 +1,5 @@
 [package]
-name = "finalverse-common"
+name = "fv-common"
 version.workspace = true
 edition.workspace = true
 

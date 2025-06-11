@@ -4,9 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-finalverse-common.workspace = true
-finalverse-protocol.workspace = true
-finalverse-health.workspace = true
+fv-common.workspace = true
+protocol.workspace = true
+health.workspace = true
 finalverse-service-registry.workspace = true
 axum.workspace = true
 tokio.workspace = true

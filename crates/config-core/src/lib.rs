@@ -1,4 +1,4 @@
-// finalverse-config/src/lib.rs
+// finalverse-config-core/src/lib.rs
 
 pub mod config;
 pub mod loader;

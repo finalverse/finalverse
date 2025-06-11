@@ -14,7 +14,7 @@ members = [
     "services/websocket-gateway",
     "services/realtime-gateway",
     "services/service-registry",
-    "crates/finalverse-plugin",
+    "crates/plugin",
     "plugins/greeter-plugin",
     
     # AI Infrastructure
@@ -23,19 +23,20 @@ members = [
     "services/behavior-ai",
     
     # Shared Libraries
-    "crates/finalverse-core",
-    "crates/finalverse-protocol",
-    "crates/finalverse-ai-common",
-    "crates/finalverse-health",
-    "crates/finalverse-wasm-runtime",
-    "crates/finalverse-world-engine",
+    "crates/fv-core",
+    "crates/protocol",
+    "crates/ai-common",
+    "crates/health",
+    "crates/wasm-runtime",
+    "crates/world-engine",
     
     # Client
     "client/mock-client",
+    "crates/events",
 
     # server
     "server",
-    "config",
+    "crates/config-core",
     
 ]
 
@@ -48,6 +49,7 @@ license = "Copyright Finalverse Inc."
 [workspace.dependencies]
 # Async runtime
 tokio = { version = "1.45.1", features = ["full"] }
+async-nats = "0.33"
 async-trait = "0.1"
 tokio-tungstenite = "0.21"
 
@@ -82,16 +84,17 @@ chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8"
 
 # Finalverse internal crates
-finalverse-common = { path = "crates/finalverse-core" }
-finalverse-health = { path = "crates/finalverse-health" }
-finalverse-protocol = { path = "crates/finalverse-protocol" }
-finalverse-ai-common = { path = "crates/finalverse-ai-common" }
+fv-common = { path = "crates/fv-core" }
+health = { path = "crates/health" }
+protocol = { path = "crates/protocol" }
+ai-common = { path = "crates/ai-common" }
 finalverse-service-registry = { path = "services/service-registry" }
+events = { path = "crates/events" }
 finalverse-server = { path = "server" }
-finalverse-config = { path = "config" }
-finalverse-plugin = { path = "crates/finalverse-plugin" }
-finalverse-wasm-runtime = { path = "crates/finalverse-wasm-runtime" }
-finalverse-world-engine = { path = "crates/finalverse-world-engine" }
+config-core = { path = "crates/config-core" }
+plugin = { path = "crates/plugin" }
+wasm-runtime = { path = "crates/wasm-runtime" }
+world-engine = { path = "crates/world-engine" }
 
 # QUIC/Networking
 quinn = "0.10"

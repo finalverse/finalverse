@@ -9,11 +9,11 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use finalverse_common::*;
+use fv_common::*;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
-use finalverse_health::HealthMonitor;
+use health::HealthMonitor;
 use finalverse_service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone)]

@@ -1,8 +1,11 @@
 [package]
-name = "finalverse-wasm-runtime"
+name = "events"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-wasmtime.workspace = true
+async-trait.workspace = true
 anyhow.workspace = true
+tokio.workspace = true
+async-nats = "0.33"
+

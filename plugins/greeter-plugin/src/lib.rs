@@ -1,4 +1,4 @@
-use finalverse_plugin::{ServicePlugin};
+use plugin::{ServicePlugin};
 use axum::Router;
 use tonic::{transport::Server, Request, Response, Status};
 use async_trait::async_trait;
