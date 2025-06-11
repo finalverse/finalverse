@@ -1,0 +1,15 @@
+[package]
+name = "greeter-plugin"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+finalverse-plugin = { path = "../../services/plugin" }
+async-trait = "0.1"
+tonic = "0.11"
+axum = "0.7"
+tracing = "0.1"
+finalverse-service-registry = { path = "../../services/service-registry" }
