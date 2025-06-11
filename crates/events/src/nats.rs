@@ -24,7 +24,7 @@ impl GameEventBus for NatsEventBus {
         self.client
             .read()
             .await
-            .publish(topic.into(), payload.into())
+            .publish(topic.to_string(), payload.into())
             .await?;
         Ok(())
     }
@@ -33,7 +33,7 @@ impl GameEventBus for NatsEventBus {
     where
         F: Fn(Vec<u8>) + Send + Sync + 'static,
     {
-        let sub = self.client.read().await.subscribe(topic.into()).await?;
+        let sub = self.client.read().await.subscribe(topic.to_string()).await?;
         tokio::spawn(async move {
             let mut sub = sub;
             while let Some(msg) = sub.next().await {
@@ -43,4 +43,3 @@ impl GameEventBus for NatsEventBus {
         Ok(())
     }
 }
-

@@ -13,7 +13,6 @@ pub mod metabolism {
         pub political_tension: f32,
     }
 
-    #[derive(Default)]
     pub struct MetabolismSimulator {
         pub world_map: HashMap<String, RegionState>,
         pub last_tick: Instant,
@@ -57,6 +56,16 @@ pub mod metabolism {
 
         pub fn get_state(&self, region: &str) -> Option<&RegionState> {
             self.world_map.get(region)
+        }
+    }
+
+    impl Default for MetabolismSimulator {
+        fn default() -> Self {
+            Self {
+                world_map: HashMap::new(),
+                last_tick: Instant::now(),
+                tick_interval: Duration::from_secs(60), // Default to 60 seconds
+            }
         }
     }
 

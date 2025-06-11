@@ -1,10 +1,10 @@
 use axum::{routing::get, extract::ws::WebSocketUpgrade, Router};
 use axum::extract::ws::WebSocket;
-use finalverse_realtime_gateway::{discover_plugins, LoadedPlugin};
+use realtime_gateway::{discover_plugins, LoadedPlugin};
 use std::path::PathBuf;
 use tracing::info;
 
-async fn handle_socket(mut plugin: Box<dyn finalverse_realtime_gateway::WebSocketPlugin>, ws: WebSocketUpgrade) -> impl axum::response::IntoResponse {
+async fn handle_socket(mut plugin: Box<dyn realtime_gateway::WebSocketPlugin>, ws: WebSocketUpgrade) -> impl axum::response::IntoResponse {
     ws.on_upgrade(move |socket| async move {
         plugin.handle(socket).await;
     })

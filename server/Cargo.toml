@@ -18,6 +18,10 @@ tokio-tungstenite.workspace = true
 reqwest.workspace = true
 plugin.workspace = true
 once_cell.workspace = true
+uuid = { workspace = true, features = ["v4"] }
+tonic.workspace = true
+
+service-registry.workspace = true
 
 [[bin]]
 name = "finalverse-server"

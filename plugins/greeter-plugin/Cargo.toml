@@ -13,3 +13,7 @@ tonic.workspace = true
 axum.workspace = true
 tracing.workspace = true
 service-registry.workspace = true
+anyhow.workspace = true
+
+[build-dependencies]
+tonic-build = "0.13.1"

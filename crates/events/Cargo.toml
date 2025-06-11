@@ -7,5 +7,6 @@ edition.workspace = true
 async-trait.workspace = true
 anyhow.workspace = true
 tokio.workspace = true
-async-nats = "0.33"
+async-nats.workspace = true
+futures-util.workspace = true
 

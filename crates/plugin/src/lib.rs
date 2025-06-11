@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use libloading::{Library, Symbol};
 
 // Import the registry from the workspace `service_registry` crate (formerly
-// `finalverse_service_registry`)
+// `service_registry`)
 use service_registry::LocalServiceRegistry;
 // Use anyhow's Result for convenience in async plugin APIs
 use anyhow::Result;
