@@ -1,429 +1,394 @@
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::{IntoResponse, Json},
-    routing::{get, post},
-    Router,
-};
-use fv_common::{
-    events::FinalverseEvent,
-    types::{PlayerId, Quest, QuestType, QuestObjective, QuestReward, RewardType},
-};
-use fv_common::error::{FinalverseError, Result};
-use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    net::SocketAddr,
-    sync::Arc,
-};
+// services/song-engine/src/main.rs
+use std::sync::Arc;
+use std::collections::HashMap;
 use tokio::sync::RwLock;
-use tokio;
-use tower::ServiceBuilder;
-use tower_http::cors::CorsLayer;
-use uuid::Uuid;
-use fv_health::HealthMonitor;
-use service_registry::LocalServiceRegistry;
-use chrono::{DateTime, Utc};
-
-#[derive(Debug, Clone)]
-pub struct StoryEngineState {
-    player_chronicles: HashMap<PlayerId, PlayerChronicle>,
-    active_quests: HashMap<String, Quest>,
-    completed_quests: HashMap<PlayerId, Vec<String>>,
-    world_events: Vec<FinalverseEvent>,
-    ai_service_url: String,
-}
-
-type SharedStoryState = Arc<RwLock<StoryEngineState>>;
+use serde::{Deserialize, Serialize};
+use warp::Filter;
+use fv_events::{
+    GameEventBus, LocalEventBus, NatsEventBus,
+    Event, EventType, SongEvent, SongType, PlayerId, Coordinates,
+    HarmonyEvent, EventMetadata,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PlayerChronicle {
-    pub player_id: PlayerId,
-    pub achievements: Vec<Achievement>,
-    pub story_arcs: Vec<StoryArc>,
-    pub relationships: HashMap<String, f32>, // NPC relationships
-    pub reputation: HashMap<String, f32>,    // Faction reputations
-    pub memorable_moments: Vec<MemorableMoment>,
-    pub character_growth: CharacterGrowth,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Achievement {
+pub struct ActiveSong {
     pub id: String,
-    pub title: String,
-    pub description: String,
-    pub achieved_at: DateTime<Utc>,
-    pub significance: AchievementSignificance,
+    pub weaver_id: PlayerId,
+    pub song_type: SongType,
+    pub power: f64,
+    pub location: Coordinates,
+    pub started_at: chrono::DateTime<chrono::Utc>,
+    pub duration: u64, // seconds
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum AchievementSignificance {
-    Personal,
-    Community,
-    Regional,
-    Global,
-    Legendary,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct StoryArc {
+pub struct Symphony {
     pub id: String,
-    pub title: String,
-    pub current_chapter: u32,
-    pub completed: bool,
-    pub key_decisions: Vec<String>,
+    pub symphony_type: String,
+    pub participants: Vec<PlayerId>,
+    pub required_power: f64,
+    pub current_power: f64,
+    pub started_at: chrono::DateTime<chrono::Utc>,
+    pub status: SymphonyStatus,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MemorableMoment {
-    pub id: String,
-    pub description: String,
-    pub timestamp: DateTime<Utc>,
-    pub emotional_impact: f32,
-    pub witnesses: Vec<String>,
+pub enum SymphonyStatus {
+    Gathering,
+    InProgress,
+    Completed,
+    Failed,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CharacterGrowth {
-    pub personality_traits: HashMap<String, f32>,
-    pub learned_lessons: Vec<String>,
-    pub evolved_beliefs: Vec<String>,
-    pub mentor_relationships: Vec<String>,
+pub struct SongEngineService {
+    active_songs: Arc<RwLock<HashMap<String, ActiveSong>>>,
+    symphonies: Arc<RwLock<HashMap<String, Symphony>>>,
+    event_bus: Arc<dyn GameEventBus>,
+    subscription_ids: Arc<RwLock<Vec<String>>>,
 }
 
-#[derive(Serialize)]
-struct ServiceInfo {
-    name: String,
-    version: String,
-    status: String,
-    active_chronicles: usize,
-    active_quests: usize,
-}
-
-#[derive(Deserialize)]
-struct QuestGenerationRequest {
-    player_id: String,
-    context: String,
-    difficulty: Option<String>,
-    quest_type: Option<String>,
-}
-
-#[derive(Serialize)]
-struct QuestGenerationResponse {
-    quest: Quest,
-    narrative_hook: String,
-    estimated_duration: u32,
-}
-
-#[derive(Deserialize)]
-struct ChronicleUpdateRequest {
-    player_id: String,
-    event_type: String,
-    description: String,
-    emotional_impact: Option<f32>,
-    witnesses: Option<Vec<String>>,
-}
-
-#[derive(Serialize)]
-struct ChronicleUpdateResponse {
-    success: bool,
-    chronicle_updated: bool,
-    new_achievements: Vec<String>,
-    story_progression: Option<String>,
-}
-
-impl StoryEngineState {
-    pub fn new() -> Self {
+impl SongEngineService {
+    pub fn new(event_bus: Arc<dyn GameEventBus>) -> Self {
         Self {
-            player_chronicles: HashMap::new(),
-            active_quests: HashMap::new(),
-            completed_quests: HashMap::new(),
-            world_events: Vec::new(),
-            ai_service_url: "http://localhost:3001".to_string(),
+            active_songs: Arc::new(RwLock::new(HashMap::new())),
+            symphonies: Arc::new(RwLock::new(HashMap::new())),
+            event_bus,
+            subscription_ids: Arc::new(RwLock::new(Vec::new())),
         }
     }
 
-    pub fn get_or_create_chronicle(&mut self, player_id: PlayerId) -> &mut PlayerChronicle {
-        self.player_chronicles.entry(player_id.clone()).or_insert_with(|| {
-            PlayerChronicle {
-                player_id: player_id.clone(),
-                achievements: Vec::new(),
-                story_arcs: vec![
-                    StoryArc {
-                        id: "songweaver_awakening".to_string(),
-                        title: "The Songweaver's Awakening".to_string(),
-                        current_chapter: 1,
-                        completed: false,
-                        key_decisions: Vec::new(),
+    pub async fn start_event_listeners(&self) -> anyhow::Result<()> {
+        // Listen for harmony events to trigger automatic songs
+        let songs = self.active_songs.clone();
+        let event_bus = self.event_bus.clone();
+
+        let harmony_sub_id = self.event_bus.subscribe("events.harmony", move |event| {
+            let songs = songs.clone();
+            let event_bus = event_bus.clone();
+
+            tokio::spawn(async move {
+                if let EventType::Harmony(harmony_event) = &event.event_type {
+                    match harmony_event {
+                        HarmonyEvent::AttunementAchieved { player_id, tier, .. } => {
+                            if *tier >= 3 {
+                                // High-tier players automatically create ambient songs
+                                println!("🎵 Player {} achieved tier {}, creating ambient song", player_id.0, tier);
+
+                                let song = ActiveSong {
+                                    id: uuid::Uuid::new_v4().to_string(),
+                                    weaver_id: player_id.clone(),
+                                    song_type: SongType::Protection,
+                                    power: *tier as f64 * 10.0,
+                                    location: Coordinates { x: 0.0, y: 0.0, z: 0.0 }, // Would get from player location
+                                    started_at: chrono::Utc::now(),
+                                    duration: 300, // 5 minutes
+                                };
+
+                                songs.write().await.insert(song.id.clone(), song.clone());
+
+                                // Publish song woven event
+                                let song_event = Event::new(EventType::Song(SongEvent::SongWoven {
+                                    weaver_id: player_id.clone(),
+                                    song_type: SongType::Protection,
+                                    power: song.power,
+                                    location: song.location,
+                                })).with_metadata(EventMetadata {
+                                    source: Some("song-engine".to_string()),
+                                    causation_id: Some(event.id.clone()),
+                                    ..Default::default()
+                                });
+
+                                let _ = event_bus.publish(song_event).await;
+                            }
+                        }
+                        _ => {}
                     }
-                ],
-                relationships: HashMap::new(),
-                reputation: HashMap::new(),
-                memorable_moments: Vec::new(),
-                character_growth: CharacterGrowth {
-                    personality_traits: HashMap::new(),
-                    learned_lessons: Vec::new(),
-                    evolved_beliefs: Vec::new(),
-                    mentor_relationships: Vec::new(),
-                },
+                }
+            });
+        }).await?;
+
+        self.subscription_ids.write().await.push(harmony_sub_id);
+
+        // Start cleanup task for expired songs
+        let songs = self.active_songs.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(10));
+
+            loop {
+                interval.tick().await;
+                let now = chrono::Utc::now();
+                let mut expired_songs = Vec::new();
+
+                {
+                    let songs_map = songs.read().await;
+                    for (id, song) in songs_map.iter() {
+                        let elapsed = (now - song.started_at).num_seconds() as u64;
+                        if elapsed >= song.duration {
+                            expired_songs.push(id.clone());
+                        }
+                    }
+                }
+
+                for id in expired_songs {
+                    songs.write().await.remove(&id);
+                    println!("🎵 Song {} expired and removed", id);
+                }
             }
-        })
+        });
+
+        println!("✅ Song Engine event listeners started");
+        Ok(())
     }
 
-    pub async fn generate_quest_with_ai(&self, context: &str, difficulty: &str, quest_type: &str) -> Result<Quest> {
-        let client = reqwest::Client::new();
+    pub async fn weave_song(
+        &self,
+        weaver_id: PlayerId,
+        song_type: SongType,
+        power: f64,
+        location: Coordinates,
+    ) -> anyhow::Result<String> {
+        let song = ActiveSong {
+            id: uuid::Uuid::new_v4().to_string(),
+            weaver_id: weaver_id.clone(),
+            song_type: song_type.clone(),
+            power,
+            location: location.clone(),
+            started_at: chrono::Utc::now(),
+            duration: match &song_type {
+                SongType::Healing => 60,      // 1 minute
+                SongType::Creation => 300,    // 5 minutes
+                SongType::Protection => 600,  // 10 minutes
+                SongType::Discovery => 120,   // 2 minutes
+                SongType::Destruction => 30,  // 30 seconds
+            },
+        };
 
-        let response = client
-            .post(&format!("{}/api/quest", self.ai_service_url))
-            .json(&serde_json::json!({
-                "player_context": context,
-                "world_state": "Current harmony levels and active events",
-                "difficulty": difficulty,
-                "quest_type": quest_type
-            }))
-            .send()
-            .await
-            .map_err(|e| FinalverseError::ServiceError(format!("AI service error: {}", e)))?;
+        let song_id = song.id.clone();
+        self.active_songs.write().await.insert(song_id.clone(), song);
 
-        if response.status().is_success() {
-            let ai_response: serde_json::Value = response.json().await
-                .map_err(|e| FinalverseError::NetworkError(e))?;
+        // Publish song woven event
+        let event = Event::new(EventType::Song(SongEvent::SongWoven {
+            weaver_id,
+            song_type,
+            power,
+            location,
+        })).with_metadata(EventMetadata {
+            source: Some("song-engine".to_string()),
+            tags: vec!["player_action".to_string()],
+            ..Default::default()
+        });
 
-            // Extract narrative from AI response and create quest
-            let narrative = ai_response["quest_narrative"]
-                .as_str()
-                .unwrap_or("Embark on a journey to strengthen the Song of Creation");
+        self.event_bus.publish(event).await?;
 
-            let quest_id = Uuid::new_v4().to_string();
+        Ok(song_id)
+    }
 
-            let quest_type_enum = match quest_type {
-                "exploration" => QuestType::Exploration,
-                "harmony" => QuestType::Harmony,
-                "creation" => QuestType::Creation,
-                "protection" => QuestType::Protection,
-                "discovery" => QuestType::Discovery,
-                _ => QuestType::Social,
-            };
+    pub async fn start_symphony(
+        &self,
+        symphony_type: String,
+        initiator: PlayerId,
+        required_power: f64,
+    ) -> anyhow::Result<String> {
+        let symphony = Symphony {
+            id: uuid::Uuid::new_v4().to_string(),
+            symphony_type: symphony_type.clone(),
+            participants: vec![initiator.clone()],
+            required_power,
+            current_power: 0.0,
+            started_at: chrono::Utc::now(),
+            status: SymphonyStatus::Gathering,
+        };
 
-            Ok(Quest {
-                id: quest_id.clone(),
-                title: format!("Quest: {}", quest_type),
-                description: narrative.to_string(),
-                quest_type: quest_type_enum,
-                objectives: vec![
-                    QuestObjective {
-                        id: format!("{}_obj1", quest_id),
-                        description: "Complete the primary objective".to_string(),
-                        completed: false,
-                        progress: 0.0,
-                        target: 1.0,
+        let symphony_id = symphony.id.clone();
+        self.symphonies.write().await.insert(symphony_id.clone(), symphony);
+
+        // Publish symphony started event
+        let event = Event::new(EventType::Song(SongEvent::SymphonyStarted {
+            participants: vec![initiator],
+            symphony_type,
+            required_power,
+        })).with_metadata(EventMetadata {
+            source: Some("song-engine".to_string()),
+            correlation_id: Some(symphony_id.clone()),
+            ..Default::default()
+        });
+
+        self.event_bus.publish(event).await?;
+
+        Ok(symphony_id)
+    }
+
+    pub async fn join_symphony(
+        &self,
+        symphony_id: &str,
+        player_id: PlayerId,
+        contributed_power: f64,
+    ) -> anyhow::Result<()> {
+        let mut symphonies = self.symphonies.write().await;
+
+        if let Some(symphony) = symphonies.get_mut(symphony_id) {
+            if !symphony.participants.contains(&player_id) {
+                symphony.participants.push(player_id);
+            }
+
+            symphony.current_power += contributed_power;
+
+            // Check if symphony is ready to complete
+            if symphony.current_power >= symphony.required_power && symphony.status == SymphonyStatus::Gathering {
+                symphony.status = SymphonyStatus::InProgress;
+
+                // Simulate symphony completion after some time
+                let symphony_id = symphony_id.to_string();
+                let participants = symphony.participants.clone();
+                let symphony_type = symphony.symphony_type.clone();
+                let event_bus = self.event_bus.clone();
+                let symphonies_clone = self.symphonies.clone();
+
+                tokio::spawn(async move {
+                    tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+
+                    // Complete the symphony
+                    if let Some(symphony) = symphonies_clone.write().await.get_mut(&symphony_id) {
+                        symphony.status = SymphonyStatus::Completed;
                     }
-                ],
-                rewards: vec![
-                    QuestReward {
-                        reward_type: RewardType::Resonance,
-                        amount: match difficulty {
-                            "easy" => 50,
-                            "normal" => 100,
-                            "hard" => 200,
-                            _ => 75,
-                        },
-                        item_id: None,
-                    }
-                ],
-                prerequisites: Vec::new(),
-            })
-        } else {
-            Err(FinalverseError::AIServiceError("Failed to generate quest".to_string()))
+
+                    // Publish completion event
+                    let event = Event::new(EventType::Song(SongEvent::SymphonyCompleted {
+                        participants,
+                        symphony_type,
+                        success: true,
+                    })).with_metadata(EventMetadata {
+                        source: Some("song-engine".to_string()),
+                        correlation_id: Some(symphony_id),
+                        ..Default::default()
+                    });
+
+                    let _ = event_bus.publish(event).await;
+                });
+            }
         }
+
+        Ok(())
     }
 
-    pub fn add_memorable_moment(&mut self, player_id: &PlayerId, description: String, emotional_impact: f32, witnesses: Vec<String>) {
-        let chronicle = self.get_or_create_chronicle(player_id.clone());
-
-        let moment = MemorableMoment {
-            id: Uuid::new_v4().to_string(),
-            description,
-            timestamp: Utc::now(),
-            emotional_impact,
-            witnesses,
-        };
-
-        chronicle.memorable_moments.push(moment);
-
-        // Check for achievement triggers
-        self.check_achievement_triggers(player_id.clone());
+    pub async fn get_active_songs(&self) -> Vec<ActiveSong> {
+        self.active_songs.read().await.values().cloned().collect()
     }
 
-    fn check_achievement_triggers(&mut self, player_id: PlayerId) {
-        let chronicle = self.get_or_create_chronicle(player_id);
-        let moment_count = chronicle.memorable_moments.len();
+    pub async fn get_symphonies(&self) -> Vec<Symphony> {
+        self.symphonies.read().await.values().cloned().collect()
+    }
 
-        // Example achievement triggers
-        if moment_count == 1 && !chronicle.achievements.iter().any(|a| a.id == "first_memory") {
-            chronicle.achievements.push(Achievement {
-                id: "first_memory".to_string(),
-                title: "First Memory".to_string(),
-                description: "Created your first memorable moment in Finalverse".to_string(),
-                achieved_at: Utc::now(),
-                significance: AchievementSignificance::Personal,
-            });
+    pub async fn shutdown(&self) -> anyhow::Result<()> {
+        let sub_ids = self.subscription_ids.read().await;
+        for sub_id in sub_ids.iter() {
+            self.event_bus.unsubscribe(sub_id).await?;
         }
-
-        if moment_count >= 10 && !chronicle.achievements.iter().any(|a| a.id == "chronicler") {
-            chronicle.achievements.push(Achievement {
-                id: "chronicler".to_string(),
-                title: "Chronicler".to_string(),
-                description: "Accumulated 10 memorable moments".to_string(),
-                achieved_at: Utc::now(),
-                significance: AchievementSignificance::Community,
-            });
-        }
+        Ok(())
     }
 }
 
-
-async fn generate_quest(
-    State(state): State<SharedStoryState>,
-    Json(request): Json<QuestGenerationRequest>,
-) -> impl IntoResponse {
-    let player_id = PlayerId(request.player_id);
-    let difficulty = request.difficulty.unwrap_or_else(|| "normal".to_string());
-    let quest_type = request.quest_type.unwrap_or_else(|| "harmony".to_string());
-
-    let quest = {
-        let story_state = state.read().await;
-        match story_state.generate_quest_with_ai(&request.context, &difficulty, &quest_type).await {
-            Ok(quest) => quest,
-            Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
-                "error": format!("Failed to generate quest: {}", e)
-            }))),
-        }
-    };
-
-    // Store the quest
-    {
-        let mut story_state = state.write().await;
-        story_state.active_quests.insert(quest.id.clone(), quest.clone());
-    }
-
-    let response = QuestGenerationResponse {
-        narrative_hook: format!("A new quest awaits: {}", quest.description),
-        estimated_duration: 30, // minutes
-        quest: quest,
-    };
-    let json_response = serde_json::to_value(response).unwrap();
-
-    (StatusCode::OK, Json(json_response))
-}
-
-async fn update_chronicle(
-    State(state): State<SharedStoryState>,
-    Json(request): Json<ChronicleUpdateRequest>,
-) -> impl IntoResponse {
-    let player_id = PlayerId(request.player_id);
-    let emotional_impact = request.emotional_impact.unwrap_or(1.0);
-    let witnesses = request.witnesses.unwrap_or_default();
-
-    let (new_achievements, story_progression) = {
-        let mut story_state = state.write().await;
-        let initial_achievement_count = story_state.get_or_create_chronicle(player_id.clone()).achievements.len();
-
-        story_state.add_memorable_moment(&player_id, request.description, emotional_impact, witnesses);
-
-        let final_achievement_count = story_state.get_or_create_chronicle(player_id.clone()).achievements.len();
-        let new_achievements: Vec<String> = if final_achievement_count > initial_achievement_count {
-            story_state.get_or_create_chronicle(player_id.clone())
-                .achievements
-                .iter()
-                .skip(initial_achievement_count)
-                .map(|a| a.title.clone())
-                .collect()
-        } else {
-            Vec::new()
-        };
-
-        let story_progression = if !new_achievements.is_empty() {
-            Some("Your legend grows, Songweaver!".to_string())
-        } else {
-            None
-        };
-
-        (new_achievements, story_progression)
-    };
-
-    let response = ChronicleUpdateResponse {
-        success: true,
-        chronicle_updated: true,
-        new_achievements,
-        story_progression,
-    };
-    let json_response = serde_json::to_value(response).unwrap();
-
-    (StatusCode::OK, Json(json_response))
-}
-
-async fn get_player_chronicle(
-    Path(player_id): Path<String>,
-    State(state): State<SharedStoryState>,
-) -> impl IntoResponse {
-    let player_id = PlayerId(player_id);
-
-    let chronicle = {
-        let mut story_state = state.write().await;
-        story_state.get_or_create_chronicle(player_id).clone()
-    };
-
-    (StatusCode::OK, Json(chronicle))
-}
-
-async fn get_quest(
-    Path(quest_id): Path<String>,
-    State(state): State<SharedStoryState>,
-) -> impl IntoResponse {
-    let story_state = state.read().await;
-
-    match story_state.active_quests.get(&quest_id) {
-        Some(quest) => {
-            let json_quest = serde_json::to_value(quest).unwrap();
-            (StatusCode::OK, Json(json_quest))
-        }
-        None => (StatusCode::NOT_FOUND, Json(serde_json::json!({
-            "error": "Quest not found"
+// HTTP handlers
+async fn weave_song_handler(
+    body: WeaveRequest,
+    service: Arc<SongEngineService>,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    match service.weave_song(
+        PlayerId(body.player_id),
+        body.song_type,
+        body.power,
+        body.location,
+    ).await {
+        Ok(song_id) => Ok(warp::reply::json(&serde_json::json!({
+            "success": true,
+            "song_id": song_id,
+        }))),
+        Err(e) => Ok(warp::reply::json(&serde_json::json!({
+            "error": e.to_string(),
         }))),
     }
 }
 
+async fn health_handler() -> Result<impl warp::Reply, warp::Rejection> {
+    Ok(warp::reply::json(&serde_json::json!({
+        "status": "healthy",
+        "service": "song-engine",
+        "version": env!("CARGO_PKG_VERSION"),
+    })))
+}
+
+#[derive(Deserialize)]
+struct WeaveRequest {
+    player_id: String,
+    song_type: SongType,
+    power: f64,
+    location: Coordinates,
+}
+
 #[tokio::main]
-async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
+async fn main() -> anyhow::Result<()> {
+    env_logger::init();
 
-    let state = Arc::new(RwLock::new(StoryEngineState::new()));
+    // Initialize event bus
+    let event_bus: Arc<dyn GameEventBus> = if let Ok(nats_url) = std::env::var("NATS_URL") {
+        println!("📡 Connecting to NATS at {}", nats_url);
+        Arc::new(NatsEventBus::new(&nats_url).await?)
+    } else {
+        println!("📦 Using local event bus");
+        Arc::new(LocalEventBus::new())
+    };
 
-    let monitor = Arc::new(HealthMonitor::new("story-engine", env!("CARGO_PKG_VERSION")));
-    let registry = LocalServiceRegistry::new();
-    registry
-        .register_service("story-engine".to_string(), "http://localhost:3005".to_string())
+    // Create service
+    let service = Arc::new(SongEngineService::new(event_bus));
+
+    // Start event listeners
+    service.start_event_listeners().await?;
+
+    // Define routes
+    let service_filter = warp::any().map(move || service.clone());
+
+    let weave_song = warp::path!("song" / "weave")
+        .and(warp::post())
+        .and(warp::body::json())
+        .and(service_filter.clone())
+        .and_then(weave_song_handler);
+
+    let get_songs = warp::path!("songs")
+        .and(warp::get())
+        .and(service_filter.clone())
+        .map(|service: Arc<SongEngineService>| {
+            let service = service.clone();
+            async move {
+                let songs = service.get_active_songs().await;
+                warp::reply::json(&songs)
+            }
+        });
+
+    let health = warp::path!("health")
+        .and(warp::get())
+        .and_then(health_handler);
+
+    let routes = weave_song
+        .or(get_songs)
+        .or(health);
+
+    // Handle shutdown
+    let service_shutdown = service.clone();
+    tokio::spawn(async move {
+        tokio::signal::ctrl_c().await.expect("Failed to listen for ctrl+c");
+        println!("\n🛑 Shutting down Song Engine...");
+        let _ = service_shutdown.shutdown().await;
+        std::process::exit(0);
+    });
+
+    println!("🎵 Song Engine v{} starting on port 3001", env!("CARGO_PKG_VERSION"));
+
+    warp::serve(routes)
+        .run(([0, 0, 0, 0], 3001))
         .await;
-
-    let app = Router::new()
-        .route("/api/quest/generate", post(generate_quest))
-        .route("/api/chronicle/update", post(update_chronicle))
-        .route("/api/chronicle/:player_id", get(get_player_chronicle))
-        .route("/api/quest/:quest_id", get(get_quest))
-        .with_state(state.clone())
-        .merge(monitor.clone().axum_routes())
-        .layer(
-            ServiceBuilder::new()
-                .layer(CorsLayer::permissive())
-                .into_inner(),
-        );
-
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3005));
-    println!("Story Engine listening on {}", addr);
-
-    let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, app).await?;
 
     Ok(())
 }
+
+// Add uuid to dependencies
+// uuid = { version = "1.0", features = ["v4", "serde"] }

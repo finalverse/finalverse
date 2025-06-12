@@ -1,5 +1,5 @@
 // client/txtViewer/src/connection_test.rs
-// A simple test to verify direct connections work
+// A simple tests to verify direct connections work
 
 use reqwest;
 

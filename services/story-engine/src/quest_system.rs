@@ -709,7 +709,7 @@ impl QuestGenerationEngine {
             ),
             (EchoType::Ignis, _) => (
                 "Ignis's Challenge".to_string(),
-                "Ignis seeks a worthy Songweaver to test in the fires of courage.".to_string(),
+                "Ignis seeks a worthy Songweaver to tests in the fires of courage.".to_string(),
                 ObjectiveType::SurviveTime {
                     duration_seconds: 300,
                     conditions: vec!["combat_trial".to_string()],

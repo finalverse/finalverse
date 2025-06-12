@@ -9,7 +9,7 @@
 
 # Daily development workflow
 ./scripts/finalverse.sh start    # Start all services
-./scripts/finalverse.sh test     # Test connectivity
+./scripts/finalverse.sh tests     # Test connectivity
 ./scripts/finalverse.sh monitor  # Watch services
 ./scripts/finalverse.sh stop     # Stop everything
 ```
@@ -76,7 +76,7 @@ The consolidated development CLI with all functionality:
 ./scripts/finalverse.sh monitor
 
 # Test individual services
-./scripts/finalverse.sh test
+./scripts/finalverse.sh tests
 curl http://localhost:3001/health
 
 # Debug specific service

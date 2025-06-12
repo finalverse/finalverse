@@ -52,7 +52,7 @@ All services expose `/health` and `/info` endpoints and are automatically regist
    ```
 2. **Verify services**
    ```bash
-   ./fv test
+   ./fv tests
    ```
 3. **Run the CLI client**
    ```bash

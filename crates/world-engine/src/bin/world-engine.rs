@@ -36,7 +36,7 @@ async fn main() {
     // Register observer
     engine.register_observer(Arc::new(LoggingObserver)).await;
 
-    // Initialize some test data
+    // Initialize some tests data
     let test_region = RegionState {
         id: RegionId("terra-nova-central".to_string()),
         harmony_level: 0.8,
