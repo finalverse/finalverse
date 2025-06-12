@@ -1,4 +1,5 @@
 use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
+use std::net::AddrParseError;
 use tokio::sync::RwLock;
 use tonic::transport::{Channel, Endpoint};
 use uuid::Uuid;
@@ -61,5 +62,5 @@ async fn fetch_address_book() -> Result<HashMap<String, SocketAddr>> {
     raw.into_iter()
         .map(|(k, v)| v.parse().map(|a| (k, a)))
         .collect::<std::result::Result<_, _>>()
-        .map_err(|e| anyhow::anyhow!(e))
+        .map_err(|e: AddrParseError | anyhow::anyhow!(e))
 }

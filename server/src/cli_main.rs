@@ -222,7 +222,7 @@ impl FinalverseCli {
                         continue;
                     }
 
-                    rl.add_history_entry(&line)?;
+                    rl.add_history_entry(&*line)?;
 
                     let parts: Vec<&str> = line.split_whitespace().collect();
                     match parts.get(0) {
