@@ -20,6 +20,7 @@ serde_json.workspace = true
 uuid.workspace = true
 fv-health.workspace = true
 service-registry.workspace = true
+fv-events.workspace = true
 chrono.workspace = true
 reqwest.workspace = true
 tower.workspace = true
