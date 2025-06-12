@@ -44,10 +44,12 @@ impl HarmonyService {
     pub async fn start_event_listeners(&self) -> anyhow::Result<()> {
         // Subscribe to player events
         let progress = self.player_progress.clone();
-        let player_sub_id = self.event_bus.subscribe("events.player", move |event| {
-            let progress = progress.clone();
-            tokio::spawn(async move {
-                if let EventType::Player(player_event) = &event.event_type {
+        let player_sub_id = self
+            .event_bus
+            .subscribe("events.player", Box::new(move |event| {
+                let progress = progress.clone();
+                tokio::spawn(async move {
+                    if let EventType::Player(player_event) = &event.event_type {
                     match player_event {
                         PlayerEvent::Connected { player_id } => {
                             println!("🎵 Player {} connected, initializing harmony data", player_id.0);
@@ -74,16 +76,20 @@ impl HarmonyService {
                     }
                 }
             });
-        }).await?;
+            }))
+            .await?;
 
         self.subscription_ids.write().await.push(player_sub_id);
 
         // Subscribe to harmony events for logging
-        let harmony_sub_id = self.event_bus.subscribe("events.harmony", |event| {
-            if let EventType::Harmony(harmony_event) = &event.event_type {
-                println!("🎼 Harmony Event: {:?}", harmony_event);
-            }
-        }).await?;
+        let harmony_sub_id = self
+            .event_bus
+            .subscribe("events.harmony", Box::new(|event| {
+                if let EventType::Harmony(harmony_event) = &event.event_type {
+                    println!("🎼 Harmony Event: {:?}", harmony_event);
+                }
+            }))
+            .await?;
 
         self.subscription_ids.write().await.push(harmony_sub_id);
 

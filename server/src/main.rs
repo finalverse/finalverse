@@ -40,6 +40,7 @@ mod mesh;
 use finalverse_server::{
     ServiceInfo, ServiceStatus, LogEntry, LogLevel, ServerCommand, ServerResponse,
 };
+use tonic_health::server::health_reporter;
 use tonic::transport::Server as GrpcServer;
 
 #[derive(Parser)]
@@ -693,31 +694,24 @@ async fn main() -> Result<()> {
         .ok()
         .and_then(|s| s.parse().ok())
         .unwrap_or(50051);
-    let grpc_plugins = plugins.clone();
+    let grpc_plugins = plugins;
     let grpc_addr = format!("0.0.0.0:{}", grpc_port).parse()?;
 
     tokio::spawn(async move {
         // Build the gRPC server with all plugin services
-        let mut builder = GrpcServer::builder();
+        let (_health_reporter, health_service) = health_reporter();
+        let mut builder = GrpcServer::builder().add_service(health_service);
 
         // Register each plugin's gRPC services
-        for plugin in grpc_plugins {
-            builder = plugin.instance.register_grpc(builder).await;
+        for mut plugin in grpc_plugins {
+            let instance = plugin.take_instance();
+            builder = instance.register_grpc(builder);
         }
 
         println!("🚀 Starting gRPC server on {}", grpc_addr);
 
-        // Create a dummy service if no plugins provide services
-        if builder
-            .add_service(tonic::transport::server::Routes::new())
-            .serve(grpc_addr)
-            .await
-            .is_err()
-        {
-            // If that fails, the plugins should have added services
-            if let Err(e) = builder.serve(grpc_addr).await {
-                eprintln!("❌ gRPC server error: {}", e);
-            }
+        if let Err(e) = builder.serve(grpc_addr).await {
+            eprintln!("❌ gRPC server error: {}", e);
         }
     });
 

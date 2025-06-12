@@ -10,10 +10,16 @@ async fn test_local_event_bus() {
 
     // Subscribe to player events
     let count_clone = received_count.clone();
-    let sub_id = event_bus.subscribe("events.player", move |event| {
-        println!("Received event: {:?}", event);
-        count_clone.fetch_add(1, Ordering::SeqCst);
-    }).await.unwrap();
+    let sub_id = event_bus
+        .subscribe(
+            "events.player",
+            Box::new(move |event| {
+                println!("Received event: {:?}", event);
+                count_clone.fetch_add(1, Ordering::SeqCst);
+            }),
+        )
+        .await
+        .unwrap();
 
     // Publish some events
     let player_id = PlayerId("test_player".to_string());
@@ -58,26 +64,32 @@ async fn test_harmony_song_integration() {
     // Subscribe to harmony events
     let harmony_events_clone = Arc::new(tokio::sync::Mutex::new(Vec::new()));
     let harmony_clone = harmony_events_clone.clone();
-    event_bus.subscribe("events.harmony", move |event| {
-        if let EventType::Harmony(harmony_event) = &event.event_type {
-            let harmony_clone = harmony_clone.clone();
-            tokio::spawn(async move {
-                harmony_clone.lock().await.push(format!("{:?}", harmony_event));
-            });
-        }
-    }).await.unwrap();
+    event_bus
+        .subscribe("events.harmony", Box::new(move |event| {
+            if let EventType::Harmony(harmony_event) = &event.event_type {
+                let harmony_clone = harmony_clone.clone();
+                tokio::spawn(async move {
+                    harmony_clone.lock().await.push(format!("{:?}", harmony_event));
+                });
+            }
+        }))
+        .await
+        .unwrap();
 
     // Subscribe to song events
     let song_events_clone = Arc::new(tokio::sync::Mutex::new(Vec::new()));
     let song_clone = song_events_clone.clone();
-    event_bus.subscribe("events.song", move |event| {
-        if let EventType::Song(song_event) = &event.event_type {
-            let song_clone = song_clone.clone();
-            tokio::spawn(async move {
-                song_clone.lock().await.push(format!("{:?}", song_event));
-            });
-        }
-    }).await.unwrap();
+    event_bus
+        .subscribe("events.song", Box::new(move |event| {
+            if let EventType::Song(song_event) = &event.event_type {
+                let song_clone = song_clone.clone();
+                tokio::spawn(async move {
+                    song_clone.lock().await.push(format!("{:?}", song_event));
+                });
+            }
+        }))
+        .await
+        .unwrap();
 
     // Simulate player gaining resonance
     let player_id = PlayerId("harmony_test_player".to_string());
@@ -133,12 +145,18 @@ async fn test_event_metadata() {
     let received_event = Arc::new(tokio::sync::Mutex::new(None));
     let received_clone = received_event.clone();
 
-    event_bus.subscribe("events.system", move |event| {
-        let received_clone = received_clone.clone();
-        tokio::spawn(async move {
-            *received_clone.lock().await = Some(event);
-        });
-    }).await.unwrap();
+    event_bus
+        .subscribe(
+            "events.system",
+            Box::new(move |event| {
+                let received_clone = received_clone.clone();
+                tokio::spawn(async move {
+                    *received_clone.lock().await = Some(event);
+                });
+            }),
+        )
+        .await
+        .unwrap();
 
     event_bus.publish(event.clone()).await.unwrap();
     sleep(Duration::from_millis(100)).await;
@@ -180,10 +198,11 @@ impl GameEventBus for MockEventBus {
         Ok(())
     }
 
-    async fn subscribe_raw<F>(&self, _topic: &str, _handler: F) -> anyhow::Result<String>
-    where
-        F: Fn(Vec<u8>) + Send + Sync + 'static,
-    {
+    async fn subscribe_raw(
+        &self,
+        _topic: &str,
+        _handler: Box<dyn Fn(Vec<u8>) + Send + Sync + 'static>,
+    ) -> anyhow::Result<String> {
         Ok("mock-subscription".to_string())
     }
 
