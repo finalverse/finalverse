@@ -1,12 +1,14 @@
 // plugins/greeter-plugin/src/lib.rs
 use async_trait::async_trait;
-use fv_plugin::{Plugin, PluginManifest, PluginError, PluginCapability};
+use fv_plugin::ServicePlugin;
+use service_registry::LocalServiceRegistry;
+use axum::Router;
+use tonic::transport::Server;
 use serde_json::Value;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 pub struct GreeterPlugin {
-    manifest: PluginManifest,
     greeting_count: Arc<RwLock<u64>>,
     greeting_history: Arc<RwLock<Vec<GreetingRecord>>>,
 }
@@ -20,23 +22,7 @@ struct GreetingRecord {
 
 impl GreeterPlugin {
     pub fn new() -> Self {
-        let manifest = PluginManifest {
-            name: "greeter".to_string(),
-            version: env!("CARGO_PKG_VERSION").to_string(),
-            author: "Finalverse Team".to_string(),
-            description: "A friendly greeter plugin that demonstrates the plugin system".to_string(),
-            capabilities: vec![
-                PluginCapability::Command("greet".to_string()),
-                PluginCapability::Command("farewell".to_string()),
-                PluginCapability::Command("stats".to_string()),
-                PluginCapability::Command("history".to_string()),
-                PluginCapability::Event("player_joined".to_string()),
-            ],
-            dependencies: vec![],
-        };
-
         Self {
-            manifest,
             greeting_count: Arc::new(RwLock::new(0)),
             greeting_history: Arc::new(RwLock::new(Vec::new())),
         }
@@ -66,35 +52,28 @@ impl Default for GreeterPlugin {
 }
 
 #[async_trait]
-impl Plugin for GreeterPlugin {
-    fn manifest(&self) -> &PluginManifest {
-        &self.manifest
+impl ServicePlugin for GreeterPlugin {
+    fn name(&self) -> &'static str {
+        "greeter"
     }
 
-    async fn initialize(&mut self) -> Result<(), PluginError> {
-        println!("🎉 {} v{} initialized!", self.manifest.name, self.manifest.version);
-        println!("   Author: {}", self.manifest.author);
-        println!("   Description: {}", self.manifest.description);
-        println!("   Capabilities: {} commands, {} events",
-                 self.manifest.capabilities.iter()
-                     .filter(|c| matches!(c, PluginCapability::Command(_)))
-                     .count(),
-                 self.manifest.capabilities.iter()
-                     .filter(|c| matches!(c, PluginCapability::Event(_)))
-                     .count()
-        );
+    async fn routes(&self) -> Router {
+        // In a real plugin we would expose HTTP routes here.
+        Router::new()
+    }
+
+    async fn init(&self, _registry: &LocalServiceRegistry) -> anyhow::Result<()> {
+        println!("🎉 greeter plugin initialized");
         Ok(())
     }
 
-    async fn shutdown(&mut self) -> Result<(), PluginError> {
-        let count = *self.greeting_count.read().await;
-        let history_count = self.greeting_history.read().await.len();
-        println!("👋 {} shutting down after {} greetings ({} in history)!",
-                 self.manifest.name, count, history_count);
-        Ok(())
+    fn register_grpc(self: Box<Self>, server: Server) -> Server {
+        server
     }
+}
 
-    async fn handle_command(&self, command: &str, args: Value) -> Result<Value, PluginError> {
+impl GreeterPlugin {
+    async fn handle_command_internal(&self, command: &str, args: Value) -> serde_json::Result<Value> {
         match command {
             "greet" => {
                 let name = args.get("name")
@@ -180,10 +159,7 @@ impl Plugin for GreeterPlugin {
                 Ok(serde_json::json!({
                     "total_greetings": count,
                     "greetings_in_history": history_count,
-                    "plugin_version": self.manifest.version,
-                    "plugin_name": self.manifest.name,
-                    "uptime_message": format!("Greeter has said hello {} times!", count),
-                    "capabilities": self.manifest.capabilities.len(),
+                    "uptime_message": format!("Greeter has said hello {} times!", count)
                 }))
             }
 
@@ -208,44 +184,16 @@ impl Plugin for GreeterPlugin {
                     "total_in_history": history.len(),
                 }))
             }
-
-            _ => Err(PluginError::InvalidCommand(command.to_string())),
+            _ => Err(serde_json::Error::custom("invalid command")),
         }
-    }
-
-    async fn handle_event(&self, event: Value) -> Result<(), PluginError> {
-        if let Some(event_type) = event.get("type").and_then(|v| v.as_str()) {
-            match event_type {
-                "player_joined" => {
-                    if let Some(player_name) = event.get("player_name").and_then(|v| v.as_str()) {
-                        println!("🎮 Player {} joined! Auto-greeting...", player_name);
-
-                        // Simulate sending a greeting
-                        let greeting = format!("Welcome to Finalverse, {}! Type /help for commands.", player_name);
-                        self.record_greeting(player_name.to_string(), greeting.clone()).await;
-
-                        // In a real implementation, this would send the greeting through the game's chat system
-                        println!("   Sent: {}", greeting);
-                    }
-                }
-                _ => {
-                    // Ignore other events
-                }
-            }
-        }
-        Ok(())
-    }
-
-    fn supports_capability(&self, capability: &PluginCapability) -> bool {
-        self.manifest.capabilities.contains(capability)
     }
 }
 
 // Plugin entry point for dynamic loading
 #[no_mangle]
-pub extern "C" fn create_plugin() -> *mut dyn Plugin {
+pub extern "C" fn finalverse_plugin_entry() -> *mut dyn ServicePlugin {
     let plugin = GreeterPlugin::new();
-    Box::into_raw(Box::new(plugin) as Box<dyn Plugin>)
+    Box::into_raw(Box::new(plugin) as Box<dyn ServicePlugin>)
 }
 
 // Cargo.toml for greeter-plugin:

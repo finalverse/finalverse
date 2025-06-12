@@ -9,7 +9,7 @@ use uuid::Uuid;
 pub use crate::server::*;
 
 // Core types
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct RegionId(pub String);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -328,15 +328,17 @@ pub mod server {
             .and(warp::get())
             .and_then(health_handler);
 
+        let engine_get = engine.clone();
         let get_region = warp::path!("region" / String)
             .and(warp::get())
-            .and(warp::any().map(move || engine.clone()))
+            .and(warp::any().map(move || engine_get.clone()))
             .and_then(region_handler);
 
+        let engine_post = engine.clone();
         let post_action = warp::path!("action")
             .and(warp::post())
             .and(warp::body::json())
-            .and(warp::any().map(move || engine.clone()))
+            .and(warp::any().map(move || engine_post.clone()))
             .and_then(action_handler);
 
         health.or(get_region).or(post_action)
