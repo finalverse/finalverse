@@ -40,7 +40,10 @@ mod mesh;
 use finalverse_server::{
     ServiceInfo, ServiceStatus, LogEntry, LogLevel, ServerCommand, ServerResponse,
 };
-use tonic_health::server::{health_reporter, HealthServer, Health};
+// Use the public `health_reporter` helper which returns the health reporter and
+// service implementation. Recent versions of `tonic-health` no longer expose
+// `HealthServer` publicly, so we avoid importing it directly.
+use tonic_health::server::health_reporter;
 use tonic::transport::Server as GrpcServer;
 
 #[derive(Parser)]

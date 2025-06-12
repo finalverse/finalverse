@@ -2,6 +2,7 @@
 
 //mod enhanced_client;
 pub mod enhanced_client;
+mod tui;
 
 use enhanced_client::EnhancedClient;
 use fv_common::*;
@@ -177,6 +178,13 @@ async fn main() -> anyhow::Result<()> {
     let mut client = EnhancedClient::new(player_name.clone());
     println!("\n✨ Welcome, {}!", player_name);
     println!("Your unique ID: {}", client.player_id.0);
+
+    // If the user requested TUI mode via `--tui`, run the simplified TUI and
+    // exit afterwards.
+    if std::env::args().any(|a| a == "--tui") {
+        tui::run_tui(&mut client).await?;
+        return Ok(());
+    }
     
     // Check if services are running
     println!("\nChecking services...");
