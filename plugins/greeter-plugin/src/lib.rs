@@ -5,6 +5,7 @@ use service_registry::LocalServiceRegistry;
 use axum::Router;
 use tonic::transport::Server;
 use serde_json::Value;
+use serde::de::Error as SerdeError;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -39,8 +40,9 @@ impl GreeterPlugin {
 
         // Keep only last 100 greetings
         let mut history = self.greeting_history.write().await;
-        if history.len() > 100 {
-            history.drain(0..history.len() - 100);
+        let len = history.len();
+        if len > 100 {
+            history.drain(0..len - 100);
         }
     }
 }
@@ -184,7 +186,7 @@ impl GreeterPlugin {
                     "total_in_history": history.len(),
                 }))
             }
-            _ => Err(serde_json::Error::custom("invalid command")),
+            _ => Err(SerdeError::custom("invalid command")),
         }
     }
 }
