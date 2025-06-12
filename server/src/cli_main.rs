@@ -68,6 +68,8 @@ enum Commands {
         /// Command to execute
         command: String,
     },
+    /// Start conversational chat mode
+    Chat,
     /// Start interactive mode
     Interactive,
     /// Shutdown the server
@@ -173,6 +175,39 @@ impl FinalverseCli {
         self.send_command(&command.to_string()).await
     }
 
+    pub async fn chat_mode(&mut self) -> Result<()> {
+        println!("Entering AI chat mode. Type 'exit' to quit.");
+        let mut rl = DefaultEditor::new()?;
+
+        loop {
+            match rl.readline("you> ") {
+                Ok(line) => {
+                    let line = line.trim();
+                    if line.eq_ignore_ascii_case("exit") {
+                        break;
+                    }
+                    if line.is_empty() {
+                        continue;
+                    }
+                    rl.add_history_entry(line)?;
+                    let cmd = serde_json::json!({
+                        "type": "chat",
+                        "message": line,
+                    });
+                    self.send_command(&cmd.to_string()).await?;
+                }
+                Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => {
+                    break;
+                }
+                Err(err) => {
+                    println!("Error: {:?}", err);
+                    break;
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub async fn interactive_mode(&mut self) -> Result<()> {
         println!("Entering interactive mode. Type 'help' for commands, 'exit' to quit.");
 
@@ -266,6 +301,7 @@ fn print_help(&self) {
         println!("  quest <type> <n>  - Generate a quest");
         println!("  event <type>      - Trigger an event");
         println!("  raw <json>        - Send raw JSON command");
+        println!("  chat              - Enter AI chat mode");
     }
 }
 
@@ -279,6 +315,9 @@ async fn main() -> Result<()> {
     match cli.command {
         Some(Commands::Interactive) | None if cli.interactive => {
             client.interactive_mode().await?;
+        }
+        Some(Commands::Chat) => {
+            client.chat_mode().await?;
         }
         Some(Commands::Exec { command }) => {
             client.send_command(&command).await?;
