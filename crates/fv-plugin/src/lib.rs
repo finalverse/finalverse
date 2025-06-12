@@ -1,7 +1,7 @@
 // services/plugin/src/lib.rs
 // Dynamic service plugin interface for Finalverse
-use axum::Router;
-use tonic::transport::Server;
+use axum::Router as AxumRouter;
+use tonic::transport::server::Router as GrpcRouter;
 use std::path::{Path, PathBuf};
 
 #[cfg(feature = "dynamic")]
@@ -21,7 +21,7 @@ pub trait ServicePlugin: Send + Sync {
     fn name(&self) -> &'static str;
 
     /// Build the router for this plugin.
-    async fn routes(&self) -> Router;
+    async fn routes(&self) -> AxumRouter;
 
     /// Initialize the plugin. Called after loading so the plugin can register
     /// itself with the service registry or load configuration.
@@ -33,7 +33,7 @@ pub trait ServicePlugin: Send + Sync {
     /// Implementations can add their own gRPC service definitions and return
     /// the updated builder. The default implementation simply returns the
     /// builder unchanged.
-    fn register_grpc(self: Box<Self>, server: Server) -> Server {
+    fn register_grpc(self: Box<Self>, server: GrpcRouter) -> GrpcRouter {
         server
     }
 }
@@ -44,8 +44,8 @@ pub struct NoopPlugin;
 #[async_trait::async_trait]
 impl ServicePlugin for NoopPlugin {
     fn name(&self) -> &'static str { "noop" }
-    async fn routes(&self) -> Router { Router::new() }
-    fn register_grpc(self: Box<Self>, server: Server) -> Server { server }
+    async fn routes(&self) -> AxumRouter { AxumRouter::new() }
+    fn register_grpc(self: Box<Self>, server: GrpcRouter) -> GrpcRouter { server }
 }
 
 /// Discover available plugins on the filesystem at runtime.

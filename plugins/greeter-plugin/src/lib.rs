@@ -2,8 +2,8 @@
 use async_trait::async_trait;
 use fv_plugin::ServicePlugin;
 use service_registry::LocalServiceRegistry;
-use axum::Router;
-use tonic::transport::Server;
+use axum::Router as AxumRouter;
+use tonic::transport::server::Router as GrpcRouter;
 use serde_json::Value;
 use serde::de::Error as SerdeError;
 use std::sync::Arc;
@@ -59,9 +59,9 @@ impl ServicePlugin for GreeterPlugin {
         "greeter"
     }
 
-    async fn routes(&self) -> Router {
+    async fn routes(&self) -> AxumRouter {
         // In a real plugin we would expose HTTP routes here.
-        Router::new()
+        AxumRouter::new()
     }
 
     async fn init(&self, _registry: &LocalServiceRegistry) -> anyhow::Result<()> {
@@ -69,7 +69,7 @@ impl ServicePlugin for GreeterPlugin {
         Ok(())
     }
 
-    fn register_grpc(self: Box<Self>, server: Server) -> Server {
+    fn register_grpc(self: Box<Self>, server: GrpcRouter) -> GrpcRouter {
         server
     }
 }

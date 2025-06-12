@@ -122,3 +122,6 @@ warp = "0.3"
 libloading = "0.7"
 wasmtime = "13"
 
+[patch.crates-io]
+tonic = "0.11"
+
