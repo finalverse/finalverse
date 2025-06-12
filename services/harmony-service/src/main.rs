@@ -1,443 +1,338 @@
 // services/harmony-service/src/main.rs
-
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::Json,
-    routing::{get, post},
-    Router,
-};
-use fv_events::{GameEventBus, NatsEventBus};
-use fv_common::*;
-use finalverse_protocol::*;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::sync::Arc;
+use std::collections::HashMap;
 use tokio::sync::RwLock;
-use tracing::info;
-use fv_health::HealthMonitor;
-use service_registry::LocalServiceRegistry;
+use serde::{Deserialize, Serialize};
+use warp::Filter;
+use fv_events::{
+    GameEventBus, LocalEventBus, NatsEventBus,
+    Event, EventType, HarmonyEvent, ResonanceType, PlayerId,
+    PlayerEvent, EventMetadata,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct PlayerProgression {
-    player_id: PlayerId,
-    resonance: Resonance,
-    attunement_tier: AttunementTier,
-    unlocked_melodies: Vec<UnlockedMelody>,
-    unlocked_harmonies: Vec<UnlockedHarmony>,
-    total_actions: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-enum AttunementTier {
-    Novice,          // 0-100 total resonance
-    Apprentice,      // 100-500
-    Journeyman,      // 500-2000
-    Expert,          // 2000-10000
-    Master,          // 10000-50000
-    Grandmaster,     // 50000+
+pub struct Resonance {
+    pub creative: f64,
+    pub exploration: f64,
+    pub restoration: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct UnlockedMelody {
-    id: String,
-    name: String,
-    melody_type: MelodyType,
-    power_level: u32,
-    unlocked_at: chrono::DateTime<chrono::Utc>,
+pub struct PlayerProgress {
+    pub player_id: PlayerId,
+    pub resonance: Resonance,
+    pub attunement_tier: u32,
+    pub unlocked_melodies: Vec<String>,
+    pub unlocked_harmonies: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-enum MelodyType {
-    Healing,
-    Creation,
-    Discovery,
-    Courage,
-    Protection,
-    Transformation,
+pub struct HarmonyService {
+    player_progress: Arc<RwLock<HashMap<PlayerId, PlayerProgress>>>,
+    event_bus: Arc<dyn GameEventBus>,
+    subscription_ids: Arc<RwLock<Vec<String>>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct UnlockedHarmony {
-    id: String,
-    name: String,
-    description: String,
-    required_echoes: Vec<EchoType>,
-    unlocked_at: chrono::DateTime<chrono::Utc>,
-}
-
-#[derive(Clone)]
-struct HarmonyServiceState {
-    progressions: Arc<RwLock<HashMap<PlayerId, PlayerProgression>>>,
-    melody_library: Arc<RwLock<HashMap<String, MelodyDefinition>>>,
-    harmony_library: Arc<RwLock<HashMap<String, HarmonyDefinition>>>,
-    event_bus: Arc<dyn EventBus>,
-    start_time: std::time::Instant,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct MelodyDefinition {
-    id: String,
-    name: String,
-    melody_type: MelodyType,
-    base_power: u32,
-    resonance_requirement: Resonance,
-    echo_requirement: Option<(EchoType, u32)>, // Echo type and bond level
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct HarmonyDefinition {
-    id: String,
-    name: String,
-    description: String,
-    required_echoes: Vec<(EchoType, u32)>, // Echo types and minimum bond levels
-    resonance_requirement: Resonance,
-}
-
-impl HarmonyServiceState {
-    fn new(event_bus: Arc<dyn EventBus>) -> Self {
-        let mut melody_library = HashMap::new();
-        let mut harmony_library = HashMap::new();
-        
-        // Initialize basic melodies
-        melody_library.insert("healing_touch".to_string(), MelodyDefinition {
-            id: "healing_touch".to_string(),
-            name: "Healing Touch".to_string(),
-            melody_type: MelodyType::Healing,
-            base_power: 10,
-            resonance_requirement: Resonance { creative: 0, exploration: 0, restoration: 10 },
-            echo_requirement: None,
-        });
-        
-        melody_library.insert("light_of_hope".to_string(), MelodyDefinition {
-            id: "light_of_hope".to_string(),
-            name: "Light of Hope".to_string(),
-            melody_type: MelodyType::Discovery,
-            base_power: 15,
-            resonance_requirement: Resonance { creative: 20, exploration: 30, restoration: 0 },
-            echo_requirement: Some((EchoType::Lumi, 20)),
-        });
-        
-        melody_library.insert("forge_of_will".to_string(), MelodyDefinition {
-            id: "forge_of_will".to_string(),
-            name: "Forge of Will".to_string(),
-            melody_type: MelodyType::Creation,
-            base_power: 25,
-            resonance_requirement: Resonance { creative: 50, exploration: 0, restoration: 20 },
-            echo_requirement: Some((EchoType::Ignis, 30)),
-        });
-        
-        // Initialize harmonies
-        harmony_library.insert("harmony_of_balance".to_string(), HarmonyDefinition {
-            id: "harmony_of_balance".to_string(),
-            name: "Harmony of Balance".to_string(),
-            description: "Unite all four Echoes in perfect balance".to_string(),
-            required_echoes: vec![
-                (EchoType::Lumi, 50),
-                (EchoType::KAI, 50),
-                (EchoType::Terra, 50),
-                (EchoType::Ignis, 50),
-            ],
-            resonance_requirement: Resonance { creative: 100, exploration: 100, restoration: 100 },
-        });
-        
+impl HarmonyService {
+    pub fn new(event_bus: Arc<dyn GameEventBus>) -> Self {
         Self {
-            progressions: Arc::new(RwLock::new(HashMap::new())),
-            melody_library: Arc::new(RwLock::new(melody_library)),
-            harmony_library: Arc::new(RwLock::new(harmony_library)),
+            player_progress: Arc::new(RwLock::new(HashMap::new())),
             event_bus,
-            start_time: std::time::Instant::now(),
+            subscription_ids: Arc::new(RwLock::new(Vec::new())),
         }
     }
-    
-    fn calculate_attunement_tier(resonance: &Resonance) -> AttunementTier {
-        let total = resonance.creative + resonance.exploration + resonance.restoration;
-        match total {
-            0..=99 => AttunementTier::Novice,
-            100..=499 => AttunementTier::Apprentice,
-            500..=1999 => AttunementTier::Journeyman,
-            2000..=9999 => AttunementTier::Expert,
-            10000..=49999 => AttunementTier::Master,
-            _ => AttunementTier::Grandmaster,
-        }
+
+    pub async fn start_event_listeners(&self) -> anyhow::Result<()> {
+        // Subscribe to player events
+        let progress = self.player_progress.clone();
+        let player_sub_id = self.event_bus.subscribe("events.player", move |event| {
+            let progress = progress.clone();
+            tokio::spawn(async move {
+                if let EventType::Player(player_event) = &event.event_type {
+                    match player_event {
+                        PlayerEvent::Connected { player_id } => {
+                            println!("🎵 Player {} connected, initializing harmony data", player_id.0);
+                            // Initialize player progress if needed
+                            let mut progress_map = progress.write().await;
+                            progress_map.entry(player_id.clone()).or_insert_with(|| {
+                                PlayerProgress {
+                                    player_id: player_id.clone(),
+                                    resonance: Resonance {
+                                        creative: 0.0,
+                                        exploration: 0.0,
+                                        restoration: 0.0,
+                                    },
+                                    attunement_tier: 0,
+                                    unlocked_melodies: Vec::new(),
+                                    unlocked_harmonies: Vec::new(),
+                                }
+                            });
+                        }
+                        PlayerEvent::Disconnected { player_id } => {
+                            println!("👋 Player {} disconnected", player_id.0);
+                        }
+                        _ => {}
+                    }
+                }
+            });
+        }).await?;
+
+        self.subscription_ids.write().await.push(player_sub_id);
+
+        // Subscribe to harmony events for logging
+        let harmony_sub_id = self.event_bus.subscribe("events.harmony", |event| {
+            if let EventType::Harmony(harmony_event) = &event.event_type {
+                println!("🎼 Harmony Event: {:?}", harmony_event);
+            }
+        }).await?;
+
+        self.subscription_ids.write().await.push(harmony_sub_id);
+
+        println!("✅ Harmony Service event listeners started");
+        Ok(())
     }
-    
-    async fn grant_resonance(&self, player_id: PlayerId, resonance_gain: Resonance) -> PlayerProgression {
-        let mut progressions = self.progressions.write().await;
-        let progression = progressions.entry(player_id.clone()).or_insert_with(|| PlayerProgression {
+
+    pub async fn add_resonance(&self, player_id: PlayerId, resonance_type: ResonanceType, amount: f64) -> anyhow::Result<()> {
+        let mut progress_map = self.player_progress.write().await;
+
+        let progress = progress_map.entry(player_id.clone()).or_insert_with(|| {
+            PlayerProgress {
+                player_id: player_id.clone(),
+                resonance: Resonance {
+                    creative: 0.0,
+                    exploration: 0.0,
+                    restoration: 0.0,
+                },
+                attunement_tier: 0,
+                unlocked_melodies: Vec::new(),
+                unlocked_harmonies: Vec::new(),
+            }
+        });
+
+        // Update resonance
+        match &resonance_type {
+            ResonanceType::Creative => progress.resonance.creative += amount,
+            ResonanceType::Exploration => progress.resonance.exploration += amount,
+            ResonanceType::Restoration => progress.resonance.restoration += amount,
+        }
+
+        // Publish resonance gained event
+        let event = Event::new(EventType::Harmony(HarmonyEvent::ResonanceGained {
             player_id: player_id.clone(),
-            resonance: Resonance { creative: 0, exploration: 0, restoration: 0 },
-            attunement_tier: AttunementTier::Novice,
-            unlocked_melodies: vec![],
-            unlocked_harmonies: vec![],
-            total_actions: 0,
+            resonance_type: resonance_type.clone(),
+            amount,
+        })).with_metadata(EventMetadata {
+            source: Some("harmony-service".to_string()),
+            ..Default::default()
         });
-        
-        // Add resonance
-        progression.resonance.creative += resonance_gain.creative;
-        progression.resonance.exploration += resonance_gain.exploration;
-        progression.resonance.restoration += resonance_gain.restoration;
-        progression.total_actions += 1;
-        
-        // Update tier
-        let new_tier = Self::calculate_attunement_tier(&progression.resonance);
-        let tier_changed = !matches!((&progression.attunement_tier, &new_tier), 
-            (AttunementTier::Novice, AttunementTier::Novice) |
-            (AttunementTier::Apprentice, AttunementTier::Apprentice) |
-            (AttunementTier::Journeyman, AttunementTier::Journeyman) |
-            (AttunementTier::Expert, AttunementTier::Expert) |
-            (AttunementTier::Master, AttunementTier::Master) |
-            (AttunementTier::Grandmaster, AttunementTier::Grandmaster)
-        );
-        
-        if tier_changed {
-            progression.attunement_tier = new_tier;
-            info!("Player {:?} advanced to {:?} tier!", player_id, progression.attunement_tier);
+
+        self.event_bus.publish(event).await?;
+
+        // Check for attunement tier upgrade
+        let total_resonance = progress.resonance.creative + progress.resonance.exploration + progress.resonance.restoration;
+        let new_tier = (total_resonance / 100.0) as u32;
+
+        if new_tier > progress.attunement_tier {
+            let old_tier = progress.attunement_tier;
+            progress.attunement_tier = new_tier;
+
+            // Publish attunement achieved event
+            let attunement_event = Event::new(EventType::Harmony(HarmonyEvent::AttunementAchieved {
+                player_id: player_id.clone(),
+                tier: new_tier,
+                total_resonance,
+            })).with_metadata(EventMetadata {
+                source: Some("harmony-service".to_string()),
+                ..Default::default()
+            });
+
+            self.event_bus.publish(attunement_event).await?;
+
+            println!("⭐ Player {} achieved attunement tier {} (was {})", player_id.0, new_tier, old_tier);
+
+            // Unlock new abilities based on tier
+            self.unlock_tier_abilities(progress, new_tier).await?;
         }
-        
-        progression.clone()
+
+        Ok(())
     }
-    
-    async fn check_melody_unlocks(&self, player_id: &PlayerId, progression: &PlayerProgression, echo_bonds: Option<HashMap<EchoType, u32>>) {
-        let library = self.melody_library.read().await;
-        let mut progressions = self.progressions.write().await;
-        
-        if let Some(prog) = progressions.get_mut(player_id) {
-            for (id, definition) in library.iter() {
-                // Check if already unlocked
-                if prog.unlocked_melodies.iter().any(|m| m.id == *id) {
-                    continue;
-                }
-                
-                // Check resonance requirements
-                let meets_resonance = prog.resonance.creative >= definition.resonance_requirement.creative
-                    && prog.resonance.exploration >= definition.resonance_requirement.exploration
-                    && prog.resonance.restoration >= definition.resonance_requirement.restoration;
-                
-                if !meets_resonance {
-                    continue;
-                }
-                
-                // Check echo requirements
-                let meets_echo = if let Some((echo_type, required_bond)) = &definition.echo_requirement {
-                    echo_bonds.as_ref()
-                        .and_then(|bonds| bonds.get(echo_type))
-                        .map(|bond| *bond >= *required_bond)
-                        .unwrap_or(false)
-                } else {
-                    true
-                };
-                
-                if meets_echo {
-                    prog.unlocked_melodies.push(UnlockedMelody {
-                        id: id.clone(),
-                        name: definition.name.clone(),
-                        melody_type: definition.melody_type.clone(),
-                        power_level: definition.base_power,
-                        unlocked_at: chrono::Utc::now(),
-                    });
-                    
-                    info!("Player {:?} unlocked melody: {}", player_id, definition.name);
-                }
+
+    async fn unlock_tier_abilities(&self, progress: &mut PlayerProgress, tier: u32) -> anyhow::Result<()> {
+        // Example melody unlocks
+        let melodies = match tier {
+            1 => vec![("Melody of Healing", 1), ("Melody of Light", 1)],
+            2 => vec![("Melody of Discovery", 2), ("Melody of Growth", 2)],
+            3 => vec![("Melody of Creation", 3), ("Melody of Harmony", 3)],
+            4 => vec![("Melody of Transcendence", 4)],
+            _ => vec![],
+        };
+
+        for (melody_name, required_tier) in melodies {
+            if !progress.unlocked_melodies.contains(&melody_name.to_string()) {
+                progress.unlocked_melodies.push(melody_name.to_string());
+
+                let melody_event = Event::new(EventType::Harmony(HarmonyEvent::MelodyUnlocked {
+                    player_id: progress.player_id.clone(),
+                    melody: melody_name.to_string(),
+                    tier_required: required_tier,
+                })).with_metadata(EventMetadata {
+                    source: Some("harmony-service".to_string()),
+                    tags: vec!["ability_unlock".to_string(), format!("tier_{}", tier)],
+                    ..Default::default()
+                });
+
+                self.event_bus.publish(melody_event).await?;
             }
         }
+
+        // Example harmony unlocks
+        let harmonies = match tier {
+            2 => vec![("Harmony of Courage", 2), ("Harmony of Wisdom", 2)],
+            3 => vec![("Harmony of Unity", 3)],
+            4 => vec![("Harmony of Transcendence", 4), ("Harmony of Creation", 4)],
+            5 => vec![("Harmony of the First Song", 5)],
+            _ => vec![],
+        };
+
+        for (harmony_name, required_tier) in harmonies {
+            if !progress.unlocked_harmonies.contains(&harmony_name.to_string()) {
+                progress.unlocked_harmonies.push(harmony_name.to_string());
+
+                let harmony_event = Event::new(EventType::Harmony(HarmonyEvent::HarmonyUnlocked {
+                    player_id: progress.player_id.clone(),
+                    harmony: harmony_name.to_string(),
+                    tier_required: required_tier,
+                })).with_metadata(EventMetadata {
+                    source: Some("harmony-service".to_string()),
+                    tags: vec!["ability_unlock".to_string(), format!("tier_{}", tier)],
+                    ..Default::default()
+                });
+
+                self.event_bus.publish(harmony_event).await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn get_progress(&self, player_id: &PlayerId) -> Option<PlayerProgress> {
+        self.player_progress.read().await.get(player_id).cloned()
+    }
+
+    pub async fn shutdown(&self) -> anyhow::Result<()> {
+        // Unsubscribe from all events
+        let sub_ids = self.subscription_ids.read().await;
+        for sub_id in sub_ids.iter() {
+            self.event_bus.unsubscribe(sub_id).await?;
+        }
+        Ok(())
     }
 }
 
-// API handlers
-async fn get_service_info(State(state): State<HarmonyServiceState>) -> Json<ServiceInfo> {
-    Json(ServiceInfo {
-        name: "harmony-service".to_string(),
-        version: env!("CARGO_PKG_VERSION").to_string(),
-        status: ServiceStatus::Healthy,
-        uptime_seconds: state.start_time.elapsed().as_secs(),
-    })
-}
-
-async fn get_player_progression(
-    State(state): State<HarmonyServiceState>,
-    Path(player_id): Path<String>,
-) -> Result<Json<PlayerProgression>> {
-    let player_uuid = uuid::Uuid::parse_str(&player_id)
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let player_id = PlayerId(player_uuid);
-    
-    let progressions = state.progressions.read().await;
-    let progression = progressions.get(&player_id)
-        .ok_or(StatusCode::NOT_FOUND)?;
-    
-    Ok(Json(progression.clone()))
-}
-
-async fn grant_resonance(
-    State(state): State<HarmonyServiceState>,
-    Json(request): Json<serde_json::Value>,
-) -> Result<Json<PlayerProgression>> {
-    let player_id = request.get("player_id")
-        .and_then(|v| v.as_str())
-        .ok_or(StatusCode::BAD_REQUEST)?;
-    
-    let resonance_gain = Resonance {
-        creative: request.get("creative").and_then(|v| v.as_u64()).unwrap_or(0),
-        exploration: request.get("exploration").and_then(|v| v.as_u64()).unwrap_or(0),
-        restoration: request.get("restoration").and_then(|v| v.as_u64()).unwrap_or(0),
+// HTTP API handlers
+async fn add_resonance_handler(
+    player_id: String,
+    resonance_type: String,
+    amount: f64,
+    service: Arc<HarmonyService>,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    let resonance_type = match resonance_type.as_str() {
+        "creative" => ResonanceType::Creative,
+        "exploration" => ResonanceType::Exploration,
+        "restoration" => ResonanceType::Restoration,
+        _ => return Ok(warp::reply::with_status(
+            warp::reply::json(&serde_json::json!({"error": "Invalid resonance type"})),
+            warp::http::StatusCode::BAD_REQUEST,
+        )),
     };
-    
-    let player_uuid = uuid::Uuid::parse_str(player_id)
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let player_id = PlayerId(player_uuid);
-    
-    let progression = state.grant_resonance(player_id.clone(), resonance_gain).await;
-    
-    // Check for new melody unlocks
-    let echo_bonds = request.get("echo_bonds")
-        .and_then(|v| serde_json::from_value::<HashMap<String, u32>>(v.clone()).ok())
-        .map(|bonds| {
-            bonds.into_iter().map(|(k, v)| {
-                let echo_type = match k.as_str() {
-                    "lumi" => EchoType::Lumi,
-                    "kai" => EchoType::KAI,
-                    "terra" => EchoType::Terra,
-                    "ignis" => EchoType::Ignis,
-                    _ => EchoType::Lumi, // Default
-                };
-                (echo_type, v)
-            }).collect::<HashMap<_, _>>()
-        });
-    
-    state.check_melody_unlocks(&player_id, &progression, echo_bonds).await;
-    
-    // Get updated progression
-    let progressions = state.progressions.read().await;
-    let updated_progression = progressions.get(&player_id).unwrap();
-    
-    Ok(Json(updated_progression.clone()))
-}
 
-async fn get_available_melodies(
-    State(state): State<HarmonyServiceState>,
-    Path(player_id): Path<String>,
-) -> Result<Json<serde_json::Value>> {
-    let player_uuid = uuid::Uuid::parse_str(&player_id)
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let player_id = PlayerId(player_uuid);
-    
-    let progressions = state.progressions.read().await;
-    let progression = progressions.get(&player_id)
-        .ok_or(StatusCode::NOT_FOUND)?;
-    
-    let library = state.melody_library.read().await;
-    
-    let available: Vec<_> = library.values()
-        .filter(|def| {
-            // Check if player meets requirements but hasn't unlocked yet
-            let meets_resonance = progression.resonance.creative >= def.resonance_requirement.creative
-                && progression.resonance.exploration >= def.resonance_requirement.exploration
-                && progression.resonance.restoration >= def.resonance_requirement.restoration;
-            
-            let not_unlocked = !progression.unlocked_melodies.iter().any(|m| m.id == def.id);
-            
-            meets_resonance && not_unlocked
-        })
-        .cloned()
-        .collect();
-    
-    Ok(Json(serde_json::json!({
-        "unlocked": progression.unlocked_melodies,
-        "available_to_unlock": available,
-        "total_melodies": library.len(),
-    })))
-}
-
-async fn get_harmonies(
-    State(state): State<HarmonyServiceState>,
-    Path(player_id): Path<String>,
-) -> Result<Json<serde_json::Value>> {
-    let player_uuid = uuid::Uuid::parse_str(&player_id)
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-    let player_id = PlayerId(player_uuid);
-    
-    let progressions = state.progressions.read().await;
-    let progression = progressions.get(&player_id)
-        .ok_or(StatusCode::NOT_FOUND)?;
-    
-    let library = state.harmony_library.read().await;
-    
-    Ok(Json(serde_json::json!({
-        "unlocked": progression.unlocked_harmonies,
-        "available": library.values().collect::<Vec<_>>(),
-    })))
-}
-
-// Event handler
-async fn handle_events(state: HarmonyServiceState) {
-    let mut receiver = state.event_bus.subscribe("harmony-service").await.unwrap();
-    
-    while let Some(event) = receiver.recv().await {
-        match event {
-            FinalverseEvent::MelodyPerformed { player, melody, .. } => {
-                // Grant resonance based on melody type
-                let resonance_gain = match melody {
-                    Melody::Healing { power } => Resonance {
-                        creative: 0,
-                        exploration: 0,
-                        restoration: (power * 2.0) as u64,
-                    },
-                    Melody::Creation { .. } => Resonance {
-                        creative: 20,
-                        exploration: 5,
-                        restoration: 5,
-                    },
-                    Melody::Discovery { range } => Resonance {
-                        creative: 5,
-                        exploration: (range * 1.5) as u64,
-                        restoration: 0,
-                    },
-                    Melody::Courage { intensity } => Resonance {
-                        creative: (intensity * 1.2) as u64,
-                        exploration: 10,
-                        restoration: 5,
-                    },
-                };
-                
-                state.grant_resonance(player, resonance_gain).await;
-            }
-            _ => {}
-        }
+    match service.add_resonance(PlayerId(player_id), resonance_type, amount).await {
+        Ok(_) => Ok(warp::reply::with_status(
+            warp::reply::json(&serde_json::json!({"success": true})),
+            warp::http::StatusCode::OK,
+        )),
+        Err(e) => Ok(warp::reply::with_status(
+            warp::reply::json(&serde_json::json!({"error": e.to_string()})),
+            warp::http::StatusCode::INTERNAL_SERVER_ERROR,
+        )),
     }
+}
+
+async fn get_progress_handler(
+    player_id: String,
+    service: Arc<HarmonyService>,
+) -> Result<impl warp::Reply, warp::Rejection> {
+    if let Some(progress) = service.get_progress(&PlayerId(player_id)).await {
+        Ok(warp::reply::json(&progress))
+    } else {
+        Ok(warp::reply::json(&serde_json::json!({"error": "Player not found"})))
+    }
+}
+
+async fn health_handler() -> Result<impl warp::Reply, warp::Rejection> {
+    Ok(warp::reply::json(&serde_json::json!({
+        "status": "healthy",
+        "service": "harmony-service",
+        "version": env!("CARGO_PKG_VERSION"),
+    })))
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    
-    info!("Starting Harmony Service...");
-    
-    let event_bus = Arc::new(NatsEventBus::new("nats://127.0.0.1:4222").await?);
-    let state = HarmonyServiceState::new(event_bus);
-    
-    // Start event handler
-    let event_state = state.clone();
-    tokio::spawn(handle_events(event_state));
-    let monitor = Arc::new(HealthMonitor::new("harmony-service", env!("CARGO_PKG_VERSION")));
-    let registry = LocalServiceRegistry::new();
-    registry
-        .register_service("harmony-service".to_string(), "http://localhost:3006".to_string())
+    env_logger::init();
+
+    // Initialize event bus - use NATS if URL provided, otherwise use local
+    let event_bus: Arc<dyn GameEventBus> = if let Ok(nats_url) = std::env::var("NATS_URL") {
+        println!("📡 Connecting to NATS at {}", nats_url);
+        Arc::new(NatsEventBus::new(&nats_url).await?)
+    } else {
+        println!("📦 Using local event bus (no NATS_URL provided)");
+        Arc::new(LocalEventBus::new())
+    };
+
+    // Create service
+    let service = Arc::new(HarmonyService::new(event_bus));
+
+    // Start event listeners
+    service.start_event_listeners().await?;
+
+    // Define routes
+    let service_filter = warp::any().map(move || service.clone());
+
+    let add_resonance = warp::path!("resonance" / String / String / f64)
+        .and(warp::post())
+        .and(service_filter.clone())
+        .and_then(add_resonance_handler);
+
+    let get_progress = warp::path!("progress" / String)
+        .and(warp::get())
+        .and(service_filter.clone())
+        .and_then(get_progress_handler);
+
+    let health = warp::path!("health")
+        .and(warp::get())
+        .and_then(health_handler);
+
+    let routes = add_resonance
+        .or(get_progress)
+        .or(health);
+
+    // Handle shutdown gracefully
+    let service_shutdown = service.clone();
+    tokio::spawn(async move {
+        tokio::signal::ctrl_c().await.expect("Failed to listen for ctrl+c");
+        println!("\n🛑 Shutting down Harmony Service...");
+        let _ = service_shutdown.shutdown().await;
+        std::process::exit(0);
+    });
+
+    println!("🎵 Harmony Service v{} starting on port 3006", env!("CARGO_PKG_VERSION"));
+    println!("   Event bus: {}", if std::env::var("NATS_URL").is_ok() { "NATS" } else { "Local" });
+
+    warp::serve(routes)
+        .run(([0, 0, 0, 0], 3006))
         .await;
-    
-    // Build router
-    let app = Router::new()
-        .route("/info", get(get_service_info))
-        .route("/progression/:player_id", get(get_player_progression))
-        .route("/grant", post(grant_resonance))
-        .route("/melodies/:player_id", get(get_available_melodies))
-        .route("/harmonies/:player_id", get(get_harmonies))
-        .with_state(state.clone())
-        .merge(monitor.clone().axum_routes());
-    
-    let addr = "0.0.0.0:3006";
-    info!("Harmony Service listening on {}", addr);
-    
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+
     Ok(())
 }
+
+// services

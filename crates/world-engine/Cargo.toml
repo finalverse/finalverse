@@ -15,6 +15,9 @@ uuid.workspace = true
 fv-health.workspace = true
 service-registry.workspace = true
 rand.workspace = true
+async-trait = "0.1.88"
+warp = "0.3.7"
+env_logger = "0.11.8"
 
 [[bin]]
 name = "world-engine"
