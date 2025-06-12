@@ -32,7 +32,7 @@ pub struct Symphony {
     pub status: SymphonyStatus,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum SymphonyStatus {
     Gathering,
     InProgress,
@@ -348,7 +348,8 @@ async fn main() -> anyhow::Result<()> {
     service.start_event_listeners().await?;
 
     // Define routes
-    let service_filter = warp::any().map(move || service.clone());
+    let service_clone = service.clone();
+    let service_filter = warp::any().map(move || service_clone.clone());
 
     let weave_song = warp::path!("song" / "weave")
         .and(warp::post())
@@ -359,12 +360,9 @@ async fn main() -> anyhow::Result<()> {
     let get_songs = warp::path!("songs")
         .and(warp::get())
         .and(service_filter.clone())
-        .map(|service: Arc<SongEngineService>| {
-            let service = service.clone();
-            async move {
-                let songs = service.get_active_songs().await;
-                warp::reply::json(&songs)
-            }
+        .and_then(|service: Arc<SongEngineService>| async move {
+            let songs = service.get_active_songs().await;
+            Ok::<_, warp::Rejection>(warp::reply::json(&songs))
         });
 
     let health = warp::path!("health")

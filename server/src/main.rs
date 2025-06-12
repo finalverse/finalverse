@@ -700,17 +700,17 @@ async fn main() -> Result<()> {
     tokio::spawn(async move {
         // Build the gRPC server with all plugin services
         let (_health_reporter, health_service) = health_reporter();
-        let mut builder = GrpcServer::builder().add_service(health_service);
+        let mut router = GrpcServer::builder().add_service(health_service);
 
         // Register each plugin's gRPC services
         for mut plugin in grpc_plugins {
             let instance = plugin.take_instance();
-            builder = instance.register_grpc(builder);
+            router = instance.register_grpc(router);
         }
 
         println!("🚀 Starting gRPC server on {}", grpc_addr);
 
-        if let Err(e) = builder.serve(grpc_addr).await {
+        if let Err(e) = router.serve(grpc_addr).await {
             eprintln!("❌ gRPC server error: {}", e);
         }
     });

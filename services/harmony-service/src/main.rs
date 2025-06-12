@@ -302,7 +302,8 @@ async fn main() -> anyhow::Result<()> {
     service.start_event_listeners().await?;
 
     // Define routes
-    let service_filter = warp::any().map(move || service.clone());
+    let service_clone = service.clone();
+    let service_filter = warp::any().map(move || service_clone.clone());
 
     let add_resonance = warp::path!("resonance" / String / String / f64)
         .and(warp::post())
