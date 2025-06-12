@@ -34,10 +34,11 @@ impl GameEventBus for NatsEventBus {
         Ok(())
     }
 
-    async fn subscribe_raw<F>(&self, topic: &str, handler: F) -> anyhow::Result<String>
-    where
-        F: Fn(Vec<u8>) + Send + Sync + 'static,
-    {
+    async fn subscribe_raw(
+        &self,
+        topic: &str,
+        handler: Box<dyn Fn(Vec<u8>) + Send + Sync + 'static>,
+    ) -> anyhow::Result<String> {
         let subscriber = self.client.read().await.subscribe(topic.to_string()).await?;
         let subscription_id = Uuid::new_v4().to_string();
         
@@ -50,6 +51,7 @@ impl GameEventBus for NatsEventBus {
         // Spawn handler task
         tokio::spawn(async move {
             let mut sub = subscriptions.write().await.remove(&sub_id_clone).unwrap();
+            let handler = handler;
             while let Some(msg) = sub.next().await {
                 handler(msg.payload.to_vec());
             }

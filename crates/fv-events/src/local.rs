@@ -40,10 +40,11 @@ impl GameEventBus for LocalEventBus {
         Ok(())
     }
 
-    async fn subscribe_raw<F>(&self, topic: &str, handler: F) -> anyhow::Result<String>
-    where
-        F: Fn(Vec<u8>) + Send + Sync + 'static,
-    {
+    async fn subscribe_raw(
+        &self,
+        topic: &str,
+        handler: Box<dyn Fn(Vec<u8>) + Send + Sync + 'static>,
+    ) -> anyhow::Result<String> {
         let subscription_id = Uuid::new_v4().to_string();
         
         // Get or create channel for topic
@@ -63,9 +64,9 @@ impl GameEventBus for LocalEventBus {
         // Spawn handler task
         let sub_id_clone = subscription_id.clone();
         let subscriptions = self.subscriptions.clone();
-        
         tokio::spawn(async move {
             if let Some(mut receiver) = subscriptions.write().await.remove(&sub_id_clone) {
+                let handler = handler;
                 while let Ok(payload) = receiver.recv().await {
                     handler(payload);
                 }

@@ -8,9 +8,11 @@ pub trait GameEventBus: Send + Sync {
     async fn publish_raw(&self, topic: &str, payload: Vec<u8>) -> anyhow::Result<()>;
     
     /// Subscribe to raw bytes from a topic
-    async fn subscribe_raw<F>(&self, topic: &str, handler: F) -> anyhow::Result<String>
-    where
-        F: Fn(Vec<u8>) + Send + Sync + 'static;
+    async fn subscribe_raw(
+        &self,
+        topic: &str,
+        handler: Box<dyn Fn(Vec<u8>) + Send + Sync + 'static>,
+    ) -> anyhow::Result<String>;
     
     /// Publish a typed event
     async fn publish(&self, event: Event) -> anyhow::Result<()> {
@@ -20,16 +22,21 @@ pub trait GameEventBus: Send + Sync {
     }
     
     /// Subscribe to typed events
-    async fn subscribe<F>(&self, topic: &str, handler: F) -> anyhow::Result<String>
-    where
-        F: Fn(Event) + Send + Sync + 'static,
-    {
+    async fn subscribe(
+        &self,
+        topic: &str,
+        handler: Box<dyn Fn(Event) + Send + Sync + 'static>,
+    ) -> anyhow::Result<String> {
         let topic = topic.to_string();
-        self.subscribe_raw(&topic, move |payload| {
-            if let Ok(event) = serde_json::from_slice::<Event>(&payload) {
-                handler(event);
-            }
-        }).await
+        self.subscribe_raw(
+            &topic,
+            Box::new(move |payload| {
+                if let Ok(event) = serde_json::from_slice::<Event>(&payload) {
+                    handler(event);
+                }
+            }),
+        )
+        .await
     }
     
     /// Unsubscribe from a topic

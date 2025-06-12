@@ -62,11 +62,13 @@ impl SongEngineService {
         let songs = self.active_songs.clone();
         let event_bus = self.event_bus.clone();
 
-        let harmony_sub_id = self.event_bus.subscribe("events.harmony", move |event| {
-            let songs = songs.clone();
-            let event_bus = event_bus.clone();
+        let harmony_sub_id = self
+            .event_bus
+            .subscribe("events.harmony", Box::new(move |event| {
+                let songs = songs.clone();
+                let event_bus = event_bus.clone();
 
-            tokio::spawn(async move {
+                tokio::spawn(async move {
                 if let EventType::Harmony(harmony_event) = &event.event_type {
                     match harmony_event {
                         HarmonyEvent::AttunementAchieved { player_id, tier, .. } => {
@@ -105,7 +107,8 @@ impl SongEngineService {
                     }
                 }
             });
-        }).await?;
+            }))
+            .await?;
 
         self.subscription_ids.write().await.push(harmony_sub_id);
 
