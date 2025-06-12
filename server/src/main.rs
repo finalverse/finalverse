@@ -40,7 +40,7 @@ mod mesh;
 use finalverse_server::{
     ServiceInfo, ServiceStatus, LogEntry, LogLevel, ServerCommand, ServerResponse,
 };
-use tonic_health::server::health_reporter;
+use tonic_health::server::{health_reporter, HealthServer, Health};
 use tonic::transport::Server as GrpcServer;
 
 #[derive(Parser)]
@@ -561,7 +561,7 @@ impl App {
         let area = self.centered_rect(60, 20, f.size());
         f.render_widget(Clear, area);
         
-        let help_text = "Finalverse Server Console Help\n\nPress 'h' to toggle this help\nPress 'q' to quit";
+        let help_text = "Finalverse Server Console Help\n\nPress '?' to toggle this help\nPress 'q' to quit";
         let help_block = Paragraph::new(help_text)
             .block(Block::default().borders(Borders::ALL).title("Help"))
             .wrap(Wrap { trim: true });
@@ -591,7 +591,7 @@ impl App {
     async fn handle_input(&mut self, key: KeyEvent) -> Result<bool> {
         match key.code {
             KeyCode::Char('q') => return Ok(true),
-            KeyCode::Char('h') => self.show_help = !self.show_help,
+            KeyCode::Char('?') => self.show_help = !self.show_help,
             KeyCode::Tab => self.next_tab(),
             KeyCode::BackTab => self.previous_tab(),
             KeyCode::Up => self.previous_service(),
@@ -719,22 +719,23 @@ async fn main() -> Result<()> {
     server_manager.run_command_handler().await;
     server_manager.run_health_monitor().await;
 
+    // WebSocket server for CLI connections
+    let ws_port = args.port;
+    let ws_manager = Arc::clone(&server_manager);
+    tokio::spawn(async move {
+        if let Err(e) = run_websocket_server(ws_port, ws_manager).await {
+            eprintln!("❌ WebSocket server error: {}", e);
+        }
+    });
+
     if args.headless {
         // Run in headless mode (no TUI)
         println!("🎵 Finalverse Server starting in headless mode on port {}", args.port);
-        
-        // Start WebSocket server for CLI connections
-        let listener = TcpListener::bind(format!("127.0.0.1:{}", args.port)).await?;
-        println!("📡 WebSocket server listening on ws://127.0.0.1:{}", args.port);
-        
-        while let Ok((stream, _)) = listener.accept().await {
-            let server_manager_clone = Arc::clone(&server_manager);
-            tokio::spawn(handle_client(stream, server_manager_clone));
-        }
+        futures::future::pending::<()>().await;
     } else {
         // Run with TUI
         println!("🎵 Starting Finalverse Server Console...");
-        
+
         let mut app = App::new(Arc::clone(&server_manager));
         app.run().await?;
     }
@@ -748,6 +749,17 @@ async fn handle_client(stream: TcpStream, server_manager: Arc<ServerManager>) ->
 
     // Handle WebSocket messages for CLI communication
     // This would implement the protocol for CLI commands
-    
+
     Ok(())
+}
+
+async fn run_websocket_server(port: u16, server_manager: Arc<ServerManager>) -> Result<()> {
+    let listener = TcpListener::bind(format!("127.0.0.1:{port}")).await?;
+    println!("📡 WebSocket server listening on ws://127.0.0.1:{port}");
+
+    loop {
+        let (stream, _) = listener.accept().await?;
+        let manager = Arc::clone(&server_manager);
+        tokio::spawn(handle_client(stream, manager));
+    }
 }
