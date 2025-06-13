@@ -102,7 +102,10 @@ impl VoiceSynthesizer {
         let phonemes = self.text_to_melodic_phonemes(text, &adjusted_profile, &context);
 
         // Generate audio
-        let audio_data = self.tts_engine.synthesize(phonemes, adjusted_profile).await?;
+        let audio_data = self
+            .tts_engine
+            .synthesize(phonemes, adjusted_profile.clone())
+            .await?;
 
         // Apply character-specific effects
         let processed_audio = self.apply_character_effects(
@@ -243,7 +246,7 @@ impl VoiceSynthesizer {
     fn add_sparkle_effect(&self, audio: Vec<f32>) -> Vec<f32> {
         // Add high-frequency shimmer
         let mut output = audio.clone();
-        let mut phase = 0.0;
+        let mut phase: f32 = 0.0;
 
         for sample in &mut output {
             phase += 0.1;

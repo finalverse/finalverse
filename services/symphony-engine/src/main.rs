@@ -75,7 +75,7 @@ impl SymphonyEngine {
             pubsub.subscribe("player:actions").await.unwrap();
             pubsub.subscribe("npc:events").await.unwrap();
 
-            while let Ok(msg) = pubsub.on_message().next().await {
+            while let Some(msg) = pubsub.on_message().next().await {
                 let payload: String = msg.get_payload().unwrap();
                 if let Ok(event) = serde_json::from_str::<AudioEvent>(&payload) {
                     // Process audio event
@@ -91,9 +91,8 @@ impl SymphonyEngine {
     async fn start_ambient_generator(&self) -> Result<(), Box<dyn std::error::Error>> {
         let world_state = self.world_state.clone();
         let music_ai = self.music_ai.clone();
-        let audio_gen = self.audio_generator.clone();
-
         tokio::spawn(async move {
+            let audio_gen = AudioGenerator::new();
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(30));
 
             loop {
