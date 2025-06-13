@@ -1,6 +1,16 @@
 # Finalverse Developer Overview
 
-Finalverse is an AI‑driven metaverse where players and intelligent agents co‑create persistent worlds. The repository contains a collection of Rust microservices, configuration files and a CLI client that demonstrate the core gameplay loop.
+**Current Release: v0.1.0 – Proof‑of‑concept MVP**
+
+Finalverse is an AI‑driven metaverse where players and intelligent agents co‑create persistent worlds. This repository hosts the microservices, CLI client and plugin SDK that power the prototype.
+
+## Features
+
+- Real‑time WebSocket gateway for future 3D clients
+- AI Orchestra with pluggable LLM providers (Ollama or OpenAI)
+- Dynamic quest and story generation
+- Procedural world simulation and ecosystem services
+- Extensible plugin system for adding gameplay modules
 
 ## Architecture
 
@@ -61,6 +71,37 @@ All services expose `/health` and `/info` endpoints and are automatically regist
 
 The upcoming **FinalStorm** 3D client will connect through the WebSocket gateway (`:3000`) using the same service APIs.
 
+### Deployment
+
+```bash
+./scripts/setup_mvp.sh   # one-time setup
+./fv build               # compile all services
+./fv start               # start data + game services
+./fv tests               # verify health endpoints
+```
+
+Production deployments follow the same steps but with `--release` and persistent data directories.
+
+### Server Maintenance
+
+- `./fv status` – show running services
+- `./fv monitor` – realtime health and log view
+- `./fv restart <service>` – restart a single service
+- `./fv backup` – snapshot data to `backups/`
+- `./fv clean` – remove generated data and logs
+
+Logs are stored in the `logs/` directory.
+
+### Developing Plugins
+
+1. Add `fv-plugin` to your plugin `Cargo.toml`.
+2. Implement the `ServicePlugin` trait and export `finalverse_plugin_entry`.
+3. Build with `cargo build --release`.
+4. Copy the resulting library into `$FINALVERSE_PLUGIN_DIR`.
+5. Restart the server for the plugin to load.
+
+See [docs/plugin_dev_guide.md](docs/plugin_dev_guide.md) for details.
+
 ## Development Workflow
 
 - Each service lives under `services/` and shares common types in `crates/`.
@@ -73,6 +114,10 @@ The upcoming **FinalStorm** 3D client will connect through the WebSocket gateway
 
 This MVP focuses on the core loop of songweaving, world simulation and AI interaction. Contributions that enhance interoperability with FinalStorm, improve AI behaviours or extend the service APIs are welcome. Please ensure code is formatted with `cargo fmt` and that all services compile with `cargo build --workspace`.
 
+## Release History
+
+- **0.1.0** - Initial proof-of-concept MVP. See `CHANGELOG.md` for details.
+
 ## License
 
-MIT © 2025 Finalverse Team
+© 2025 Finalverse Inc. All rights reserved.
