@@ -202,7 +202,7 @@ pub extern "C" fn finalverse_plugin_entry() -> *mut dyn ServicePlugin {
 /*
 [package]
 name = "greeter-plugin"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [lib]
