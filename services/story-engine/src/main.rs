@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
 use warp::Filter;
-use fv_events::{
+use finalverse_events::{
     GameEventBus, LocalEventBus, NatsEventBus,
     Event, EventType, SongEvent, SongType, PlayerId, Coordinates,
     HarmonyEvent, EventMetadata,

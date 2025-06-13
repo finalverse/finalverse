@@ -17,11 +17,11 @@ tracing-subscriber.workspace = true
 anyhow.workspace = true
 
 [lib]
-name = "fv_config"
+name = "finalverse_config"
 path = "src/lib.rs"
 
 [[bin]]
-name = "fv-config"
+name = "finalverse-config"
 path = "src/main.rs"
 
 [dev-dependencies]

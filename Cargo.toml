@@ -4,29 +4,31 @@ resolver = "2"
 members = [
     # Core Services
     "services/api-gateway",
-    "services/song-engine",
-    "services/story-engine",
+    "services/asset-service",
+    "services/community",
     "services/echo-engine",
     "services/harmony-service",
-    "services/silence-service",
-    "services/community",
-    "services/asset-service",
-    "services/websocket-gateway",
     "services/realtime-gateway",
     "services/service-registry",
-    "crates/plugin",
+    "services/silence-service",
+    "services/song-engine",
+    "services/story-engine",
+    "services/symphony-engine",
+    "services/websocket-gateway",
     "plugins/greeter-plugin",
     
     # AI Infrastructure
+    "services/behavior-ai",
     "services/ai-orchestra",
     "services/procedural-gen",
-    "services/behavior-ai",
     
     # Shared Libraries
-    "crates/core",
-    "crates/protocol",
     "crates/ai-common",
+    "crates/audio-core",
+    "crates/core",
     "crates/health",
+    "crates/plugin",
+    "crates/protocol",
     "crates/wasm-runtime",
     "crates/world-engine",
     
@@ -82,12 +84,16 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1.0"
 thiserror = "1.0"
 
+# For 3D audio positioning
+nalgebra = "0.32"
+
 # Utils
 uuid = { version = "1.6", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8"
 
 # Finalverse internal crates
+finalverse-audio-core = { path = "crates/audio-core" }
 finalverse-core = { path = "crates/core" }
 finalverse-health = { path = "crates/health" }
 finalverse-protocol = { path = "crates/protocol" }

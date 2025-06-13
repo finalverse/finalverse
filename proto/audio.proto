@@ -1,0 +1,51 @@
+// proto/audio.proto
+syntax = "proto3";
+
+package finalverse.audio;
+
+message AudioStreamRequest {
+    string stream_id = 1;
+    AudioStreamType stream_type = 2;
+    AudioQuality quality = 3;
+}
+
+enum AudioStreamType {
+    AMBIENT = 0;
+    CHARACTER = 1;
+    EFFECT = 2;
+    MUSIC = 3;
+    VOICE = 4;
+}
+
+enum AudioQuality {
+    LOW = 0;     // 64kbps
+    MEDIUM = 1;  // 128kbps
+    HIGH = 2;    // 256kbps
+    LOSSLESS = 3; // FLAC
+}
+
+message AudioChunk {
+    bytes data = 1;
+    uint32 sequence = 2;
+    bool is_final = 3;
+    AudioMetadata metadata = 4;
+}
+
+message AudioMetadata {
+    string theme_id = 1;
+    uint64 duration_ms = 2;
+    optional uint64 loop_point_ms = 3;
+    repeated float spatial_position = 4;
+}
+
+service AudioService {
+    rpc StreamAudio(AudioStreamRequest) returns (stream AudioChunk);
+    rpc UpdateListenerPosition(ListenerUpdate) returns (Empty);
+}
+
+message ListenerUpdate {
+    repeated float position = 1;
+    repeated float orientation = 2;
+}
+
+message Empty {}

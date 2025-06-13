@@ -18,7 +18,7 @@ async fn main() -> anyhow::Result<()> {
     let addr: SocketAddr = std::env::var("FINALVERSE_CONFIG_ADDR")
         .unwrap_or_else(|_| "0.0.0.0:7070".to_string())
         .parse()?;
-    println!("fv-config listening on {}", addr);
+    println!("finalverse-config listening on {}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
     Ok(())

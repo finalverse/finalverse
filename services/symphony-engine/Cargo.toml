@@ -1,0 +1,30 @@
+# // services/symphony-engine/Cargo.toml
+[package]
+name = "symphony-engine"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { workspace = true, features = ["full"] }
+tonic.workspace = true
+prost.workspace = true
+# finalverse-core = { path = "../../crates/core" }
+# finalverse-audio-core = { path = "../../crates/audio-core" }
+finalverse-core = { workspace = true }
+finalverse_config = { workspace = true }
+finalverse-audio-core = { workspace = true }
+symphonia = { version = "0.5", features = ["all"] }
+cpal = "0.15"
+rubato = "0.14"
+hound = "3.5"
+rodio = "0.17"
+redis = { workspace = true, features = ["tokio-comp"] }
+sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "postgres"] }
+uuid = { workspace = true, features = ["v4"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber = "0.3"
+
+[build-dependencies]
+tonic-build.workspace = true
