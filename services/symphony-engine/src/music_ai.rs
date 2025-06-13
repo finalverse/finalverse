@@ -1,6 +1,6 @@
 // services/symphony-engine/src/music_ai.rs
 use finalverse_audio_core::*;
-use finalverse_common::config::Config;
+use finalverse_config::FinalverseConfig as Config;
 use std::collections::HashMap;
 
 pub struct MusicAI {
