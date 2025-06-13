@@ -4,10 +4,10 @@ This guide covers the basics of creating, testing and deploying a plugin for the
 
 ## 1. Project Setup
 
-1. Enable the `fv-plugin` crate in your `Cargo.toml`:
+1. Enable the `finalverse-plugin` crate in your `Cargo.toml`:
    ```toml
    [dependencies]
-   fv-plugin = { path = "../../crates/fv-plugin" }
+   finalverse-plugin = { path = "../../crates/plugin" }
    ```
 2. Add other dependencies as needed (e.g. `async-trait`, `tokio`).
 3. Ensure your library is built as a dynamic library:

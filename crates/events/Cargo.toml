@@ -1,5 +1,5 @@
 [package]
-name = "fv-events"
+name = "finalverse-events"
 version.workspace = true
 edition.workspace = true
 license = "Copyright Finalverse Inc."

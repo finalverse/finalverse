@@ -1,5 +1,5 @@
 [package]
-name = "fv-config"
+name = "finalverse-config"
 version.workspace = true
 edition.workspace = true
 authors = ["Finalverse Team"]

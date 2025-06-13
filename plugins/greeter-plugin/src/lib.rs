@@ -202,7 +202,7 @@ pub extern "C" fn finalverse_plugin_entry() -> *mut dyn ServicePlugin {
 /*
 [package]
 name = "greeter-plugin"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [lib]
@@ -211,7 +211,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 async-trait = "0.1"
 chrono = { version = "0.4", features = ["serde"] }
-fv-plugin = { path = "../../crates/fv-plugin" }
+finalverse-plugin = { path = "../../crates/plugin" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1", features = ["sync", "rt"] }

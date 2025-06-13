@@ -1,4 +1,4 @@
-// plugin module removed - plugins are now managed directly via the `fv-plugin` crate
+// plugin module removed - plugins are now managed directly via the `finalverse-plugin` crate
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};

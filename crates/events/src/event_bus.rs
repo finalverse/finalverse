@@ -1,4 +1,4 @@
-// crates/fv-events/src/event_bus.rs
+// crates/events/src/event_bus.rs
 use async_trait::async_trait;
 use crate::events::Event;
 

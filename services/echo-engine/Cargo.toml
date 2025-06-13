@@ -8,7 +8,7 @@ name = "echo-engine"
 path = "src/main.rs"
 
 [dependencies]
-fv-common.workspace = true
+finalverse-core.workspace = true
 finalverse-protocol.workspace = true
 axum.workspace = true
 tokio.workspace = true
@@ -17,7 +17,7 @@ tracing-subscriber.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
-fv-health.workspace = true
+finalverse-health.workspace = true
 service-registry.workspace = true
 tower.workspace = true
 tower-http = { workspace = true, features = ["cors"] }
