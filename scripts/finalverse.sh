@@ -28,6 +28,9 @@ NC='\033[0m' # No Color
 GAME_SERVICES="websocket-gateway:3000 api-gateway:8080 ai-orchestra:3004 song-engine:3001 story-engine:3005 echo-engine:3003 world-engine:3002 harmony-service:3006 asset-service:3007 community:3008 silence-service:3009 procedural-gen:3010 behavior-ai:3011"
 DATA_SERVICES="postgres:5432 redis:6379 qdrant:6333 minio:9000"
 
+# Optionally start game services inside Docker containers
+USE_DOCKER="${USE_DOCKER:-false}"
+
 # Logging functions
 log() { echo -e "${GREEN}$(date '+%H:%M:%S')${NC} $1"; }
 info() { echo -e "${BLUE}$(date '+%H:%M:%S')${NC} ℹ️  $1"; }
@@ -61,7 +64,11 @@ is_service_running() {
 get_service_pid() {
     local service=$1
     local port=$(get_service_port "$service")
-    [ -n "$port" ] && lsof -ti :$port 2>/dev/null
+    if [ "$USE_DOCKER" = "true" ]; then
+        docker ps --filter "name=^/${service}$" --format '{{.ID}}'
+    else
+        [ -n "$port" ] && lsof -ti :$port 2>/dev/null
+    fi
 }
 
 is_data_service_healthy() {
@@ -212,55 +219,76 @@ EOF
 start_service() {
     local service=$1
     local port=$(get_service_port "$service")
-    
+
     if is_service_running "$service"; then
         warn "$service already running on port $port"
         return 0
     fi
-    
-    if [ ! -f "target/release/$service" ]; then
-        error "Binary not found: target/release/$service (run 'build' first)"
-        return 1
-    fi
-    
-    info "Starting $service on port $port..."
-    RUST_LOG=info target/release/$service > "$LOG_DIR/${service}.log" 2>&1 &
-    local pid=$!
-    echo $pid > "$LOG_DIR/${service}.pid"
-    
-    sleep 2
-    if kill -0 $pid 2>/dev/null && is_service_running "$service"; then
-        success "$service started (PID: $pid, Port: $port)"
-        return 0
+
+    if [ "$USE_DOCKER" = "true" ]; then
+        info "Starting $service in Docker on port $port..."
+        docker build -f docker/Dockerfile.service --build-arg SERVICE="$service" -t "finalverse/$service" . > "$LOG_DIR/${service}.log" 2>&1 && \
+        docker run -d --name "$service" --network finalverse-network -p "$port:$port" "finalverse/$service" >> "$LOG_DIR/${service}.log" 2>&1
+        if [ $? -eq 0 ]; then
+            success "$service container started (Port: $port)"
+            return 0
+        else
+            error "$service container failed to start"
+            tail -5 "$LOG_DIR/${service}.log" >&2
+            return 1
+        fi
     else
-        error "$service failed to start"
-        [ -f "$LOG_DIR/${service}.log" ] && tail -5 "$LOG_DIR/${service}.log" >&2
-        return 1
+        if [ ! -f "target/release/$service" ]; then
+            error "Binary not found: target/release/$service (run 'build' first)"
+            return 1
+        fi
+
+        info "Starting $service on port $port..."
+        RUST_LOG=info target/release/$service > "$LOG_DIR/${service}.log" 2>&1 &
+        local pid=$!
+        echo $pid > "$LOG_DIR/${service}.pid"
+
+        sleep 2
+        if kill -0 $pid 2>/dev/null && is_service_running "$service"; then
+            success "$service started (PID: $pid, Port: $port)"
+            return 0
+        else
+            error "$service failed to start"
+            [ -f "$LOG_DIR/${service}.log" ] && tail -5 "$LOG_DIR/${service}.log" >&2
+            return 1
+        fi
     fi
 }
 
 stop_service() {
     local service=$1
     local pid_file="$LOG_DIR/${service}.pid"
-    
-    if [ -f "$pid_file" ]; then
-        local pid=$(cat "$pid_file")
-        if kill -0 $pid 2>/dev/null; then
-            info "Stopping $service (PID: $pid)..."
-            kill $pid
-            sleep 2
-            kill -0 $pid 2>/dev/null && kill -9 $pid 2>/dev/null
-            rm -f "$pid_file"
-            success "Stopped $service"
-        else
-            rm -f "$pid_file"
+
+    if [ "$USE_DOCKER" = "true" ]; then
+        if docker ps -a --format '{{.Names}}' | grep -q "^${service}$"; then
+            info "Stopping container $service..."
+            docker rm -f "$service" >/dev/null 2>&1 && success "Stopped $service container"
         fi
+    else
+        if [ -f "$pid_file" ]; then
+            local pid=$(cat "$pid_file")
+            if kill -0 $pid 2>/dev/null; then
+                info "Stopping $service (PID: $pid)..."
+                kill $pid
+                sleep 2
+                kill -0 $pid 2>/dev/null && kill -9 $pid 2>/dev/null
+                rm -f "$pid_file"
+                success "Stopped $service"
+            else
+                rm -f "$pid_file"
+            fi
+        fi
+
+        # Also kill by port
+        local port=$(get_service_port "$service")
+        local port_pid=$(lsof -ti :$port 2>/dev/null || true)
+        [ -n "$port_pid" ] && kill -9 $port_pid 2>/dev/null || true
     fi
-    
-    # Also kill by port
-    local port=$(get_service_port "$service")
-    local port_pid=$(lsof -ti :$port 2>/dev/null || true)
-    [ -n "$port_pid" ] && kill -9 $port_pid 2>/dev/null || true
 }
 
 start_all_services() {

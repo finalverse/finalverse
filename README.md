@@ -1,6 +1,6 @@
 # Finalverse Developer Overview
 
-**Current Release: v0.1.0 – Proof‑of‑concept MVP**
+**Current Release: v0.1.1 – Post‑MVP Development**
 
 Finalverse is an AI‑driven metaverse where players and intelligent agents co‑create persistent worlds. This repository hosts the microservices, CLI client and plugin SDK that power the prototype.
 
@@ -51,23 +51,36 @@ Finalverse is an AI‑driven metaverse where players and intelligent agents co�
 └────────────────────────────────────┘
 ```
 
-All services expose `/health` and `/info` endpoints and are automatically registered with the local service registry.
+All services expose `/health` and `/info` endpoints and are automatically registered with the local service registry. The API Gateway on port `8080` provides the HTTP interface while the WebSocket Gateway on port `3000` handles realtime client traffic.
+
+Service addresses are defined in `crates/config/finalverse.toml` so you can change the ports as needed. Environment variables can override any value at runtime.
+
+Services can be launched either as local binaries or as Docker containers by setting the `USE_DOCKER` flag.
 
 ## Quick Start
 
-1. **Prepare the environment**
-   ```bash
-   ./scripts/setup_mvp.sh       # builds services and starts the data layer
-   ./fv start                   # alias for scripts/finalverse.sh
-   ```
-2. **Verify services**
-   ```bash
-   ./fv tests
-   ```
-3. **Run the CLI client**
-   ```bash
-   cargo run --bin txtViewer
-   ```
+### First-Time Setup
+
+Run the helper script once to create directories, build binaries and prepare Docker images:
+
+```bash
+./scripts/setup_mvp.sh
+```
+
+### Starting the Stack
+
+For daily development start the services (rebuild if you changed code):
+
+```bash
+./fv start                # launch data + game services
+./fv tests                # check health endpoints
+```
+
+### Run the CLI client
+
+```bash
+cargo run --bin txtViewer
+```
 
 The upcoming **FinalStorm** 3D client will connect through the WebSocket gateway (`:3000`) using the same service APIs.
 
@@ -78,6 +91,12 @@ The upcoming **FinalStorm** 3D client will connect through the WebSocket gateway
 ./fv build               # compile all services
 ./fv start               # start data + game services
 ./fv tests               # verify health endpoints
+```
+
+To run services inside Docker containers set `USE_DOCKER=true`:
+
+```bash
+USE_DOCKER=true ./fv start
 ```
 
 Production deployments follow the same steps but with `--release` and persistent data directories.
@@ -105,8 +124,8 @@ See [docs/plugin_dev_guide.md](docs/plugin_dev_guide.md) for details.
 ## Development Workflow
 
 - Each service lives under `services/` and shares common types in `crates/`.
-- After modifying a service run `cargo build -p <service>` and restart it via `./fv start-service <service>`.
-- Use `./scripts/monitor_services.sh` to tail logs during development. The
+- After modifying a service run `cargo build -p <service>` and restart it via `./fv restart <service>`.
+- Use `./fv monitor` to tail logs during development. The
   server loads dynamic plugins from `FINALVERSE_PLUGIN_DIR` and exposes all
   gRPC services on `FINALVERSE_GRPC_PORT`. See `.env.example` for defaults.
 
@@ -116,6 +135,7 @@ This MVP focuses on the core loop of songweaving, world simulation and AI intera
 
 ## Release History
 
+- **0.1.1** - Updated scripts and Docker support.
 - **0.1.0** - Initial proof-of-concept MVP. See `CHANGELOG.md` for details.
 
 ## License

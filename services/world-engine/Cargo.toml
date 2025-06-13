@@ -11,6 +11,8 @@ path = "src/main.rs"
 finalverse-audio-core.workspace = true
 redis.workspace = true
 serde_json.workspace = true
+serde = { workspace = true, features = ["derive"] }
+rand.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 nalgebra.workspace = true
