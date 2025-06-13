@@ -27,6 +27,7 @@ tracing.workspace = true
 tracing-subscriber = "0.3"
 nalgebra.workspace = true
 rand = "0.8.5"
+tokio-stream = "0.1"
 
 [build-dependencies]
 tonic-build.workspace = true

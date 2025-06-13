@@ -1,0 +1,10 @@
+[package]
+name = "finalverse-ecosystem"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+uuid.workspace = true
+rand.workspace = true
+finalverse-core.workspace = true
