@@ -8,7 +8,6 @@ name = "world-engine"
 path = "src/main.rs"
 
 [dependencies]
-finalverse-world-engine = { path = "../../crates/world-engine" }
 finalverse-audio-core.workspace = true
 redis.workspace = true
 serde_json.workspace = true

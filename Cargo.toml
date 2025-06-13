@@ -33,7 +33,7 @@ members = [
     "crates/plugin",
     "crates/protocol",
     "crates/wasm-runtime",
-    "crates/world-engine",
+    "crates/ecosystem",
     
     # Client
     "client/txtViewer",
@@ -105,7 +105,7 @@ finalverse-server = { path = "server" }
 finalverse-config = { path = "crates/config" }
 finalverse-plugin = { path = "crates/plugin" }
 finalverse-wasm-runtime = { path = "crates/wasm-runtime" }
-finalverse-world-engine = { path = "crates/world-engine" }
+finalverse-ecosystem = { path = "crates/ecosystem" }
 
 # QUIC/Networking
 quinn = "0.10"
