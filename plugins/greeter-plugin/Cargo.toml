@@ -1,13 +1,13 @@
 [package]
 name = "greeter-plugin"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-fv-plugin.workspace = true
+finalverse-plugin.workspace = true
 async-trait.workspace = true
 tonic.workspace = true
 axum.workspace = true
@@ -16,7 +16,7 @@ service-registry.workspace = true
 anyhow.workspace = true
 serde_json.workspace = true
 chrono = { workspace = true, features = ["serde"] }
-# fv-plugin = { path = "../../crates/fv-plugin" }
+# finalverse-plugin = { path = "../../crates/plugin" }
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["sync"] }
 

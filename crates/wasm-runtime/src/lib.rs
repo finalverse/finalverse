@@ -1,4 +1,4 @@
-// crates/finalverse-wasm-runtime/src/lib.rs
+// crates/wasm-runtime/src/lib.rs
 // Runtime for loading and executing Wasm plugins safely
 use std::path::Path;
 use anyhow::{Context, Result};

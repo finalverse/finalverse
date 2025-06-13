@@ -1,4 +1,4 @@
-// crates/fv-events/src/lib.rs
+// crates/events/src/lib.rs
 pub mod event_bus;
 pub mod events;
 pub mod nats;

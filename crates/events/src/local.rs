@@ -1,4 +1,4 @@
-// crates/fv-events/src/local.rs
+// crates/events/src/local.rs
 use tokio::sync::{broadcast, RwLock};
 use std::sync::Arc;
 use std::collections::HashMap;

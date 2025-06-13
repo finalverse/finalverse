@@ -312,7 +312,7 @@ impl Default for FinalverseConfig {
         Self {
             general: GeneralConfig {
                 server_name: "Finalverse".to_string(),
-                version: "0.1.0".to_string(),
+                version: "0.1.1".to_string(),
                 environment: Environment::Development,
                 debug_mode: false,
                 log_level: "info".to_string(),

@@ -1,4 +1,4 @@
-// crates/fv-events/src/nats.rs
+// crates/events/src/nats.rs
 use futures_util::StreamExt;
 use async_nats::{Client, Subscriber};
 use tokio::sync::RwLock;
