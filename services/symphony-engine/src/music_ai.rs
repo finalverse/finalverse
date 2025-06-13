@@ -81,7 +81,7 @@ impl MusicAI {
         emotion: EmotionalState,
     ) -> MusicalTheme {
         // Character-specific theme generation
-        let base_instruments = match character.character_type {
+        let base_instruments = match &character.character_type {
             CharacterType::Echo(echo_type) => match echo_type {
                 EchoType::Lumi => vec![
                     Instrument::CrystalBells,
@@ -115,8 +115,8 @@ impl MusicAI {
             ],
         };
 
-        let mood = self.emotion_to_mood(emotion);
-        let scale = self.emotion_to_scale(emotion);
+        let mood = self.emotion_to_mood(emotion.clone());
+        let scale = self.emotion_to_scale(emotion.clone());
         let tempo = self.emotion_to_tempo(emotion);
 
         MusicalTheme {

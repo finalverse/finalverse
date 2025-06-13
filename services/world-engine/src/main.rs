@@ -1,7 +1,7 @@
 // crates/world-engine/src/bin/world-engine.rs
 use std::sync::Arc;
 use tokio::time::{interval, Duration};
-use world_engine::{WorldEngine, Observer, WorldEvent, RegionState, RegionId, TerrainType, WeatherState, WeatherType, ecosystem::Species};
+use finalverse_world_engine::{WorldEngine, Observer, WorldEvent, RegionState, RegionId, TerrainType, WeatherState, WeatherType, ecosystem::Species};
 use finalverse_audio_core::{AudioEvent, AudioEventType, AudioSource};
 use nalgebra::Vector3;
 use redis::Client as RedisClient;

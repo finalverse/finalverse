@@ -21,6 +21,3 @@ env_logger = "0.11.8"
 finalverse-audio-core.workspace = true
 redis.workspace = true
 
-[[bin]]
-name = "world-engine"
-path = "src/bin/world-engine.rs"

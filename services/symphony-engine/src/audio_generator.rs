@@ -1,19 +1,13 @@
 // services/symphony-engine/src/audio_generator.rs
 use finalverse_audio_core::*;
-use rodio::{OutputStream, Sink, Source};
-use std::sync::Arc;
+use rodio::{Sink, Source};
 use std::time::Duration;
 
-pub struct AudioGenerator {
-    output_stream: OutputStream,
-}
+pub struct AudioGenerator;
 
 impl AudioGenerator {
     pub fn new() -> Self {
-        let (stream, stream_handle) = OutputStream::try_default().unwrap();
-        Self {
-            output_stream: stream,
-        }
+        Self {}
     }
 
     pub async fn generate_ambient_track(&self, theme: MusicalTheme) -> AudioStream {
@@ -170,7 +164,7 @@ impl AudioGenerator {
         let len = layers[0].len();
         let mut mixed = vec![0.0; len];
 
-        for layer in layers {
+        for layer in &layers {
             for (i, &sample) in layer.iter().enumerate() {
                 mixed[i] += sample / layers.len() as f32;
             }
