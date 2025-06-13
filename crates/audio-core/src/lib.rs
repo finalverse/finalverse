@@ -42,7 +42,7 @@ pub enum AudioSource {
     Environment(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum EchoType {
     Lumi,
     KAI,

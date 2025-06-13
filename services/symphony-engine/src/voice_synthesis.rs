@@ -1,5 +1,6 @@
 // services/symphony-engine/src/voice_synthesis.rs
 use finalverse_audio_core::*;
+use crate::audio_generator::{AudioStream, AudioFormat, AudioMetadata};
 use std::collections::HashMap;
 use tokio::sync::RwLock;
 

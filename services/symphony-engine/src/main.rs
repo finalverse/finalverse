@@ -1,9 +1,10 @@
 // services/symphony-engine/src/main.rs
 use finalverse_audio_core::*;
-use finalverse_config::config::Config;
+use finalverse_config::{FinalverseConfig as Config, load_default_config};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{info, error};
+use tokio_stream::StreamExt;
 
 mod audio_generator;
 mod spatial_audio;
@@ -125,7 +126,7 @@ impl SymphonyEngine {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
-    let config = Config::from_env()?;
+    let config = load_default_config()?;
     let engine = SymphonyEngine::new(config).await?;
 
     engine.start().await?;
