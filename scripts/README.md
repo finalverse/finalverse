@@ -100,4 +100,15 @@ These helper scripts were removed. Use `./scripts/finalverse.sh <command>` direc
 3. **Data issues**: Run `./scripts/finalverse.sh clean` for full reset
 4. **Build failures**: Check Rust version and dependencies
 
-## Advance
+## Advanced Usage
+
+To run services inside Docker containers instead of local binaries, set the
+`USE_DOCKER` environment variable:
+
+```bash
+export USE_DOCKER=true
+./scripts/finalverse.sh start
+```
+
+This will build container images with `docker/Dockerfile.service` and run them
+using the same port mappings as the local setup.
