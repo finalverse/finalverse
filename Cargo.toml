@@ -25,7 +25,9 @@ members = [
     # Shared Libraries
     "crates/ai-common",
     "crates/audio-core",
+    "crates/config",
     "crates/core",
+    "crates/events",
     "crates/health",
     "crates/plugin",
     "crates/protocol",
@@ -34,11 +36,9 @@ members = [
     
     # Client
     "client/txtViewer",
-    "crates/events",
 
     # server
     "server",
-    "crates/config",
     
 ]
 

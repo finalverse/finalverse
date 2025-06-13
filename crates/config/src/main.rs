@@ -1,5 +1,5 @@
 use axum::{routing::get, Router, Json};
-use fv_config::{load_default_config, GrpcServiceRegistry};
+use finalverse_config::{load_default_config, GrpcServiceRegistry};
 use std::sync::Arc;
 use std::net::SocketAddr;
 

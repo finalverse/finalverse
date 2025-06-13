@@ -11,7 +11,7 @@ prost.workspace = true
 # finalverse-core = { path = "../../crates/core" }
 # finalverse-audio-core = { path = "../../crates/audio-core" }
 finalverse-core = { workspace = true }
-finalverse_config = { workspace = true }
+finalverse-config = { workspace = true }
 finalverse-audio-core = { workspace = true }
 symphonia = { version = "0.5", features = ["all"] }
 cpal = "0.15"

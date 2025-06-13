@@ -24,7 +24,6 @@ service-registry.workspace = true
 warp.workspace = true
 async-trait = "0.1.88"
 env_logger.workspace = true
-# fv-events = { path = "../../crates/fv-events" }
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["full"] }
 
