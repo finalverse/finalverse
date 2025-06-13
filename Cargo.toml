@@ -14,7 +14,7 @@ members = [
     "services/websocket-gateway",
     "services/realtime-gateway",
     "services/service-registry",
-    "crates/fv-plugin",
+    "crates/plugin",
     "plugins/greeter-plugin",
     
     # AI Infrastructure
@@ -23,20 +23,20 @@ members = [
     "services/behavior-ai",
     
     # Shared Libraries
-    "crates/fv-core",
-    "crates/finalverse-protocol",
-    "crates/fv-ai-common",
-    "crates/fv-health",
+    "crates/core",
+    "crates/protocol",
+    "crates/ai-common",
+    "crates/health",
     "crates/wasm-runtime",
     "crates/world-engine",
     
     # Client
     "client/txtViewer",
-    "crates/fv-events",
+    "crates/events",
 
     # server
     "server",
-    "crates/fv-config",
+    "crates/config",
     
 ]
 
@@ -88,17 +88,17 @@ chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8"
 
 # Finalverse internal crates
-fv-common = { path = "crates/fv-core" }
-fv-health = { path = "crates/fv-health" }
-finalverse-protocol = { path = "crates/finalverse-protocol" }
-fv-ai-common = { path = "crates/fv-ai-common" }
+finalverse-core = { path = "crates/core" }
+finalverse-health = { path = "crates/health" }
+finalverse-protocol = { path = "crates/protocol" }
+finalverse-ai-common = { path = "crates/ai-common" }
 service-registry = { path = "services/service-registry" }
-fv-events = { path = "crates/fv-events" }
+finalverse-events = { path = "crates/events" }
 finalverse-server = { path = "server" }
-fv-config = { path = "crates/fv-config" }
-fv-plugin = { path = "crates/fv-plugin" }
-wasm-runtime = { path = "crates/wasm-runtime" }
-world-engine = { path = "crates/world-engine" }
+finalverse-config = { path = "crates/config" }
+finalverse-plugin = { path = "crates/plugin" }
+finalverse-wasm-runtime = { path = "crates/wasm-runtime" }
+finalverse-world-engine = { path = "crates/world-engine" }
 
 # QUIC/Networking
 quinn = "0.10"

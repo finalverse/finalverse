@@ -9,8 +9,8 @@ name = "ai-orchestra"
 path = "src/main.rs"
 
 [dependencies]
-fv-common = { path = "../../crates/fv-core" }
-finalverse-protocol = { path = "../../crates/finalverse-protocol" }
+finalverse-core = { path = "../../crates/core" }
+finalverse-protocol = { path = "../../crates/protocol" }
 axum.workspace = true
 tokio.workspace = true
 tracing.workspace = true
@@ -18,7 +18,7 @@ tracing-subscriber.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
-fv-health.workspace = true
+finalverse-health.workspace = true
 service-registry.workspace = true
 rand.workspace = true
 reqwest = { workspace = true, features = ["json"] }

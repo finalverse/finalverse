@@ -1,5 +1,5 @@
 [package]
-name = "fv-health"
+name = "finalverse-health"
 version.workspace = true
 edition.workspace = true
 license = "Copyright Finalverse Inc."

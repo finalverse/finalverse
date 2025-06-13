@@ -4,9 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-fv-common = { path = "../../crates/fv-core" }
-finalverse-protocol = { path = "../../crates/finalverse-protocol" }
-fv-health.workspace = true
+finalverse-core = { path = "../../crates/core" }
+finalverse-protocol = { path = "../../crates/protocol" }
+finalverse-health.workspace = true
 service-registry.workspace = true
 axum.workspace = true
 tokio.workspace = true

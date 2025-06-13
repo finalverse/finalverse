@@ -8,8 +8,8 @@ name = "txtViewer"
 path = "src/main.rs"
 
 [dependencies]
-fv-common = { path = "../../crates/fv-core" }
-finalverse-protocol = { path = "../../crates/finalverse-protocol" }
+finalverse-core = { path = "../../crates/core" }
+finalverse-protocol = { path = "../../crates/protocol" }
 reqwest = { workspace = true, features = ["json"] }
 tokio.workspace = true
 tracing.workspace = true

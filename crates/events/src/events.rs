@@ -1,4 +1,4 @@
-// crates/fv-events/src/events.rs
+// crates/events/src/events.rs
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
