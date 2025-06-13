@@ -4,6 +4,11 @@ use std::collections::HashMap;
 use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
 use warp::Filter;
+use finalverse_audio_core::{AudioEvent, AudioEventType, AudioSource, EmotionalState};
+use redis::Client as RedisClient;
+use uuid::Uuid;
+use nalgebra::Vector3;
+use serde_json;
 use finalverse_events::{
     GameEventBus, LocalEventBus, NatsEventBus,
     Event, EventType, SongEvent, SongType, PlayerId, Coordinates,
@@ -40,20 +45,35 @@ pub enum SymphonyStatus {
     Failed,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayerContext {
+    pub player_id: String,
+    pub location: Coordinates,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DialogueResponse {
+    pub text: String,
+    pub emotion: EmotionalState,
+    pub audio_stream_id: uuid::Uuid,
+}
+
 pub struct SongEngineService {
     active_songs: Arc<RwLock<HashMap<String, ActiveSong>>>,
     symphonies: Arc<RwLock<HashMap<String, Symphony>>>,
     event_bus: Arc<dyn GameEventBus>,
     subscription_ids: Arc<RwLock<Vec<String>>>,
+    redis_client: RedisClient,
 }
 
 impl SongEngineService {
-    pub fn new(event_bus: Arc<dyn GameEventBus>) -> Self {
+    pub fn new(event_bus: Arc<dyn GameEventBus>, redis_client: RedisClient) -> Self {
         Self {
             active_songs: Arc::new(RwLock::new(HashMap::new())),
             symphonies: Arc::new(RwLock::new(HashMap::new())),
             event_bus,
             subscription_ids: Arc::new(RwLock::new(Vec::new())),
+            redis_client,
         }
     }
 
@@ -274,6 +294,59 @@ impl SongEngineService {
         Ok(())
     }
 
+    async fn publish_audio_event(&self, event: AudioEvent) {
+        if let Ok(mut con) = self.redis_client.get_async_connection().await {
+            if let Ok(json) = serde_json::to_string(&event) {
+                let _ : Result<(), _> = redis::cmd("PUBLISH")
+                    .arg("npc:events")
+                    .arg(json)
+                    .query_async(&mut con)
+                    .await;
+            }
+        }
+    }
+
+    async fn generate_dialogue_text(&self, npc_id: &str, _ctx: &PlayerContext) -> String {
+        format!("{} greets you warmly.", npc_id)
+    }
+
+    fn determine_npc_emotion(&self, _npc_id: &str, _ctx: &PlayerContext) -> EmotionalState {
+        EmotionalState::Curious
+    }
+
+    fn get_npc_position(&self, _npc_id: &str) -> nalgebra::Vector3<f32> {
+        nalgebra::Vector3::new(0.0, 0.0, 0.0)
+    }
+
+    pub async fn generate_npc_dialogue(
+        &self,
+        npc_id: &str,
+        player_context: &PlayerContext,
+    ) -> DialogueResponse {
+        let dialogue_text = self.generate_dialogue_text(npc_id, player_context).await;
+        let emotion = self.determine_npc_emotion(npc_id, player_context);
+
+        let audio_event = AudioEvent {
+            id: Uuid::new_v4(),
+            event_type: AudioEventType::CharacterSpeak {
+                character_id: npc_id.to_string(),
+                emotion: emotion.clone(),
+                text: dialogue_text.clone(),
+            },
+            position: Some(self.get_npc_position(npc_id)),
+            source: AudioSource::NPC(npc_id.to_string()),
+            timestamp: chrono::Utc::now().timestamp(),
+        };
+
+        self.publish_audio_event(audio_event.clone()).await;
+
+        DialogueResponse {
+            text: dialogue_text,
+            emotion,
+            audio_stream_id: audio_event.id,
+        }
+    }
+
     pub async fn get_active_songs(&self) -> Vec<ActiveSong> {
         self.active_songs.read().await.values().cloned().collect()
     }
@@ -342,7 +415,8 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // Create service
-    let service = Arc::new(SongEngineService::new(event_bus));
+    let redis_client = RedisClient::open("redis://127.0.0.1/").unwrap();
+    let service = Arc::new(SongEngineService::new(event_bus, redis_client));
 
     // Start event listeners
     service.start_event_listeners().await?;

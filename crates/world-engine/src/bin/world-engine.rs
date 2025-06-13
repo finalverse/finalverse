@@ -2,9 +2,19 @@
 use std::sync::Arc;
 use tokio::time::{interval, Duration};
 use world_engine::{WorldEngine, Observer, WorldEvent, RegionState, RegionId, TerrainType, WeatherState, WeatherType, ecosystem::Species};
+use finalverse_audio_core::{AudioEvent, AudioEventType, AudioSource};
+use nalgebra::Vector3;
+use redis::Client as RedisClient;
+use uuid::Uuid;
+use chrono::Utc;
+use serde_json;
 
 // Example observer for logging events
 struct LoggingObserver;
+
+struct AudioObserver {
+    redis_client: RedisClient,
+}
 
 #[async_trait::async_trait]
 impl Observer for LoggingObserver {
@@ -24,6 +34,41 @@ impl Observer for LoggingObserver {
     }
 }
 
+#[async_trait::async_trait]
+impl Observer for AudioObserver {
+    async fn notify(&self, event: &WorldEvent) {
+        let audio_event_opt = match event {
+            WorldEvent::CelestialEvent { event_type, .. } => Some(AudioEvent {
+                id: uuid::Uuid::new_v4(),
+                event_type: AudioEventType::CelestialEvent { event_name: format!("{:?}", event_type) },
+                position: None,
+                source: AudioSource::World,
+                timestamp: chrono::Utc::now().timestamp(),
+            }),
+            WorldEvent::SilenceOutbreak { epicenter, intensity, .. } => Some(AudioEvent {
+                id: uuid::Uuid::new_v4(),
+                event_type: AudioEventType::AmbientTrigger { trigger_id: "silence_outbreak".to_string(), intensity: *intensity as f32 },
+                position: Some(Vector3::new(epicenter.x as f32, epicenter.y as f32, epicenter.z as f32)),
+                source: AudioSource::Environment("silence".to_string()),
+                timestamp: chrono::Utc::now().timestamp(),
+            }),
+            _ => None,
+        };
+
+        if let Some(audio_event) = audio_event_opt {
+            if let Ok(mut con) = self.redis_client.get_async_connection().await {
+                if let Ok(event_json) = serde_json::to_string(&audio_event) {
+                    let _ : Result<(), _> = redis::cmd("PUBLISH")
+                        .arg("world:events")
+                        .arg(event_json)
+                        .query_async(&mut con)
+                        .await;
+                }
+            }
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
     env_logger::init();
@@ -33,8 +78,10 @@ async fn main() {
     // Create world engine
     let engine = Arc::new(WorldEngine::new());
 
-    // Register observer
+    // Register observers
     engine.register_observer(Arc::new(LoggingObserver)).await;
+    let redis_client = RedisClient::open("redis://127.0.0.1/").unwrap();
+    engine.register_observer(Arc::new(AudioObserver { redis_client })).await;
 
     // Initialize some tests data
     let test_region = RegionState {
