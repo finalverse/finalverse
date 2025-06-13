@@ -1,6 +1,6 @@
 // plugins/greeter-plugin/src/lib.rs
 use async_trait::async_trait;
-use fv_plugin::ServicePlugin;
+use finalverse_plugin::ServicePlugin;
 use service_registry::LocalServiceRegistry;
 use axum::Router as AxumRouter;
 use tonic::transport::server::Router as GrpcRouter;

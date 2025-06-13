@@ -8,7 +8,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use fv_common::{
+use finalverse_core::{
     events::{FinalverseEvent, HarmonyEvent, SongEvent},
     types::{Coordinates, EchoId, Melody, PlayerId, RegionId},
 };
@@ -24,7 +24,7 @@ use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 use reqwest;
-use fv_health::HealthMonitor;
+use finalverse_health::HealthMonitor;
 use service_registry::LocalServiceRegistry;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

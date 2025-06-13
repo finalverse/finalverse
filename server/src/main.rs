@@ -34,7 +34,7 @@ use tokio::{
     time::interval,
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
-use fv_plugin::{discover_plugins, LoadedPlugin};
+use finalverse_plugin::{discover_plugins, LoadedPlugin};
 use service_registry::LocalServiceRegistry;
 mod mesh;
 use finalverse_server::{

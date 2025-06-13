@@ -1,6 +1,6 @@
 use axum::{routing::{get, post}, Router, Json};
 use serde::{Deserialize, Serialize};
-use fv_health::HealthMonitor;
+use finalverse_health::HealthMonitor;
 use service_registry::LocalServiceRegistry;
 use std::{net::SocketAddr, sync::Arc};
 

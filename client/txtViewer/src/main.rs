@@ -5,7 +5,7 @@ pub mod enhanced_client;
 mod tui;
 
 use enhanced_client::EnhancedClient;
-use fv_common::*;
+use finalverse_core::*;
 use serde::{Serialize, Deserialize};
 use finalverse_protocol::*;
 use std::io::{self, Write};

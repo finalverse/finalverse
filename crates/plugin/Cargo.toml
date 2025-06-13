@@ -18,5 +18,5 @@ service-registry.workspace = true
 dynamic = ["libloading"]
 
 [lib]
-name = "fv_plugin"
+name = "finalverse_plugin"
 path = "src/lib.rs"

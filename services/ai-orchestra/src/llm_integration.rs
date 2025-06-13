@@ -1,4 +1,4 @@
-use fv_common::types::PlayerId;
+use finalverse_core::types::PlayerId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

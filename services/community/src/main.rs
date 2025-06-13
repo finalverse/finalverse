@@ -1,5 +1,5 @@
 use axum::Router;
-use fv_health::HealthMonitor;
+use finalverse_health::HealthMonitor;
 use service_registry::LocalServiceRegistry;
 use std::{net::SocketAddr, sync::Arc};
 
