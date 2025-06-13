@@ -8,3 +8,4 @@ serde = { workspace = true, features = ["derive"] }
 uuid = { workspace = true, features = ["v4", "serde"] }
 nalgebra.workspace = true
 tokio = { workspace = true, features = ["full"] }
+
