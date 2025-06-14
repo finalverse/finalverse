@@ -37,7 +37,7 @@ path = "src/main.rs"
 
 [[bin]]
 name = "finalverse-cli"
-path = "src/cli_main.rs"
+path = "src/cli.rs"
 
 [lib]
 name = "finalverse_server"

@@ -1,6 +1,6 @@
 # Finalverse Developer Overview
 
-**Current Release: v0.1.1 – Post‑MVP Development**
+**Current Release: v0.1.2 – for Real Production Development**
 
 Finalverse is an AI‑driven metaverse where players and intelligent agents co‑create persistent worlds. This repository hosts the microservices, CLI client and plugin SDK that power the prototype.
 
@@ -135,7 +135,8 @@ This MVP focuses on the core loop of songweaving, world simulation and AI intera
 
 ## Release History
 
-- **0.1.1** - Updated scripts and Docker support.
+- **0.1.2** - Improved monitoring and WebSocket integration.
+- **0.1.1** - First official release with working setup scripts and Docker deployment.
 - **0.1.0** - Initial proof-of-concept MVP. See `CHANGELOG.md` for details.
 
 ## License

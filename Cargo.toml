@@ -47,7 +47,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Finalverse Team"]
 license = "Copyright Finalverse Inc."
@@ -95,6 +95,7 @@ nalgebra = { version = "0.32", features = ["serde-serialize"] }
 uuid = { version = "1.6", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8"
+sysinfo = { version = "0.30", features = ["process"] }
 
 # Finalverse internal crates
 finalverse-world3d = { path = "crates/world3d" }
