@@ -1,10 +1,11 @@
-// services/first-hour/src/echo_entities.rs
-use finalverse_world3d::{
-    entities::{Entity, EntityType, Mesh, Animation},
-    Position3D, EntityId,
+use crate::{
+    EntityId,
+    Position3D,
+    entities::{Mesh, Material, Animation, AnimationLoop},
 };
-use uuid::Uuid;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+use maplit::hashmap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EchoEntity {

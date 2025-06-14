@@ -10,3 +10,10 @@ finalverse-health.workspace = true
 service-registry.workspace = true
 axum.workspace = true
 tokio.workspace = true
+serde = { workspace = true, features = ["derive"] }
+tracing.workspace = true
+anyhow.workspace = true
+
+[[bin]]
+name = "procedural-gen"
+path = "src/main.rs"

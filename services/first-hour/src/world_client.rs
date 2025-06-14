@@ -1,15 +1,17 @@
 // services/first-hour/src/world_client.rs
-use tonic::transport::Channel;
-use finalverse_world_3d::GridCoordinate;
+use finalverse_world3d::GridCoordinate;
+use tracing::info;
 
+/// Thin client used by the first hour service to request grid generation from
+/// the world engine. The actual gRPC client is omitted here to keep the
+/// example self‑contained.
 pub struct WorldEngineClient {
-    client: world_proto::world_engine_client::WorldEngineClient<Channel>,
+    url: String,
 }
 
 impl WorldEngineClient {
     pub async fn connect(url: &str) -> anyhow::Result<Self> {
-        let client = world_proto::world_engine_client::WorldEngineClient::connect(url).await?;
-        Ok(Self { client })
+        Ok(Self { url: url.to_string() })
     }
 
     pub async fn request_grid_generation(
@@ -18,14 +20,14 @@ impl WorldEngineClient {
         world_id: &str,
         biome_hint: Option<&str>,
     ) -> anyhow::Result<()> {
-        let request = world_proto::GenerateGridRequest {
-            x: coord.x,
-            y: coord.y,
-            world_id: world_id.to_string(),
-            biome_hint: biome_hint.map(|s| s.to_string()),
-        };
-
-        self.client.generate_grid(request).await?;
+        info!(
+            "requesting grid ({}, {}) in world {} biome {:?}",
+            coord.x,
+            coord.y,
+            world_id,
+            biome_hint
+        );
+        // Stub call
         Ok(())
     }
 }

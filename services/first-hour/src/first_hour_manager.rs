@@ -1,7 +1,10 @@
 // services/first-hour/src/first_hour_manager.rs
 use finalverse_world3d::{Position3D, GridCoordinate};
+use std::collections::HashMap;
 use crate::echo_spawner::EchoSpawner;
-use crate::interactive_objects::InteractiveObjectManager;
+use finalverse_world3d::interactive_objects::{
+    InteractiveObjectManager, NPCState, ObjectState, ObjectType as InteractiveType,
+};
 
 pub struct FirstHourSceneManager {
     echo_spawner: EchoSpawner,

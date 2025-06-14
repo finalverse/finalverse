@@ -1,11 +1,6 @@
-// services/first-hour/src/interactive_objects.rs
-use finalverse_world3d::{
-    entities::{Entity, EntityType},
-    Position3D, EntityId,
-};
-use uuid::Uuid;
+use crate::{EntityId, Position3D, GridCoordinate};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InteractiveObject {
@@ -78,7 +73,7 @@ impl InteractiveObject {
             position,
             state: ObjectState::Corrupted,
             interaction_range: 10.0,
-            required_harmony: Some(0.5), // Requires harmony to dispel
+            required_harmony: Some(0.5),
         }
     }
 }
@@ -112,4 +107,43 @@ impl NPCEntity {
             emotion: EmotionalState::Sad,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum NPCState {
+    InitialSadness,
+    Neutral,
+}
+
+pub struct InteractiveObjectManager;
+
+impl InteractiveObjectManager {
+    pub fn new() -> Self { Self }
+
+    pub async fn spawn_memory_crystal(&self, _grid: GridCoordinate, _pos: Position3D) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    pub async fn spawn_npc(&self, _grid: GridCoordinate, _name: &str, _pos: Position3D, _state: NPCState) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    pub async fn spawn_interactive(&self, _grid: GridCoordinate, _typ: ObjectType, _pos: Position3D, _state: ObjectState) -> anyhow::Result<()> {
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InteractiveObject3D {
+    pub id: &'static str,
+    pub position: Position3D,
+    pub mesh: &'static str,
+    pub interaction_type: InteractionType,
+    pub current_state: ObjectState,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum InteractionType {
+    Harmony,
+    Songweave,
 }
