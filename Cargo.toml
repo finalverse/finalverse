@@ -37,7 +37,7 @@ members = [
 #    "crates/plugin",
 #    "crates/protocol",
 #    "crates/wasm-runtime",
-#    "crates/ecosystem",
+#    "crates/metabolism",
 #    "crates/world3d",
     "crates/*",
     
