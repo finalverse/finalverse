@@ -115,6 +115,7 @@ finalverse-config = { path = "crates/config" }
 finalverse-plugin = { path = "crates/plugin" }
 finalverse-wasm-runtime = { path = "crates/wasm-runtime" }
 finalverse-ecosystem = { path = "crates/ecosystem" }
+finalverse-metobolism = { path = "crates/metabolism" }
 
 # QUIC/Networking
 quinn = "0.10"

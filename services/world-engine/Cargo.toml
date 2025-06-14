@@ -16,6 +16,7 @@ path = "src/lib.rs"
 finalverse-world3d.workspace = true
 finalverse-audio-core.workspace = true
 finalverse-ecosystem.workspace = true
+finalverse-metobolism.workspace = true
 redis.workspace = true
 serde_json.workspace = true
 serde = { workspace = true, features = ["derive"] }

@@ -5,6 +5,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
+pub mod simulator;
+pub use simulator::{EcosystemSimulator, EcosystemObserver, EcosystemEvent, SpeciesProfile};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Ecosystem {
     pub region_id: RegionId,

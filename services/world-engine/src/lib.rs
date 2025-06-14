@@ -1,8 +1,7 @@
 // services/world-engine/src/lib.rs
 pub mod grid_generation;
 pub mod world;
-pub mod ecosystem;
-pub mod metabolism;
+
 pub mod server;
 
 use serde::{Deserialize, Serialize};
@@ -12,9 +11,9 @@ use finalverse_core::{RegionId, TerrainType, WeatherType};
 pub use world::{WorldEngine, WorldState, WorldUpdate, WorldTime};
 
 // Re-export other important types
-pub use ecosystem::{EcosystemSimulator, Species};
-pub use metabolism::MetabolismSimulator;
-pub use finalverse_core::{RegionId, TerrainType, WeatherType};
+pub use finalverse_ecosystem::{EcosystemSimulator, Species, SpeciesProfile, MigrationPhase};
+pub use finalverse_metobolism::{MetabolismSimulator, RegionId, RegionState, TerrainType, WeatherState, WeatherType};
+
 
 // Core types that are shared across modules
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -25,24 +24,6 @@ pub struct Coordinates {
     pub x: f64,
     pub y: f64,
     pub z: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RegionState {
-    pub id: RegionId,
-    pub harmony_level: f64,
-    pub discord_level: f64,
-    pub terrain_type: TerrainType,
-    pub weather: WeatherState,
-    pub active_events: Vec<WorldEvent>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WeatherState {
-    pub weather_type: WeatherType,
-    pub intensity: f64,
-    pub wind_direction: f64,
-    pub wind_speed: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
