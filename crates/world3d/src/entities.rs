@@ -57,27 +57,27 @@ pub struct ResonanceScore {
     pub restoration: f32,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Mesh {
     pub model_id: String,
     pub materials: Vec<Material>,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Material {
     pub name: String,
     pub shader: String,
     pub properties: HashMap<String, Vec<f32>>,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Animation {
     pub name: String,
     pub loop_mode: AnimationLoop,
     pub duration: f32,
 }
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum AnimationLoop {
     Once,
     Loop,

@@ -84,29 +84,30 @@ impl TerrainGenerator {
                 let detail = self.detail_noise.get([world_x * 0.01, world_y * 0.01]) as f32;
 
                 // Biome-specific modifications
-                let biome_modifier = match biome {
+                let biome_modifier: f32 = match biome {
                     Biome::WeaversLanding => {
                         // Gentle rolling hills with river valley
-                        let river_distance = ((world_x - world_y).abs() / 100.0).min(1.0);
+                        let river_distance = ((world_x - world_y).abs() / 100.0).min(1.0) as f32;
                         1.0 - (river_distance * 0.3)
-                    },
+                    }
                     Biome::WhisperwoodGrove => {
                         // More varied terrain for forest
                         1.2 + (detail * 0.3)
-                    },
+                    }
                     Biome::MemoryGrotto => {
                         // Bowl-shaped depression
-                        let center_dist = ((world_x - grid_coord.x as f64 * GRID_SIZE as f64 - 128.0).powi(2) +
-                            (world_y - grid_coord.y as f64 * GRID_SIZE as f64 - 128.0).powi(2)).sqrt() / 128.0;
+                        let center_dist = ((world_x - grid_coord.x as f64 * GRID_SIZE as f64 - 128.0).powi(2)
+                            + (world_y - grid_coord.y as f64 * GRID_SIZE as f64 - 128.0).powi(2))
+                            .sqrt() as f32 / 128.0;
                         1.0 - (center_dist * 0.5).min(0.5)
-                    },
+                    }
                     _ => 1.0,
                 };
 
                 // Apply harmony modifications
-                let harmony_modifier = 1.0 + (harmony_level - 0.5) * 0.2;
+                let harmony_modifier = 1.0f32 + (harmony_level - 0.5) * 0.2;
 
-                heightmap[y][x] = (base_height * 30.0 + detail * 5.0) * biome_modifier * harmony_modifier + 50.0;
+                heightmap[y][x] = (base_height * 30.0_f32 + detail * 5.0_f32) * biome_modifier * harmony_modifier + 50.0_f32;
             }
         }
 

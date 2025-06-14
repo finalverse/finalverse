@@ -1,6 +1,4 @@
 pub mod grid_generation;
-pub mod terrain_generator;
-pub mod providence_3d;
 
 // crates/world-engine/src/lib.rs
 use serde::{Deserialize, Serialize};
