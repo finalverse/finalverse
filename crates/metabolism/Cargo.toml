@@ -1,6 +1,6 @@
 # // Shared ecosystem logic
 [package]
-name = "finalverse-ecosystem"
+name = "finalverse-metabolism"
 version.workspace = true
 edition.workspace = true
 

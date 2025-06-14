@@ -11,7 +11,7 @@ license.workspace = true
 # finalverse-world3d = { path = "../../crates/finalverse-world3d" }
 finalverse-world3d.workspace = true
 finalverse-core.workspace = true
-finalverse-ecosystem.workspace = true
+finalverse-metabolism.workspace = true
 tokio = { workspace = true, features = ["full"] }
 serde = { workspace = true, features = ["derive"] }
 uuid = { workspace = true, features = ["v4", "serde"] }
