@@ -28,12 +28,15 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::{broadcast, mpsc, RwLock, Mutex as TokioMutex},
     time::interval,
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
+use futures_util::{StreamExt, SinkExt};
+use sysinfo::{PidExt, ProcessExt, System, SystemExt};
 use finalverse_plugin::{discover_plugins, LoadedPlugin};
 use service_registry::LocalServiceRegistry;
 mod mesh;
@@ -57,7 +60,7 @@ struct Args {
     log_level: String,
     
     #[arg(long)]
-    headless: bool,
+    tui: bool,
 }
 
 
@@ -68,13 +71,14 @@ pub struct ServerManager {
     command_tx: mpsc::UnboundedSender<ServerCommand>,
     command_rx: Arc<TokioMutex<mpsc::UnboundedReceiver<ServerCommand>>>,
     broadcast_tx: broadcast::Sender<ServerResponse>,
+    sys: Arc<Mutex<System>>,
 }
 
 impl ServerManager {
     pub fn new() -> Self {
         let (command_tx, command_rx) = mpsc::unbounded_channel();
         let (broadcast_tx, _) = broadcast::channel(100);
-        
+
         Self {
             services: Arc::new(RwLock::new(HashMap::new())),
             processes: Arc::new(Mutex::new(HashMap::new())),
@@ -82,6 +86,7 @@ impl ServerManager {
             command_tx,
             command_rx: Arc::new(TokioMutex::new(command_rx)),
             broadcast_tx,
+            sys: Arc::new(Mutex::new(System::new_all())),
         }
     }
 
@@ -125,7 +130,7 @@ impl ServerManager {
         Ok(())
     }
 
-    pub async fn start_service(&self, name: &str) -> Result<()> {
+    pub async fn start_service(self: &Arc<Self>, name: &str) -> Result<()> {
         let binary_path = format!("target/release/{}", name);
         
         if !std::path::Path::new(&binary_path).exists() {
@@ -143,12 +148,37 @@ impl ServerManager {
         // Start the process
         let mut cmd = Command::new(&binary_path);
         cmd.env("RUST_LOG", "info");
-        
+        cmd.stdout(std::process::Stdio::piped());
+        cmd.stderr(std::process::Stdio::piped());
+
         match cmd.spawn() {
-            Ok(child) => {
+            Ok(mut child) => {
                 let pid = child.id();
-                
+
                 // Store the process
+                if let Some(stdout) = child.stdout.take() {
+                    let name_clone = name.to_string();
+                    let manager = Arc::clone(self);
+                    tokio::spawn(async move {
+                        let reader = BufReader::new(stdout);
+                        let mut lines = reader.lines();
+                        while let Ok(Some(line)) = lines.next_line().await {
+                            manager.log_event(&name_clone, LogLevel::Info, &line).await;
+                        }
+                    });
+                }
+                if let Some(stderr) = child.stderr.take() {
+                    let name_clone = name.to_string();
+                    let manager = Arc::clone(self);
+                    tokio::spawn(async move {
+                        let reader = BufReader::new(stderr);
+                        let mut lines = reader.lines();
+                        while let Ok(Some(line)) = lines.next_line().await {
+                            manager.log_event(&name_clone, LogLevel::Error, &line).await;
+                        }
+                    });
+                }
+
                 {
                     let mut processes = self.processes.lock().unwrap();
                     processes.insert(name.to_string(), child);
@@ -183,7 +213,7 @@ impl ServerManager {
         }
     }
 
-    pub async fn stop_service(&self, name: &str) -> Result<()> {
+    pub async fn stop_service(self: &Arc<Self>, name: &str) -> Result<()> {
         // Update status to stopping
         {
             let mut services = self.services.write().await;
@@ -222,7 +252,7 @@ impl ServerManager {
         Ok(())
     }
 
-    pub async fn restart_service(&self, name: &str) -> Result<()> {
+    pub async fn restart_service(self: &Arc<Self>, name: &str) -> Result<()> {
         self.stop_service(name).await?;
         tokio::time::sleep(Duration::from_secs(2)).await;
         self.start_service(name).await
@@ -260,20 +290,39 @@ impl ServerManager {
         let _ = self.broadcast_tx.send(ServerResponse::Logs(vec![entry]));
     }
 
-    pub async fn run_command_handler(&self) {
+    pub async fn run_command_handler(self: &Arc<Self>) {
         let command_rx = self.command_rx.clone();
         let services = self.services.clone();
         let broadcast_tx = self.broadcast_tx.clone();
+        let manager = Arc::clone(self);
 
         tokio::spawn(async move {
             let mut rx = command_rx.lock().await;
             while let Some(command) = rx.recv().await {
                 match command {
                     ServerCommand::StartService(name) => {
-                        // Handle start service
+                        if let Err(e) = manager.start_service(&name).await {
+                            let _ = broadcast_tx.send(ServerResponse::Error(e.to_string()));
+                        }
                     }
                     ServerCommand::StopService(name) => {
-                        // Handle stop service
+                        if let Err(e) = manager.stop_service(&name).await {
+                            let _ = broadcast_tx.send(ServerResponse::Error(e.to_string()));
+                        }
+                    }
+                    ServerCommand::RestartService(name) => {
+                        if let Err(e) = manager.restart_service(&name).await {
+                            let _ = broadcast_tx.send(ServerResponse::Error(e.to_string()));
+                        }
+                    }
+                    ServerCommand::GetServiceStatus(name) => {
+                        let info_opt = {
+                            let srv = services.read().await;
+                            srv.get(&name).cloned()
+                        };
+                        if let Some(info) = info_opt {
+                            let _ = broadcast_tx.send(ServerResponse::ServiceStatus(info));
+                        }
                     }
                     ServerCommand::GetAllServices => {
                         let services_vec: Vec<ServiceInfo> = {
@@ -281,6 +330,23 @@ impl ServerManager {
                             services_guard.values().cloned().collect()
                         };
                         let _ = broadcast_tx.send(ServerResponse::AllServices(services_vec));
+                    }
+                    ServerCommand::GetLogs { service, lines } => {
+                        let logs = if let Some(name) = service {
+                            let services_guard = services.read().await;
+                            services_guard
+                                .get(&name)
+                                .map(|s| s.log_lines.iter().rev().take(lines).cloned().collect())
+                                .unwrap_or_default()
+                        } else {
+                            let log_buf = manager.log_buffer.read().await;
+                            log_buf.iter().rev().take(lines).cloned().collect()
+                        };
+                        let _ = broadcast_tx.send(ServerResponse::Logs(logs));
+                    }
+                    ServerCommand::ExecuteCommand(cmd) => {
+                        manager.log_event("server", LogLevel::Info, &format!("execute: {cmd}" )).await;
+                        let _ = broadcast_tx.send(ServerResponse::CommandResult("ok".into()));
                     }
                     _ => {}
                 }
@@ -290,27 +356,40 @@ impl ServerManager {
 
     pub async fn run_health_monitor(&self) {
         let services = self.services.clone();
-        
+        let sys_ref = self.sys.clone();
+
         tokio::spawn(async move {
-            let mut interval = interval(Duration::from_secs(30));
-            
+            let mut interval = interval(Duration::from_secs(5));
+
             loop {
                 interval.tick().await;
-                
-                let services_to_check: Vec<String> = {
+
+                {
+                    let mut sys = sys_ref.lock().unwrap();
+                    sys.refresh_processes();
+                }
+
+                let services_to_check: Vec<(String, Option<u32>, u16)> = {
                     let services_guard = services.read().await;
-                    services_guard.keys().cloned().collect()
+                    services_guard
+                        .values()
+                        .map(|s| (s.name.clone(), s.pid, s.port))
+                        .collect()
                 };
 
-                for service_name in services_to_check {
-                    let port = {
-                        let services_guard = services.read().await;
-                        if let Some(service) = services_guard.get(&service_name) {
-                            service.port
-                        } else {
-                            continue;
+                for (service_name, pid_opt, port) in services_to_check {
+                    // process stats
+                    if let Some(pid) = pid_opt {
+                        let mut sys = sys_ref.lock().unwrap();
+                        if let Some(proc_) = sys.process(sysinfo::Pid::from_u32(pid)) {
+                            if let Ok(mut services_guard) = services.try_write() {
+                                if let Some(info) = services_guard.get_mut(&service_name) {
+                                    info.cpu_usage = proc_.cpu_usage();
+                                    info.memory_usage = proc_.memory();
+                                }
+                            }
                         }
-                    };
+                    }
 
                     // Check health endpoint
                     let health_url = format!("http://localhost:{}/health", port);
@@ -319,13 +398,10 @@ impl ServerManager {
                         Err(_) => false,
                     };
 
-                    // Update health status
-                    {
-                        let mut services_guard = services.write().await;
-                        if let Some(service) = services_guard.get_mut(&service_name) {
-                            service.health_status = is_healthy;
-                            service.last_health_check = Some(Utc::now());
-                        }
+                    let mut services_guard = services.write().await;
+                    if let Some(service) = services_guard.get_mut(&service_name) {
+                        service.health_status = is_healthy;
+                        service.last_health_check = Some(Utc::now());
                     }
                 }
             }
@@ -445,13 +521,23 @@ impl App {
             .split(area);
 
         // Services list
-        let services: Vec<ListItem> = vec![
-            ListItem::new("🌐 websocket-gateway [RUNNING]"),
-            ListItem::new("🚪 api-gateway [RUNNING]"),
-            ListItem::new("🎵 song-engine [RUNNING]"),
-            ListItem::new("🔮 echo-engine [STOPPED]"),
-            ListItem::new("🌍 world-engine [ERROR]"),
-        ];
+        let services_vec: Vec<ServiceInfo> = {
+            let guard = self.server_manager.services.blocking_read();
+            guard.values().cloned().collect()
+        };
+        let services: Vec<ListItem> = services_vec
+            .iter()
+            .map(|s| {
+                let status = match &s.status {
+                    ServiceStatus::Running => "RUNNING",
+                    ServiceStatus::Starting => "STARTING",
+                    ServiceStatus::Stopping => "STOPPING",
+                    ServiceStatus::Stopped => "STOPPED",
+                    ServiceStatus::Error(_) => "ERROR",
+                };
+                ListItem::new(format!("{} [{}]", s.name, status))
+            })
+            .collect();
 
         let services_list = List::new(services)
             .block(Block::default().borders(Borders::ALL).title("Services"))
@@ -461,42 +547,53 @@ impl App {
         f.render_stateful_widget(services_list, chunks[0], &mut self.services_list_state);
 
         // Service details
-        let service_info = Paragraph::new(
-            "Service: websocket-gateway\n\
-             Status: Running\n\
-             PID: 12345\n\
-             Port: 3000\n\
-             Uptime: 2h 15m\n\
-             CPU: 2.3%\n\
-             Memory: 45.2 MB\n\
-             Last Health Check: 2024-01-15 14:30:25\n\
-             Health Status: OK"
-        )
-        .block(Block::default().borders(Borders::ALL).title("Service Details"))
-        .wrap(Wrap { trim: true });
+        let details = if let Some(selected) = self.services_list_state.selected() {
+            services_vec.get(selected).cloned()
+        } else {
+            None
+        };
+        let detail_text = if let Some(s) = details {
+            format!(
+                "Service: {}\nStatus: {:?}\nPID: {}\nPort: {}\nUptime: {}s\nCPU: {:.1}%\nMemory: {} KB\nLast Health Check: {:?}\nHealth Status: {}",
+                s.name,
+                s.status,
+                s.pid.map(|p| p.to_string()).unwrap_or_else(|| "-".into()),
+                s.port,
+                s.uptime.as_secs(),
+                s.cpu_usage,
+                s.memory_usage,
+                s.last_health_check,
+                if s.health_status { "OK" } else { "BAD" }
+            )
+        } else {
+            "No service selected".to_string()
+        };
+
+        let service_info = Paragraph::new(detail_text)
+            .block(Block::default().borders(Borders::ALL).title("Service Details"))
+            .wrap(Wrap { trim: true });
 
         f.render_widget(service_info, chunks[1]);
     }
 
     fn render_logs_tab(&self, f: &mut Frame, area: Rect) {
-        let logs = vec![
-            Line::from(vec![
-                Span::styled("2024-01-15 14:30:15", Style::default().fg(Color::Gray)),
-                Span::raw(" "),
-                Span::styled("INFO", Style::default().fg(Color::Green)),
-                Span::raw(" "),
-                Span::styled("websocket-gateway", Style::default().fg(Color::Cyan)),
-                Span::raw(" Connection established"),
-            ]),
-            Line::from(vec![
-                Span::styled("2024-01-15 14:30:16", Style::default().fg(Color::Gray)),
-                Span::raw(" "),
-                Span::styled("ERROR", Style::default().fg(Color::Red)),
-                Span::raw(" "),
-                Span::styled("song-engine", Style::default().fg(Color::Cyan)),
-                Span::raw(" Failed to connect to database"),
-            ]),
-        ];
+        let logs_vec: Vec<LogEntry> = {
+            let log_buf = self.server_manager.log_buffer.blocking_read();
+            log_buf.iter().rev().take(100).cloned().collect()
+        };
+        let logs: Vec<Line> = logs_vec
+            .iter()
+            .map(|l| {
+                Line::from(vec![
+                    Span::styled(l.timestamp.format("%Y-%m-%d %H:%M:%S").to_string(), Style::default().fg(Color::Gray)),
+                    Span::raw(" "),
+                    Span::styled(format!("{:?}", l.level), Style::default().fg(Color::Green)),
+                    Span::raw(" "),
+                    Span::styled(&l.service, Style::default().fg(Color::Cyan)),
+                    Span::raw(format!(" {}", l.message)),
+                ])
+            })
+            .collect();
 
         let logs_paragraph = Paragraph::new(logs)
             .block(Block::default().borders(Borders::ALL).title("System Logs"))
@@ -512,10 +609,20 @@ impl App {
             .split(area);
 
         // System metrics
+        let (cpu_percent, mem_percent) = {
+            let mut sys = self.server_manager.sys.lock().unwrap();
+            sys.refresh_system();
+            let cpu = sys.global_cpu_info().cpu_usage() as u16;
+            let mem = if sys.total_memory() > 0 {
+                (sys.used_memory() * 100 / sys.total_memory()) as u16
+            } else {0};
+            (cpu, mem)
+        };
+
         let cpu_gauge = Gauge::default()
             .block(Block::default().borders(Borders::ALL).title("CPU Usage"))
             .gauge_style(Style::default().fg(Color::Yellow))
-            .percent(45);
+            .percent(cpu_percent);
 
         f.render_widget(cpu_gauge, chunks[0]);
 
@@ -523,7 +630,7 @@ impl App {
         let memory_gauge = Gauge::default()
             .block(Block::default().borders(Borders::ALL).title("Memory Usage"))
             .gauge_style(Style::default().fg(Color::Blue))
-            .percent(67);
+            .percent(mem_percent);
 
         f.render_widget(memory_gauge, chunks[1]);
     }
@@ -731,27 +838,51 @@ async fn main() -> Result<()> {
         }
     });
 
-    if args.headless {
-        // Run in headless mode (no TUI)
-        println!("🎵 Finalverse Server starting in headless mode on port {}", args.port);
-        futures::future::pending::<()>().await;
-    } else {
-        // Run with TUI
+    if args.tui {
         println!("🎵 Starting Finalverse Server Console...");
 
         let mut app = App::new(Arc::clone(&server_manager));
         app.run().await?;
+    } else {
+        // Run in headless mode
+        println!("🎵 Finalverse Server running on port {}", args.port);
+        futures::future::pending::<()>().await;
     }
 
     Ok(())
 }
 
 async fn handle_client(stream: TcpStream, server_manager: Arc<ServerManager>) -> Result<()> {
-    let ws_stream = accept_async(stream).await?;
+    let mut ws_stream = accept_async(stream).await?;
     println!("📱 New CLI client connected");
 
-    // Handle WebSocket messages for CLI communication
-    // This would implement the protocol for CLI commands
+    let services = {
+        let srv = server_manager.services.read().await;
+        srv.values().cloned().collect::<Vec<_>>()
+    };
+    let init_msg = serde_json::to_string(&ServerResponse::AllServices(services))?;
+    ws_stream.send(Message::Text(init_msg)).await?;
+
+    let mut rx = server_manager.broadcast_tx.subscribe();
+
+    loop {
+        tokio::select! {
+            msg = rx.recv() => {
+                match msg {
+                    Ok(update) => {
+                        let txt = serde_json::to_string(&update)?;
+                        if ws_stream.send(Message::Text(txt)).await.is_err() {
+                            break;
+                        }
+                    },
+                    Err(_) => break,
+                }
+            }
+            result = ws_stream.next() => {
+                if result.is_none() { break; }
+            }
+        }
+    }
 
     Ok(())
 }
