@@ -63,6 +63,10 @@ pub enum WeatherType {
     Rain,
     Storm,
     DissonanceStorm,
+    Snow,
+    Fog,
+    HarmonyStorm,
+    SilenceMist,
 }
 
 impl Default for Coordinates {
