@@ -1,9 +1,22 @@
 // services/realtime-gateway/src/spatial_streaming.rs
 
+use dashmap::DashMap;
+use std::collections::HashSet;
+use finalverse_world3d::{GridCoordinate, Position3D, PlayerId, grid::Grid, entities::{Entity, EntityId}};
+
+pub struct ObjectCache;
+
 pub struct SpatialStreamManager {
     player_positions: DashMap<PlayerId, Position3D>,
     grid_subscribers: DashMap<GridCoordinate, HashSet<PlayerId>>,
     object_cache: ObjectCache,
+}
+
+pub struct StreamUpdate {
+    pub load_grids: Vec<Grid>,
+    pub unload_grids: Vec<GridCoordinate>,
+    pub nearby_entities: Vec<Entity>,
+    pub lod_updates: Vec<(EntityId, u8)>,
 }
 
 impl SpatialStreamManager {
@@ -33,7 +46,25 @@ impl SpatialStreamManager {
     }
 
     fn get_visible_grids(&self, position: Option<Position3D>) -> HashSet<GridCoordinate> {
-        // Return grids within view distance (typically 3x3 grid area)
-        // ...
+        let mut grids = HashSet::new();
+        if let Some(pos) = position {
+            grids.insert(pos.to_grid_coordinate());
+        }
+        grids
+    }
+
+    async fn get_grid_data<'a>(&self, _coords: impl Iterator<Item = &'a GridCoordinate>) -> Vec<Grid> {
+        Vec::new()
+    }
+
+    async fn get_nearby_entities(&self, _pos: Position3D) -> Vec<Entity> {
+        Vec::new()
+    }
+
+    async fn calculate_lod_changes(&self, _pos: Position3D) -> Vec<(EntityId, u8)> {
+        Vec::new()
+    }
+
+    async fn update_grid_subscriptions(&self, _player: PlayerId, _grids: &HashSet<GridCoordinate>) {
     }
 }

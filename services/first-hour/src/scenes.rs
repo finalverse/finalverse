@@ -4,10 +4,8 @@ use finalverse_world3d::{
     entities::Entity,
     Position3D,
 };
-use crate::{
-    echo_entities::{EchoEntity, EchoType},
-    interactive_objects::{InteractiveObject, NPCEntity},
-};
+use finalverse_world3d::echo_entities::{EchoEntity, EchoType};
+use finalverse_world3d::interactive_objects::{InteractiveObject, NPCEntity};
 
 impl super::FirstHourManager {
     pub async fn add_memory_grotto_features(&self, grid: &mut Grid) -> anyhow::Result<()> {

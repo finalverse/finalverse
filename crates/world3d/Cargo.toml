@@ -21,6 +21,7 @@ bincode.workspace = true      # For efficient serialization
 anyhow.workspace = true
 tracing.workspace = true
 redis = { workspace = true, features = ["tokio-comp"] }
+maplit = "1"
 
 [dev-dependencies]
 tokio-test.workspace = true

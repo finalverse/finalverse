@@ -1,10 +1,38 @@
 // services/procedural-gen/src/world3d_generator.rs
 
+// Placeholder subsystems for terrain and structure generation
+pub struct BiomeGenerator;
+pub struct StructureGenerator;
+pub struct CreatureSpawner;
+pub struct ArtifactPlacer;
+
 pub struct World3DGenerator {
     biome_generator: BiomeGenerator,
     structure_generator: StructureGenerator,
     creature_spawner: CreatureSpawner,
     artifact_placer: ArtifactPlacer,
+}
+
+pub struct WorldSong;
+
+pub struct TerrainConfig;
+impl TerrainConfig {
+    pub fn from_world_song(_song: &WorldSong) -> Self { Self }
+}
+
+pub struct BiomeMap;
+
+pub struct Region3D {
+    pub terrain_rules: TerrainConfig,
+    pub biome_distribution: BiomeMap,
+    pub structures: Vec<()>,
+    pub artifacts: Vec<()>,
+    pub spawn_rules: Vec<()>,
+}
+
+pub struct StructureDensity;
+impl StructureDensity {
+    pub fn from_harmony(_h: f32) -> Self { Self }
 }
 
 impl World3DGenerator {
@@ -13,31 +41,18 @@ impl World3DGenerator {
         world_song: &WorldSong,
         region_seed: u64,
     ) -> Region3D {
-        // Generate base terrain features
+        // Placeholder generation logic
         let terrain_config = TerrainConfig::from_world_song(world_song);
-        let biome_map = self.biome_generator.generate_biome_map(
-            region_seed,
-            terrain_config,
-        );
-
-        // Place structures based on biome and harmony
-        let structures = self.structure_generator.place_structures(
-            &biome_map,
-            StructureDensity::from_harmony(0.5), // Default neutral harmony
-        );
-
-        // Add narrative elements
-        let artifacts = self.artifact_placer.place_story_artifacts(
-            &biome_map,
-            world_song.narrative_hints(),
-        );
+        let biome_map = BiomeMap;
+        let structures = Vec::new();
+        let artifacts = Vec::new();
 
         Region3D {
             terrain_rules: terrain_config,
             biome_distribution: biome_map,
             structures,
             artifacts,
-            spawn_rules: self.creature_spawner.generate_spawn_rules(&biome_map),
+            spawn_rules: Vec::new(),
         }
     }
 }

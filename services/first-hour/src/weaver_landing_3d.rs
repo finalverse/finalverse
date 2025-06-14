@@ -1,4 +1,10 @@
 // services/first-hour/src/weaver_landing_3d.rs
+use std::collections::HashMap;
+use maplit::hashmap;
+use finalverse_world3d::{Position3D, GridCoordinate};
+use finalverse_world3d::interactive_objects::{
+    InteractiveObject3D, InteractionType, ObjectState,
+};
 
 pub struct WeaverLanding3D {
     grid_coordinate: GridCoordinate,
@@ -35,3 +41,4 @@ impl WeaverLanding3D {
         }
     }
 }
+

@@ -62,14 +62,7 @@ async fn main() -> anyhow::Result<()> {
     let service = World3DService::new().await?;
     service.initialize_first_hour_world().await?;
 
-    // Start gRPC server
-    let addr = "[::1]:50053".parse()?;
-    info!("World 3D Service listening on {}", addr);
-
-    Server::builder()
-        .add_service(world3d_server::World3DStreamServer::new(service))
-        .serve(addr)
-        .await?;
-
+    info!("World 3D Service initialized");
+    tokio::signal::ctrl_c().await?;
     Ok(())
 }
