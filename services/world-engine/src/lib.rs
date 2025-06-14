@@ -1,8 +1,7 @@
 // services/world-engine/src/lib.rs
 pub mod grid_generation;
 pub mod world;
-pub mod ecosystem;
-pub mod metabolism;
+
 pub mod server;
 
 use serde::{Deserialize, Serialize};
@@ -11,13 +10,10 @@ use serde::{Deserialize, Serialize};
 pub use world::{WorldEngine, WorldState, WorldUpdate, WorldTime};
 
 // Re-export other important types
-pub use ecosystem::{EcosystemSimulator, Species};
-pub use metabolism::MetabolismSimulator;
+pub use finalverse_ecosystem::{EcosystemSimulator, Species, SpeciesProfile, MigrationPhase};
+pub use finalverse_metobolism::{MetabolismSimulator, RegionId, RegionState, TerrainType, WeatherState, WeatherType};
 
 // Core types that are shared across modules
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct RegionId(pub String);
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerId(pub String);
 
@@ -28,42 +24,6 @@ pub struct Coordinates {
     pub z: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RegionState {
-    pub id: RegionId,
-    pub harmony_level: f64,
-    pub discord_level: f64,
-    pub terrain_type: TerrainType,
-    pub weather: WeatherState,
-    pub active_events: Vec<WorldEvent>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum TerrainType {
-    Forest,
-    Desert,
-    Mountain,
-    Ocean,
-    Plains,
-    Corrupted,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WeatherState {
-    pub weather_type: WeatherType,
-    pub intensity: f64,
-    pub wind_direction: f64,
-    pub wind_speed: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum WeatherType {
-    Clear,
-    Cloudy,
-    Rain,
-    Storm,
-    DissonanceStorm,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WorldEvent {
