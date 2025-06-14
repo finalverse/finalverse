@@ -9,3 +9,6 @@ serde = { workspace = true, features = ["derive"] }
 uuid.workspace = true
 rand.workspace = true
 finalverse-core.workspace = true
+tokio.workspace = true
+async-trait = "0.1"
+finalverse-metobolism.workspace = true

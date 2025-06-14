@@ -1,9 +1,30 @@
 // services/world-engine/src/world.rs
 use crate::{
-    RegionId, RegionState, WorldEvent, PlayerAction, ActionType,
-    Observer, ecosystem::EcosystemSimulator, metabolism::MetabolismSimulator,
-    GridCoordinate, Position3D, EchoType, CelestialEventType
+    RegionId, RegionState, WorldEvent, PlayerAction, ActionType, Observer,
+    GridCoordinate, Position3D, EchoType, CelestialEventType, EcosystemSimulator,
+    MetabolismSimulator,
 };
+use finalverse_ecosystem::{EcosystemEvent, EcosystemObserver};
+
+struct EcosystemAdapter {
+    observer: Arc<dyn Observer>,
+}
+
+#[async_trait::async_trait]
+impl EcosystemObserver for EcosystemAdapter {
+    async fn notify(&self, event: &EcosystemEvent) {
+        let world_event = match event {
+            EcosystemEvent::CreatureMigration { species, from, to } => {
+                WorldEvent::CreatureMigration {
+                    species: species.clone(),
+                    from: from.clone(),
+                    to: to.clone(),
+                }
+            }
+        };
+        self.observer.notify(&world_event).await;
+    }
+}
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -83,7 +104,8 @@ impl WorldEngine {
 
     pub async fn register_observer(&self, observer: Arc<dyn Observer>) {
         self.observers.write().await.push(observer.clone());
-        self.ecosystem.register_observer(observer).await;
+        let adapter = Arc::new(EcosystemAdapter { observer });
+        self.ecosystem.register_observer(adapter).await;
     }
 
     pub async fn process_action(&self, action: PlayerAction) {

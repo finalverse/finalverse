@@ -1,7 +1,10 @@
 // crates/world-engine/src/bin/world-engine.rs
 use std::sync::Arc;
 use tokio::time::{interval, Duration};
-use world_engine::{WorldEngine, Observer, WorldEvent, RegionState, RegionId, TerrainType, WeatherState, WeatherType, ecosystem::Species};
+use world_engine::{
+    WorldEngine, Observer, WorldEvent, RegionState, RegionId, TerrainType,
+    WeatherState, WeatherType, Species, SpeciesProfile, MigrationPhase,
+};
 use finalverse_audio_core::{AudioEvent, AudioEventType, AudioSource};
 use nalgebra::Vector3;
 use redis::Client as RedisClient;
@@ -96,15 +99,18 @@ async fn main() {
             wind_direction: 45.0,
             wind_speed: 10.0,
         },
-        active_events: Vec::new(),
     };
 
     engine.metabolism().add_region(test_region).await;
 
     // Add some species
-    let star_deer = Species {
+    let star_deer = SpeciesProfile {
         id: "star-deer".to_string(),
         name: "Star-Horned Deer".to_string(),
+        species: Species::StarHornedStag {
+            herd_size: 3,
+            migration_phase: MigrationPhase::Resting,
+        },
         population: 150,
         migration_pattern: vec![
             RegionId("terra-nova-central".to_string()),

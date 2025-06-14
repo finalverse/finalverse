@@ -1,8 +1,46 @@
-// services/world-engine/src/metabolism.rs
-use crate::{RegionId, RegionState, TerrainType, WeatherType};
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct RegionId(pub String);
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TerrainType {
+    Forest,
+    Desert,
+    Mountain,
+    Ocean,
+    Plains,
+    Corrupted,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum WeatherType {
+    Clear,
+    Cloudy,
+    Rain,
+    Storm,
+    DissonanceStorm,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WeatherState {
+    pub weather_type: WeatherType,
+    pub intensity: f64,
+    pub wind_direction: f64,
+    pub wind_speed: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RegionState {
+    pub id: RegionId,
+    pub harmony_level: f64,
+    pub discord_level: f64,
+    pub terrain_type: TerrainType,
+    pub weather: WeatherState,
+}
 
 pub struct MetabolismSimulator {
     regions: Arc<RwLock<HashMap<RegionId, RegionState>>>,
@@ -21,22 +59,14 @@ impl MetabolismSimulator {
 
     pub async fn simulate_tick(&self) {
         let mut regions = self.regions.write().await;
-
         for (_, region) in regions.iter_mut() {
-            // Natural harmony decay
             region.harmony_level *= 1.0 - self.harmony_decay_rate;
-
-            // Discord spreads if not countered
             if region.discord_level > 0.1 {
                 region.discord_level *= 1.0 + self.discord_spread_rate;
-
-                // Corrupt terrain if discord is too high
                 if region.discord_level > 0.8 {
                     region.terrain_type = TerrainType::Corrupted;
                 }
             }
-
-            // Weather changes based on harmony/discord
             if region.discord_level > 0.5 && rand::random::<f64>() < 0.3 {
                 region.weather.weather_type = WeatherType::DissonanceStorm;
             }
