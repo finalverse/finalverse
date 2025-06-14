@@ -4,6 +4,7 @@ pub mod first_hour_manager;
 pub mod echo_spawner;
 pub mod interactive_objects;
 pub mod world_client;
+pub mod asset_generator;
 
 use finalverse_world3d::{Position3D, GridCoordinate};
 use std::sync::Arc;
