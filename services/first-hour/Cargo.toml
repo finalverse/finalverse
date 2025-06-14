@@ -10,9 +10,11 @@ license.workspace = true
 
 # finalverse-world3d = { path = "../../crates/finalverse-world3d" }
 finalverse-world3d.workspace = true
+finalverse-core.workspace = true
+finalverse-ecosystem.workspace = true
 tokio = { workspace = true, features = ["full"] }
 serde = { workspace = true, features = ["derive"] }
-uuid = { workspace = true, features = ["v4"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
 tracing.workspace = true
 anyhow.workspace = true
 image = "0.24.9"
@@ -20,6 +22,15 @@ serde_json = "1.0.140"
 tracing-subscriber = "0.3.19"
 maplit = "1"
 
+redis = { workspace = true, features = ["tokio-comp"] }
+tonic = "0.10"
+prost = "0.12"
+dashmap = "5.5"
+
 [[bin]]
 name = "first-hour"
 path = "src/main.rs"
+
+[lib]
+name = "first_hour"
+path = "src/lib.rs"

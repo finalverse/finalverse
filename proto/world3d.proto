@@ -1,0 +1,73 @@
+// proto/world_3d.proto
+syntax = "proto3";
+
+package finalverse.world3d;
+
+service World3DService {
+    rpc GenerateGrid(GenerateGridRequest) returns (GenerateGridResponse);
+    rpc SpawnEntity(SpawnEntityRequest) returns (SpawnEntityResponse);
+    rpc UpdateEntityState(UpdateEntityStateRequest) returns (UpdateEntityStateResponse);
+    rpc GetGridData(GetGridDataRequest) returns (GetGridDataResponse);
+}
+
+message GenerateGridRequest {
+    int32 x = 1;
+    int32 y = 2;
+    string world_id = 3;
+    string biome_hint = 4;
+}
+
+message GenerateGridResponse {
+    bool success = 1;
+    string grid_id = 2;
+}
+
+message SpawnEntityRequest {
+    string entity_type = 1;
+    Position3D position = 2;
+    int32 grid_x = 3;
+    int32 grid_y = 4;
+    map<string, string> properties = 5;
+}
+
+message SpawnEntityResponse {
+    string entity_id = 1;
+}
+
+message Position3D {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}
+
+message UpdateEntityStateRequest {
+    string entity_id = 1;
+    string new_state = 2;
+}
+
+message UpdateEntityStateResponse {
+    bool success = 1;
+}
+
+message GetGridDataRequest {
+    int32 x = 1;
+    int32 y = 2;
+}
+
+message GetGridDataResponse {
+    GridData grid_data = 1;
+}
+
+message GridData {
+    int32 x = 1;
+    int32 y = 2;
+    bytes terrain_data = 3;
+    repeated EntityData entities = 4;
+}
+
+message EntityData {
+    string entity_id = 1;
+    string entity_type = 2;
+    Position3D position = 3;
+    map<string, string> properties = 4;
+}

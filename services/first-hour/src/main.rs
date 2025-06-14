@@ -1,5 +1,3 @@
-mod lib;
-
 // services/first-hour/src/main.rs
 use first_hour::{FirstHourService, FirstHourConfig};
 use tracing::info;
@@ -11,7 +9,7 @@ async fn main() -> anyhow::Result<()> {
     info!("Starting First Hour Service...");
 
     let config = FirstHourConfig::from_env();
-    let mut service = FirstHourService::new(config).await?;
+    let service = FirstHourService::new(config).await?;
 
     service.run().await?;
 

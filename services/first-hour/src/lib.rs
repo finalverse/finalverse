@@ -2,16 +2,18 @@
 pub mod scenes;
 pub mod first_hour_manager;
 pub mod echo_spawner;
+pub mod interactive_objects;
 pub mod world_client;
-
-use crate::world_client::WorldEngineClient;
-use crate::first_hour_manager::FirstHourSceneManager;
 
 use finalverse_world3d::{Position3D, GridCoordinate};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-//use first_hour::{first_hour_manager, world_client};
+use tonic::codegen::tokio_stream::StreamExt;
+// Re-export for easier access
+pub use first_hour_manager::FirstHourSceneManager;
+pub use world_client::WorldEngineClient;
 
+#[derive(Clone)]
 pub struct FirstHourConfig {
     pub redis_url: String,
     pub world_engine_url: String,
@@ -19,13 +21,12 @@ pub struct FirstHourConfig {
 }
 
 impl FirstHourConfig {
-    /// Load configuration from environment variables with sensible defaults.
     pub fn from_env() -> Self {
-        let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
-        let world_engine_url = std::env::var("WORLD_ENGINE_URL").unwrap_or_else(|_| "http://localhost:50052".to_string());
         Self {
-            redis_url,
-            world_engine_url,
+            redis_url: std::env::var("REDIS_URL")
+                .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string()),
+            world_engine_url: std::env::var("WORLD_ENGINE_URL")
+                .unwrap_or_else(|_| "http://localhost:50051".to_string()),
             starting_grid: GridCoordinate::new(100, 100),
         }
     }
@@ -35,21 +36,24 @@ pub struct FirstHourService {
     config: FirstHourConfig,
     world_client: WorldEngineClient,
     scene_manager: Arc<RwLock<FirstHourSceneManager>>,
+    redis_client: redis::Client,
 }
 
 impl FirstHourService {
     pub async fn new(config: FirstHourConfig) -> anyhow::Result<Self> {
         let world_client = WorldEngineClient::connect(&config.world_engine_url).await?;
         let scene_manager = Arc::new(RwLock::new(FirstHourSceneManager::new()));
+        let redis_client = redis::Client::open(config.redis_url.clone())?;
 
         Ok(Self {
             config,
             world_client,
             scene_manager,
+            redis_client,
         })
     }
 
-    pub async fn run(&mut self) -> anyhow::Result<()> {
+    pub async fn run(&self) -> anyhow::Result<()> {
         // Initialize first hour scenes
         self.initialize_scenes().await?;
 
@@ -61,7 +65,7 @@ impl FirstHourService {
         Ok(())
     }
 
-    async fn initialize_scenes(&mut self) -> anyhow::Result<()> {
+    async fn initialize_scenes(&self) -> anyhow::Result<()> {
         let mut manager = self.scene_manager.write().await;
 
         // Request world-engine to generate the first hour grids
@@ -72,11 +76,9 @@ impl FirstHourService {
         ];
 
         for grid in grids {
-            self.world_client.request_grid_generation(
-                grid,
-                "terra_nova",
-                Some("first_hour_biome")
-            ).await?;
+            // For now, we'll just prepare the scenes
+            // In production, this would communicate with world-engine
+            tracing::info!("Preparing grid {:?}", grid);
         }
 
         // Set up specific first hour entities
@@ -88,8 +90,53 @@ impl FirstHourService {
     }
 
     async fn start_event_listeners(&self) -> anyhow::Result<()> {
-        // Placeholder for future integration with a message bus or websocket
-        // events from the client.
+        // Start Redis event listener for player actions
+        let scene_manager = self.scene_manager.clone();
+        let redis_client = self.redis_client.clone();
+
+        tokio::spawn(async move {
+            if let Err(e) = Self::listen_for_events(redis_client, scene_manager).await {
+                tracing::error!("Event listener error: {}", e);
+            }
+        });
+
         Ok(())
     }
+
+    async fn listen_for_events(
+        redis_client: redis::Client,
+        scene_manager: Arc<RwLock<FirstHourSceneManager>>,
+    ) -> anyhow::Result<()> {
+        use redis::AsyncCommands;
+
+        let mut con = redis_client.get_async_connection().await?;
+        let mut pubsub = con.into_pubsub();
+
+        pubsub.subscribe("first_hour:events").await?;
+
+        let mut stream = pubsub.into_on_message();
+
+        while let Some(msg) = stream.next().await {
+            // Process events
+            let payload: String = msg.get_payload()?;
+            tracing::debug!("Received event: {}", payload);
+
+            // Parse and handle events
+            if let Ok(event) = serde_json::from_str::<PlayerEvent>(&payload) {
+                let mut manager = scene_manager.write().await;
+                if let Err(e) = manager.handle_player_event(event).await {
+                    tracing::error!("Error handling event: {}", e);
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct PlayerEvent {
+    pub event_type: String,
+    pub player_id: String,
+    pub data: serde_json::Value,
 }
