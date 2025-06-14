@@ -1,4 +1,4 @@
-use crate::types::{Coordinates, EchoId, Melody, PlayerId, RegionId};
+use crate::types::{Coordinates, EchoId, Melody, PlayerId, RegionId, WeatherType};
 use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 
@@ -178,17 +178,6 @@ pub enum CelestialEventType {
     StarWhaleVisit,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum WeatherType {
-    Clear,
-    Cloudy,
-    Rain,
-    Storm,
-    Snow,
-    Fog,
-    HarmonyStorm, // Special Finalverse weather
-    SilenceMist,  // Corruption weather
-}
 
 impl FinalverseEvent {
     pub fn timestamp(&self) -> &DateTime<Utc> {
