@@ -12,7 +12,7 @@ pub use world::{WorldEngine, WorldState, WorldUpdate, WorldTime};
 
 // Re-export other important types
 pub use finalverse_ecosystem::{EcosystemSimulator, Species, SpeciesProfile, MigrationPhase};
-pub use finalverse_metobolism::{MetabolismSimulator, RegionId, RegionState, TerrainType, WeatherState, WeatherType};
+pub use finalverse_metobolism::{MetabolismSimulator, RegionState, WeatherState};
 
 
 // Core types that are shared across modules

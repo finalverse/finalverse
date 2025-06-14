@@ -3,27 +3,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct RegionId(pub String);
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum TerrainType {
-    Forest,
-    Desert,
-    Mountain,
-    Ocean,
-    Plains,
-    Corrupted,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum WeatherType {
-    Clear,
-    Cloudy,
-    Rain,
-    Storm,
-    DissonanceStorm,
-}
+// Use shared domain types from finalverse-core
+pub use finalverse_core::{RegionId, TerrainType, WeatherType};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WeatherState {

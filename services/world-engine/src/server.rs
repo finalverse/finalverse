@@ -11,11 +11,12 @@ pub async fn region_handler(
     id: String,
     engine: Arc<WorldEngine>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
-    if let Some(region) = engine.metabolism().get_region(&RegionId(id)).await {
-        Ok(warp::reply::json(&region))
-    } else {
-        Ok(warp::reply::json(&serde_json::json!({"error": "Region not found"})))
+    if let Ok(uuid) = uuid::Uuid::parse_str(&id) {
+        if let Some(region) = engine.metabolism().get_region(&RegionId(uuid)).await {
+            return Ok(warp::reply::json(&region));
+        }
     }
+    Ok(warp::reply::json(&serde_json::json!({"error": "Region not found"})))
 }
 
 pub async fn action_handler(
