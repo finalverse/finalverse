@@ -5,6 +5,7 @@ pub mod world;
 pub mod server;
 
 use serde::{Deserialize, Serialize};
+use finalverse_core::{RegionId, TerrainType, WeatherType};
 
 // Re-export the main types from world module
 pub use world::{WorldEngine, WorldState, WorldUpdate, WorldTime};
@@ -12,6 +13,7 @@ pub use world::{WorldEngine, WorldState, WorldUpdate, WorldTime};
 // Re-export other important types
 pub use finalverse_ecosystem::{EcosystemSimulator, Species, SpeciesProfile, MigrationPhase};
 pub use finalverse_metobolism::{MetabolismSimulator, RegionId, RegionState, TerrainType, WeatherState, WeatherType};
+
 
 // Core types that are shared across modules
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,7 +25,6 @@ pub struct Coordinates {
     pub y: f64,
     pub z: f64,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WorldEvent {

@@ -54,6 +54,25 @@ pub struct RegionState {
     pub corruption_level: f32,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TerrainType {
+    Forest,
+    Desert,
+    Mountain,
+    Ocean,
+    Plains,
+    Corrupted,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum WeatherType {
+    Clear,
+    Cloudy,
+    Rain,
+    Storm,
+    DissonanceStorm,
+}
+
 impl Default for Coordinates {
     fn default() -> Self {
         Self {
