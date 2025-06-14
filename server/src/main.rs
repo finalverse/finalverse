@@ -23,15 +23,15 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, VecDeque},
     io,
-    process::{Child, Command},
     sync::{Arc, Mutex},
     thread,
     time::{Duration, Instant},
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::{Command, Child};
 use tokio::{
     net::{TcpListener, TcpStream},
-    sync::{broadcast, mpsc, RwLock, Mutex as TokioMutex},
+    sync::{broadcast, mpsc, RwLock},
     time::interval,
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
@@ -69,7 +69,7 @@ pub struct ServerManager {
     processes: Arc<Mutex<HashMap<String, Child>>>,
     log_buffer: Arc<RwLock<VecDeque<LogEntry>>>,
     command_tx: mpsc::UnboundedSender<ServerCommand>,
-    command_rx: Arc<TokioMutex<mpsc::UnboundedReceiver<ServerCommand>>>,
+    command_rx: Mutex<Option<mpsc::UnboundedReceiver<ServerCommand>>>,
     broadcast_tx: broadcast::Sender<ServerResponse>,
     sys: Arc<Mutex<System>>,
 }
@@ -84,9 +84,9 @@ impl ServerManager {
             processes: Arc::new(Mutex::new(HashMap::new())),
             log_buffer: Arc::new(RwLock::new(VecDeque::with_capacity(10000))),
             command_tx,
-            command_rx: Arc::new(TokioMutex::new(command_rx)),
+            command_rx: Mutex::new(Some(command_rx)),
             broadcast_tx,
-            sys: Arc::new(Mutex::new(System::new_all())),
+            sys: Arc::new(Mutex::new(System::new())),
         }
     }
 
@@ -291,13 +291,15 @@ impl ServerManager {
     }
 
     pub async fn run_command_handler(self: &Arc<Self>) {
-        let command_rx = self.command_rx.clone();
+        let mut rx = {
+            let mut opt = self.command_rx.lock().unwrap();
+            opt.take().expect("command handler already running")
+        };
         let services = self.services.clone();
         let broadcast_tx = self.broadcast_tx.clone();
         let manager = Arc::clone(self);
 
         tokio::spawn(async move {
-            let mut rx = command_rx.lock().await;
             while let Some(command) = rx.recv().await {
                 match command {
                     ServerCommand::StartService(name) => {
@@ -366,7 +368,7 @@ impl ServerManager {
 
                 {
                     let mut sys = sys_ref.lock().unwrap();
-                    sys.refresh_processes();
+                    sys.refresh_all();
                 }
 
                 let services_to_check: Vec<(String, Option<u32>, u16)> = {
@@ -611,11 +613,11 @@ impl App {
         // System metrics
         let (cpu_percent, mem_percent) = {
             let mut sys = self.server_manager.sys.lock().unwrap();
-            sys.refresh_system();
+            sys.refresh_all();
             let cpu = sys.global_cpu_info().cpu_usage() as u16;
             let mem = if sys.total_memory() > 0 {
                 (sys.used_memory() * 100 / sys.total_memory()) as u16
-            } else {0};
+            } else { 0 };
             (cpu, mem)
         };
 
