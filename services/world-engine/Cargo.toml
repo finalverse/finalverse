@@ -23,6 +23,7 @@ rand.workspace = true
 chrono.workspace = true
 uuid.workspace = true
 nalgebra.workspace = true
+finalverse-core.workspace = true
 async-trait = "0.1.88"
 tokio.workspace = true
 warp = "0.3.7"

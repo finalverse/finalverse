@@ -6,6 +6,7 @@ pub mod metabolism;
 pub mod server;
 
 use serde::{Deserialize, Serialize};
+use finalverse_core::{RegionId, TerrainType, WeatherType};
 
 // Re-export the main types from world module
 pub use world::{WorldEngine, WorldState, WorldUpdate, WorldTime};
@@ -13,11 +14,9 @@ pub use world::{WorldEngine, WorldState, WorldUpdate, WorldTime};
 // Re-export other important types
 pub use ecosystem::{EcosystemSimulator, Species};
 pub use metabolism::MetabolismSimulator;
+pub use finalverse_core::{RegionId, TerrainType, WeatherType};
 
 // Core types that are shared across modules
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct RegionId(pub String);
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerId(pub String);
 
@@ -39,30 +38,11 @@ pub struct RegionState {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum TerrainType {
-    Forest,
-    Desert,
-    Mountain,
-    Ocean,
-    Plains,
-    Corrupted,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WeatherState {
     pub weather_type: WeatherType,
     pub intensity: f64,
     pub wind_direction: f64,
     pub wind_speed: f64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum WeatherType {
-    Clear,
-    Cloudy,
-    Rain,
-    Storm,
-    DissonanceStorm,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

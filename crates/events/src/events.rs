@@ -1,14 +1,12 @@
 // crates/events/src/events.rs
 use serde::{Deserialize, Serialize};
+use finalverse_core::{RegionId, TerrainType, WeatherType};
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 // Player types
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct PlayerId(pub String);
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RegionId(pub String);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Coordinates {
@@ -110,24 +108,6 @@ pub enum RegionChange {
     TerrainChanged(TerrainType),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum WeatherType {
-    Clear,
-    Cloudy,
-    Rain,
-    Storm,
-    DissonanceStorm,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum TerrainType {
-    Forest,
-    Desert,
-    Mountain,
-    Ocean,
-    Plains,
-    Corrupted,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CelestialEventType {
