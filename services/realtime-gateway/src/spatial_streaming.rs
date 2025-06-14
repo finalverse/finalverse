@@ -2,7 +2,8 @@
 
 use dashmap::DashMap;
 use std::collections::HashSet;
-use finalverse_world3d::{GridCoordinate, Position3D, PlayerId, grid::Grid, entities::{Entity, EntityId}};
+use finalverse_world3d::{GridCoordinate, Position3D, PlayerId, grid::Grid, entities::Entity};
+use finalverse_world3d::EntityId;
 
 pub struct ObjectCache;
 

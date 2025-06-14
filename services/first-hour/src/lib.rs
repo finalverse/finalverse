@@ -2,7 +2,7 @@
 pub mod scenes;
 pub mod first_hour_manager;
 pub mod echo_spawner;
-mod world_client;
+pub mod world_client;
 
 use world_client::WorldEngineClient;
 use first_hour_manager::FirstHourSceneManager;
@@ -10,6 +10,9 @@ use first_hour_manager::FirstHourSceneManager;
 use finalverse_world3d::{Position3D, GridCoordinate};
 use std::sync::Arc;
 use tokio::sync::RwLock;
+//use first_hour::first_hour_manager::FirstHourSceneManager;
+//use first_hour::world_client::WorldEngineClient;
+//use first_hour::{first_hour_manager, world_client};
 
 pub struct FirstHourConfig {
     pub redis_url: String,
@@ -48,7 +51,7 @@ impl FirstHourService {
         })
     }
 
-    pub async fn run(&self) -> anyhow::Result<()> {
+    pub async fn run(&mut self) -> anyhow::Result<()> {
         // Initialize first hour scenes
         self.initialize_scenes().await?;
 
@@ -60,7 +63,7 @@ impl FirstHourService {
         Ok(())
     }
 
-    async fn initialize_scenes(&self) -> anyhow::Result<()> {
+    async fn initialize_scenes(&mut self) -> anyhow::Result<()> {
         let mut manager = self.scene_manager.write().await;
 
         // Request world-engine to generate the first hour grids
