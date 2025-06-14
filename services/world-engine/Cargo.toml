@@ -8,6 +8,10 @@ edition.workspace = true
 name = "world-engine"
 path = "src/main.rs"
 
+[lib]
+name = "world_engine"
+path = "src/lib.rs"
+
 [dependencies]
 finalverse-world3d.workspace = true
 finalverse-audio-core.workspace = true

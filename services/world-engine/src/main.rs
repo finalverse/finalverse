@@ -29,7 +29,8 @@ impl Observer for LoggingObserver {
             WorldEvent::SilenceOutbreak { epicenter, radius, intensity } => {
                 println!("🌑 Silence outbreak at ({:.2}, {:.2}, {:.2}), radius: {:.2}, intensity: {:.2}",
                          epicenter.x, epicenter.y, epicenter.z, radius, intensity);
-            }
+            },
+            &WorldEvent::HarmonyRestored { .. } | &WorldEvent::SilenceManifested { .. } | &WorldEvent::EchoAppeared { .. } => todo!()
         }
     }
 }
@@ -127,7 +128,7 @@ async fn main() {
     });
 
     // Start HTTP server
-    let routes = world_engine::create_routes(engine);
+    let routes = world_engine::server::create_routes(engine);
 
     println!("🚀 World Engine HTTP API starting on port 3002");
     warp::serve(routes)

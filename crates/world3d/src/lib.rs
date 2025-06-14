@@ -8,6 +8,7 @@ pub mod spatial;
 pub mod interactive_objects;
 pub mod echo_entities;
 pub mod assets;
+mod terrain_generator;
 
 use serde::{Deserialize, Serialize};
 use nalgebra::{Vector3, Point3};

@@ -3,21 +3,23 @@
 resolver = "2"
 members = [
     # Core Services
-    "services/api-gateway",
-    "services/asset-service",
-    "services/community",
-    "services/echo-engine",
-    "services/first-hour",
-    "services/harmony-service",
-    "services/realtime-gateway",
-    "services/service-registry",
-    "services/silence-service",
-    "services/song-engine",
-    "services/story-engine",
-    "services/symphony-engine",
-    "services/websocket-gateway",
-    "services/world-engine",
-    "services/world3d-service",
+#    "services/api-gateway",
+#    "services/asset-service",
+#    "services/community",
+#    "services/echo-engine",
+#    "services/first-hour",
+#    "services/harmony-service",
+#    "services/realtime-gateway",
+#    "services/service-registry",
+#    "services/silence-service",
+#    "services/song-engine",
+#    "services/story-engine",
+#    "services/symphony-engine",
+#    "services/websocket-gateway",
+#    "services/world-engine",
+#    "services/world3d-service",
+    "services/*",
+
     "plugins/greeter-plugin",
     
     # AI Infrastructure
@@ -26,17 +28,18 @@ members = [
     "services/procedural-gen",
     
     # Shared Libraries
-    "crates/ai-common",
-    "crates/audio-core",
-    "crates/config",
-    "crates/core",
-    "crates/events",
-    "crates/health",
-    "crates/plugin",
-    "crates/protocol",
-    "crates/wasm-runtime",
-    "crates/ecosystem",
-    "crates/world3d",
+#    "crates/ai-common",
+#    "crates/audio-core",
+#    "crates/config",
+#    "crates/core",
+#    "crates/events",
+#    "crates/health",
+#    "crates/plugin",
+#    "crates/protocol",
+#    "crates/wasm-runtime",
+#    "crates/ecosystem",
+#    "crates/world3d",
+    "crates/*",
     
     # Client
     "client/txtViewer",
@@ -105,6 +108,7 @@ finalverse-health = { path = "crates/health" }
 finalverse-protocol = { path = "crates/protocol" }
 finalverse-ai-common = { path = "crates/ai-common" }
 service-registry = { path = "services/service-registry" }
+world-engine = { path = "services/world-engine" }
 finalverse-events = { path = "crates/events" }
 finalverse-server = { path = "server" }
 finalverse-config = { path = "crates/config" }
