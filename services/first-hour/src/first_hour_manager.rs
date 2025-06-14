@@ -1,5 +1,5 @@
 // services/first-hour/src/first_hour_manager.rs
-use finalverse_world3d::{Position3D, GridCoordinate};
+use finalverse_world3d::{grid::Grid, Position3D, GridCoordinate};
 use std::collections::HashMap;
 use crate::echo_spawner::EchoSpawner;
 use finalverse_world3d::interactive_objects::{
@@ -9,6 +9,8 @@ use finalverse_world3d::interactive_objects::{
 pub struct FirstHourSceneManager {
     echo_spawner: EchoSpawner,
     object_manager: InteractiveObjectManager,
+    /// In-memory representation of the tutorial grids keyed by scene name
+    pub(crate) scene_grids: HashMap<String, Grid>,
     scene_states: HashMap<String, SceneState>,
 }
 
@@ -17,6 +19,7 @@ impl FirstHourSceneManager {
         Self {
             echo_spawner: EchoSpawner::new(),
             object_manager: InteractiveObjectManager::new(),
+            scene_grids: HashMap::new(),
             scene_states: HashMap::new(),
         }
     }

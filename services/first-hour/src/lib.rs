@@ -4,14 +4,12 @@ pub mod first_hour_manager;
 pub mod echo_spawner;
 pub mod world_client;
 
-use world_client::WorldEngineClient;
-use first_hour_manager::FirstHourSceneManager;
+use crate::world_client::WorldEngineClient;
+use crate::first_hour_manager::FirstHourSceneManager;
 
 use finalverse_world3d::{Position3D, GridCoordinate};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-//use first_hour::first_hour_manager::FirstHourSceneManager;
-//use first_hour::world_client::WorldEngineClient;
 //use first_hour::{first_hour_manager, world_client};
 
 pub struct FirstHourConfig {

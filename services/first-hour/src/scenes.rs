@@ -6,10 +6,11 @@ use finalverse_world3d::{
 };
 use finalverse_world3d::echo_entities::{EchoEntity, EchoType};
 use finalverse_world3d::interactive_objects::{InteractiveObject, NPCEntity};
+use crate::first_hour_manager::FirstHourSceneManager;
 
 // The scene helper methods are defined on `FirstHourSceneManager`,
 // which manages the state and entity placement for the tutorial hour.
-impl super::FirstHourSceneManager {
+impl FirstHourSceneManager {
     pub async fn add_memory_grotto_features(&self, grid: &mut Grid) -> anyhow::Result<()> {
         // Central pool with ethereal water
         let pool_center = Position3D::new(128.0, 128.0, 50.0);

@@ -11,7 +11,7 @@ async fn main() -> anyhow::Result<()> {
     info!("Starting First Hour Service...");
 
     let config = FirstHourConfig::from_env();
-    let service = FirstHourService::new(config).await?;
+    let mut service = FirstHourService::new(config).await?;
 
     service.run().await?;
 
