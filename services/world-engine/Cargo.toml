@@ -1,3 +1,4 @@
+# // Manages the living world simulation
 [package]
 name = "world-engine"
 version.workspace = true
@@ -8,7 +9,9 @@ name = "world-engine"
 path = "src/main.rs"
 
 [dependencies]
+finalverse-world3d.workspace = true
 finalverse-audio-core.workspace = true
+finalverse-ecosystem.workspace = true
 redis.workspace = true
 serde_json.workspace = true
 serde = { workspace = true, features = ["derive"] }
@@ -20,4 +23,5 @@ async-trait = "0.1.88"
 tokio.workspace = true
 warp = "0.3.7"
 env_logger = "0.11.8"
+anyhow = "1.0.98"
 

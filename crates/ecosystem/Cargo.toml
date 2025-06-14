@@ -1,3 +1,4 @@
+# // Shared ecosystem logic
 [package]
 name = "finalverse-ecosystem"
 version.workspace = true

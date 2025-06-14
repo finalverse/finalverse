@@ -1,3 +1,4 @@
+# // Common types
 [package]
 name = "finalverse-core"
 version.workspace = true

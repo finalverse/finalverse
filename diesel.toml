@@ -1,0 +1,10 @@
+# File: diesel.toml
+# Path: finalverse/diesel.toml
+# Description: Diesel ORM configuration for database migrations.
+#              Points to the correct migration directory structure.
+
+[print_schema]
+file = "crates/core/src/database/schema.rs"
+
+[migrations_directory]
+dir = "migrations"

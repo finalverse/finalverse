@@ -7,6 +7,7 @@ members = [
     "services/asset-service",
     "services/community",
     "services/echo-engine",
+    "services/first-hour",
     "services/harmony-service",
     "services/realtime-gateway",
     "services/service-registry",
@@ -14,8 +15,9 @@ members = [
     "services/song-engine",
     "services/story-engine",
     "services/symphony-engine",
-    "services/world-engine",
     "services/websocket-gateway",
+    "services/world-engine",
+    "services/world3d-service",
     "plugins/greeter-plugin",
     
     # AI Infrastructure
@@ -34,6 +36,7 @@ members = [
     "crates/protocol",
     "crates/wasm-runtime",
     "crates/ecosystem",
+    "crates/world3d",
     
     # Client
     "client/txtViewer",
@@ -94,6 +97,7 @@ chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8"
 
 # Finalverse internal crates
+finalverse-world3d = { path = "crates/world3d" }
 finalverse-audio-core = { path = "crates/audio-core" }
 finalverse-core = { path = "crates/core" }
 finalverse-health = { path = "crates/health" }
@@ -130,5 +134,11 @@ tokio-test = "0.4"
 warp = "0.3"
 libloading = "0.7"
 wasmtime = "13"
+
+# 3d-world
+dashmap = "5.5"
+noise = "0.8"  # For terrain generation
+image = "0.24"  # For heightmap export
+bincode = "1.3"  # For efficient serialization
 
 

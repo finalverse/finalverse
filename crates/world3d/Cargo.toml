@@ -1,0 +1,26 @@
+# // crates/world3d/Cargo.toml
+# // Core 3D types and algorithms
+[package]
+name = "finalverse-world3d"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+nalgebra.workspace = true
+serde = { workspace = true, features = ["derive"] }
+tokio = { workspace = true, features = ["full"] }
+tonic.workspace = true
+prost.workspace = true
+uuid = { workspace = true, features = ["v4", "serde"] }
+dashmap.workspace = true
+noise.workspace = true        # For terrain generation
+image.workspace = true      # For heightmap export
+bincode.workspace = true      # For efficient serialization
+anyhow.workspace = true
+tracing.workspace = true
+redis = { workspace = true, features = ["tokio-comp"] }
+
+[dev-dependencies]
+tokio-test.workspace = true
