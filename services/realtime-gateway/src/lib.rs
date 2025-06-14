@@ -1,3 +1,5 @@
+pub mod spatial_streaming;
+
 use axum::extract::ws::WebSocket;
 use std::future::Future;
 
