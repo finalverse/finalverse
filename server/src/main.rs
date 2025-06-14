@@ -23,12 +23,12 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, VecDeque},
     io,
-    process::{Child, Command},
     sync::{Arc, Mutex},
     thread,
     time::{Duration, Instant},
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::{Command, Child};
 use tokio::{
     net::{TcpListener, TcpStream},
     sync::{broadcast, mpsc, RwLock, Mutex as TokioMutex},
@@ -86,7 +86,7 @@ impl ServerManager {
             command_tx,
             command_rx: Arc::new(TokioMutex::new(command_rx)),
             broadcast_tx,
-            sys: Arc::new(Mutex::new(System::new_all())),
+            sys: Arc::new(Mutex::new(System::new())),
         }
     }
 
@@ -366,7 +366,7 @@ impl ServerManager {
 
                 {
                     let mut sys = sys_ref.lock().unwrap();
-                    sys.refresh_processes();
+                    sys.refresh_all();
                 }
 
                 let services_to_check: Vec<(String, Option<u32>, u16)> = {
@@ -611,11 +611,11 @@ impl App {
         // System metrics
         let (cpu_percent, mem_percent) = {
             let mut sys = self.server_manager.sys.lock().unwrap();
-            sys.refresh_system();
+            sys.refresh_all();
             let cpu = sys.global_cpu_info().cpu_usage() as u16;
             let mem = if sys.total_memory() > 0 {
                 (sys.used_memory() * 100 / sys.total_memory()) as u16
-            } else {0};
+            } else { 0 };
             (cpu, mem)
         };
 

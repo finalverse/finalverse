@@ -26,6 +26,7 @@ redis = { workspace = true, features = ["tokio-comp"] }
 tonic = "0.10"
 prost = "0.12"
 dashmap = "5.5"
+sysinfo.workspace = true
 
 [[bin]]
 name = "first-hour"
