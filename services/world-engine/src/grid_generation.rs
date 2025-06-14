@@ -4,7 +4,22 @@ use finalverse_world3d::{
     grid::Grid,
     GridCoordinate,
 };
-use ecosystem::MetabolismState;
+use anyhow::Result;
+
+/// Basic metabolic information for a region
+#[derive(Debug, Clone, Copy)]
+pub struct MetabolismState {
+    pub harmony_level: f32,
+}
+
+/// Mock tracker providing metabolism data
+pub struct MetabolismTracker;
+
+impl MetabolismTracker {
+    pub async fn get_region_state(&self, _coord: GridCoordinate) -> Result<MetabolismState> {
+        Ok(MetabolismState { harmony_level: 0.5 })
+    }
+}
 
 pub struct GridGenerationService {
     terrain_generator: TerrainGenerator,
@@ -17,7 +32,7 @@ impl GridGenerationService {
         coord: GridCoordinate,
         world_id: &str,
         biome_hint: Option<&str>,
-    ) -> anyhow::Result<Grid> {
+    ) -> Result<Grid> {
         // Get current metabolism state for the region
         let metabolism = self.metabolism_tracker.get_region_state(coord).await?;
 
@@ -44,7 +59,11 @@ impl GridGenerationService {
             (100, 100) => Biome::MemoryGrotto,
             (101, 101) => Biome::WeaversLanding,
             (102, 101) => Biome::WhisperwoodGrove,
-            _ => Biome::Default,
+            _ => Biome::Other,
         }
+    }
+
+    fn determine_biome_from_world(&self, _world_id: &str, _coord: GridCoordinate) -> Biome {
+        Biome::Other
     }
 }
