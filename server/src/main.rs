@@ -36,7 +36,7 @@ use tokio::{
 };
 use tokio_tungstenite::{accept_async, tungstenite::Message};
 use futures_util::{StreamExt, SinkExt};
-use sysinfo::{PidExt, ProcessExt, System, SystemExt};
+use sysinfo::{Pid, Process, System};
 use finalverse_plugin::{discover_plugins, LoadedPlugin};
 use service_registry::LocalServiceRegistry;
 mod mesh;
@@ -68,15 +68,16 @@ pub struct ServerManager {
     services: Arc<RwLock<HashMap<String, ServiceInfo>>>,
     processes: Arc<Mutex<HashMap<String, Child>>>,
     log_buffer: Arc<RwLock<VecDeque<LogEntry>>>,
-    command_tx: mpsc::UnboundedSender<ServerCommand>,
-    command_rx: Mutex<Option<mpsc::UnboundedReceiver<ServerCommand>>>,
+    command_tx: mpsc::Sender<ServerCommand>,
+    command_rx: Mutex<Option<mpsc::Receiver<ServerCommand>>>,
     broadcast_tx: broadcast::Sender<ServerResponse>,
     sys: Arc<Mutex<System>>,
 }
 
 impl ServerManager {
     pub fn new() -> Self {
-        let (command_tx, command_rx) = mpsc::unbounded_channel();
+        // Use a bounded channel so the receiver can be sent across threads
+        let (command_tx, command_rx) = mpsc::channel(100);
         let (broadcast_tx, _) = broadcast::channel(100);
 
         Self {
@@ -153,7 +154,7 @@ impl ServerManager {
 
         match cmd.spawn() {
             Ok(mut child) => {
-                let pid = child.id();
+                let pid = Some(child.id());
 
                 // Store the process
                 if let Some(stdout) = child.stdout.take() {
@@ -189,11 +190,12 @@ impl ServerManager {
                     let mut services = self.services.write().await;
                     if let Some(service) = services.get_mut(name) {
                         service.status = ServiceStatus::Running;
-                        service.pid = Some(pid);
+                        // `pid` is already an `Option<u32>`
+                        service.pid = pid;
                     }
                 }
 
-                self.log_event(name, LogLevel::Info, &format!("Service started with PID {}", pid)).await;
+                self.log_event(name, LogLevel::Info, &format!("Service started with PID {:?}", pid)).await;
                 Ok(())
             }
             Err(e) => {
@@ -614,7 +616,9 @@ impl App {
         let (cpu_percent, mem_percent) = {
             let mut sys = self.server_manager.sys.lock().unwrap();
             sys.refresh_all();
-            let cpu = sys.global_cpu_info().cpu_usage() as u16;
+            let cpus = sys.cpus();
+            let cpu_usage: f32 = cpus.iter().map(|c| c.cpu_usage()).sum();
+            let cpu = if cpus.is_empty() { 0 } else { (cpu_usage / cpus.len() as f32) as u16 };
             let mem = if sys.total_memory() > 0 {
                 (sys.used_memory() * 100 / sys.total_memory()) as u16
             } else { 0 };
