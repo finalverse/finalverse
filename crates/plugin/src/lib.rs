@@ -3,6 +3,7 @@
 use axum::Router as AxumRouter;
 use tonic::transport::server::Router as GrpcRouter;
 use std::path::{Path, PathBuf};
+use once_cell::sync::Lazy;
 
 #[cfg(feature = "dynamic")]
 use libloading::{Library, Symbol};
@@ -56,27 +57,26 @@ pub struct LoadedPlugin {
     _lib: Library,
 }
 
+/// Plugins discovered at startup.
+pub static PLUGINS: Lazy<Vec<LoadedPlugin>> = Lazy::new(discover_plugins);
+
 impl LoadedPlugin {
     pub fn take_instance(&mut self) -> Box<dyn ServicePlugin> {
         std::mem::replace(&mut self.instance, Box::new(NoopPlugin))
     }
 }
 
-pub async fn discover_plugins() -> Vec<LoadedPlugin> {
-    // TODO: Implement dynamic discovery via configuration or directory scan.
-    // For now, we read the `FINALVERSE_PLUGIN_DIR` environment variable and
-    // look for dynamic libraries. Actual loading logic is left as a
-    // placeholder to avoid unsafe code in this example.
+pub fn discover_plugins() -> Vec<LoadedPlugin> {
     let mut plugins = Vec::new();
     if let Ok(dir) = std::env::var("FINALVERSE_PLUGIN_DIR") {
         let path = PathBuf::from(dir);
         if let Ok(entries) = std::fs::read_dir(path) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                if let Some(ext) = path.extension() {
+                if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                     if ext == "so" || ext == "dll" || ext == "dylib" {
                         tracing::info!("Discovered plugin candidate: {:?}", path);
-                        if let Ok(plugin) = load_plugin(&path).await {
+                        if let Ok(plugin) = unsafe { load_plugin(&path) } {
                             plugins.push(plugin);
                         }
                     }
@@ -87,7 +87,7 @@ pub async fn discover_plugins() -> Vec<LoadedPlugin> {
     plugins
 }
 
-async fn load_plugin(path: &Path) -> Result<LoadedPlugin> {
+unsafe fn load_plugin(path: &Path) -> Result<LoadedPlugin> {
     #[cfg(feature = "dynamic")]
     unsafe {
         let lib = Library::new(path)?;

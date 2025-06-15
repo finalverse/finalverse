@@ -11,6 +11,7 @@ tonic.workspace = true
 async-trait.workspace = true
 tracing.workspace = true
 libloading = { workspace = true, optional = true }
+once_cell.workspace = true
 anyhow.workspace = true
 service-registry.workspace = true
 
