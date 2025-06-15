@@ -140,6 +140,8 @@ pub struct LLMModel {
     pub model_name: String,
     pub api_key: String,
     pub endpoint_url: Option<String>,
+    pub model_path: Option<String>,
+    pub parameters: std::collections::HashMap<String, String>,
     pub max_requests_per_minute: u32,
 }
 
