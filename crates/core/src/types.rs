@@ -118,7 +118,7 @@ impl Note {
 }
 
 // Echo-specific types
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum EchoType {
     Lumi, // Hope & Discovery
     KAI,  // Logic & Understanding

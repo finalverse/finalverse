@@ -7,8 +7,9 @@ use axum::{
 };
 use finalverse_core::{
     echo::{Echo, EchoPersonality, EchoState},
-    types::{EchoType, Position, Uuid},
+    types::{EchoType, Coordinates as Position},
 };
+use uuid::Uuid;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -76,10 +77,10 @@ async fn main() {
     let addr = SocketAddr::from(([0, 0, 0, 0], 3004));
     info!("Echo Engine listening on {}", addr);
 
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    let listener = tokio::net::TcpListener::bind(addr)
         .await
-        .unwrap();
+        .expect("Failed to bind");
+    axum::serve(listener, app).await.unwrap();
 }
 
 fn initialize_first_echoes(state: &AppState) {
