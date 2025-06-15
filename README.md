@@ -82,6 +82,12 @@ For daily development start the services (rebuild if you changed code):
 cargo run --bin txtViewer
 ```
 
+### Test the World Engine gRPC API
+
+```bash
+cargo run -p world-engine --example world_client -- 3003
+```
+
 The upcoming **FinalStorm** 3D client will connect through the WebSocket gateway (`:3000`) using the same service APIs.
 
 ### Deployment
