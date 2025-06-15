@@ -35,10 +35,34 @@ impl ConfigLoader {
     
     /// Merge two configurations, with the second overriding the first
     fn merge_configs(base: FinalverseConfig, override_config: FinalverseConfig) -> FinalverseConfig {
-        // This is a simplified merge - in production, you'd want a more sophisticated merge strategy
-        // For now, we just return the override config
-        // TODO: Implement proper deep merge
-        override_config
+        use toml::Value;
+
+        /// Recursively merge two `toml::Value` structures.
+        fn merge_value(base: &mut Value, overlay: Value) {
+            match (base, overlay) {
+                (Value::Table(base_table), Value::Table(overlay_table)) => {
+                    for (k, v) in overlay_table {
+                        match base_table.get_mut(&k) {
+                            Some(base_val) => merge_value(base_val, v),
+                            None => {
+                                base_table.insert(k, v);
+                            }
+                        }
+                    }
+                }
+                (_, v) => {
+                    *base = v;
+                }
+            }
+        }
+
+        // Convert both configs to `toml::Value` so we can merge recursively
+        let mut base_val = Value::try_from(base).expect("failed to serialize base config");
+        let overlay_val = Value::try_from(override_config).expect("failed to serialize override config");
+
+        merge_value(&mut base_val, overlay_val);
+
+        base_val.try_into().expect("failed to deserialize merged config")
     }
     
     /// Generate a sample configuration file
@@ -95,5 +119,41 @@ connection_timeout_secs = 30
         assert!(sample.contains("[general]"));
         assert!(sample.contains("[network]"));
         assert!(sample.contains("[ai]"));
+    }
+
+    #[test]
+    fn test_merge_configs_overrides_primitives() {
+        let mut base = FinalverseConfig::default();
+        base.general.server_name = "Base".to_string();
+
+        let mut overlay = FinalverseConfig::default();
+        overlay.general.server_name = "Override".to_string();
+        overlay.network.api_port = 9000;
+
+        let merged = ConfigLoader::merge_configs(base.clone(), overlay);
+
+        assert_eq!(merged.general.server_name, "Override");
+        assert_eq!(merged.network.api_port, 9000);
+        // Unchanged field from base
+        assert_eq!(merged.network.realtime_port, base.network.realtime_port);
+    }
+
+    #[test]
+    fn test_merge_configs_nested_maps() {
+        let base = FinalverseConfig::default();
+
+        let mut overlay = FinalverseConfig::default();
+        overlay.grpc_services.services.clear();
+        overlay
+            .grpc_services
+            .services
+            .insert("new-service".to_string(), "127.0.0.1:60000".parse().unwrap());
+
+        let merged = ConfigLoader::merge_configs(base.clone(), overlay);
+
+        // Base services remain
+        assert!(merged.grpc_services.services.contains_key("song-engine"));
+        // New service added
+        assert!(merged.grpc_services.services.contains_key("new-service"));
     }
 }

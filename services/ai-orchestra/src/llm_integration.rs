@@ -1,6 +1,9 @@
 use finalverse_core::types::PlayerId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
+use ort::{Environment, SessionBuilder, Session, Value, tensor::OrtOwnedTensor, OrtError};
+use ndarray::Array;
 
 #[derive(Debug, Clone)]
 pub struct LLMOrchestra {
@@ -30,7 +33,19 @@ pub struct OpenAIProvider {
 
 #[derive(Debug, Clone)]
 pub struct LocalProvider {
-    model_path: String,
+    pub model_path: String,
+    #[allow(dead_code)]
+    environment: std::sync::Arc<ort::Environment>,
+    #[allow(dead_code)]
+    session: std::sync::Arc<ort::Session>,
+}
+
+impl LocalProvider {
+    pub fn new(model_path: String) -> Result<Self, ort::OrtError> {
+        let environment = Arc::new(Environment::builder().with_name("local-llm").build()?);
+        let session = Arc::new(SessionBuilder::new(&environment)?.with_model_from_file(&model_path)?);
+        Ok(Self { model_path, environment, session })
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -103,7 +118,7 @@ struct OpenAIUsage {
 impl LLMOrchestra {
     pub fn new() -> Self {
         let mut models = HashMap::new();
-        
+
         // Add default Ollama provider
         models.insert(
             "ollama".to_string(),
@@ -112,6 +127,13 @@ impl LLMOrchestra {
                 model_name: "llama2".to_string(),
             }),
         );
+
+        // Optionally add a local provider if the path is configured
+        if let Ok(local_path) = std::env::var("LOCAL_LLM_PATH") {
+            if let Ok(local) = LocalProvider::new(local_path.clone()) {
+                models.insert("local".to_string(), LLMProvider::Local(local));
+            }
+        }
 
         Self {
             models,
@@ -130,10 +152,7 @@ impl LLMOrchestra {
         match provider {
             LLMProvider::Ollama(ollama) => self.generate_ollama(ollama, request).await,
             LLMProvider::OpenAI(openai) => self.generate_openai(openai, request).await,
-            LLMProvider::Local(_local) => {
-                // TODO: Implement local model generation
-                Err("Local model generation not implemented yet".into())
-            }
+            LLMProvider::Local(local) => self.generate_local(local, request).await,
         }
     }
 
@@ -213,6 +232,37 @@ impl LLMOrchestra {
         } else {
             Err(format!("OpenAI request failed with status: {}", response.status()).into())
         }
+    }
+
+    async fn generate_local(
+        &self,
+        provider: &LocalProvider,
+        request: GenerationRequest,
+    ) -> Result<GenerationResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let prompt = request.prompt.clone();
+        let session = provider.session.clone();
+        let env = provider.environment.clone();
+        let output = tokio::task::spawn_blocking(move || -> Result<String, ort::OrtError> {
+            let bytes: Vec<i64> = prompt.bytes().map(|b| b as i64).collect();
+            let array = Array::from_shape_vec((1, bytes.len()), bytes)?;
+            let input = ort::Value::from_array(env.memory_info(), &array)?;
+            let result: Vec<ort::tensor::OrtOwnedTensor<i64, _>> = session.run(vec![input])?;
+            let generated = result
+                .get(0)
+                .map(|t| {
+                    let data: Vec<u8> = t.as_slice().unwrap_or(&[]).iter().map(|&v| v as u8).collect();
+                    String::from_utf8_lossy(&data).to_string()
+                })
+                .unwrap_or_default();
+            Ok(generated)
+        })
+        .await??;
+
+        Ok(GenerationResponse {
+            text: output,
+            model_used: provider.model_path.clone(),
+            tokens_used: 0,
+        })
     }
 }
 

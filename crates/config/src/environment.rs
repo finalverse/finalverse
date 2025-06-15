@@ -79,6 +79,8 @@ fn apply_ai_env_overrides(ai_config: &mut crate::config::AIConfig) -> Result<()>
                 model_name: "gpt-4".to_string(),
                 api_key,
                 endpoint_url: None,
+                model_path: None,
+                parameters: std::collections::HashMap::new(),
                 max_requests_per_minute: 60,
             },
         );
@@ -92,6 +94,8 @@ fn apply_ai_env_overrides(ai_config: &mut crate::config::AIConfig) -> Result<()>
                 model_name: "claude-3-opus-20240229".to_string(),
                 api_key: anthropic_key,
                 endpoint_url: None,
+                model_path: None,
+                parameters: std::collections::HashMap::new(),
                 max_requests_per_minute: 50,
             },
         );

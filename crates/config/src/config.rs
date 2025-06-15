@@ -140,6 +140,8 @@ pub struct LLMModel {
     pub model_name: String,
     pub api_key: String,
     pub endpoint_url: Option<String>,
+    pub model_path: Option<String>,
+    pub parameters: std::collections::HashMap<String, String>,
     pub max_requests_per_minute: u32,
 }
 
@@ -312,7 +314,7 @@ impl Default for FinalverseConfig {
         Self {
             general: GeneralConfig {
                 server_name: "Finalverse".to_string(),
-                version: "0.1.2".to_string(),
+                version: "0.1.3".to_string(),
                 environment: Environment::Development,
                 debug_mode: false,
                 log_level: "info".to_string(),
