@@ -1,0 +1,95 @@
+// proto/story.proto
+syntax = "proto3";
+
+package finalverse.story;
+
+import "google/protobuf/timestamp.proto";
+import "world.proto";
+
+service StoryService {
+    // Get dialogue for NPC
+    rpc GetDialogue(DialogueRequest) returns (DialogueResponse);
+
+    // Process story event
+    rpc ProcessStoryEvent(StoryEventRequest) returns (StoryEventResponse);
+
+    // Get player's personal legend
+    rpc GetPlayerLegend(PlayerLegendRequest) returns (PlayerLegendResponse);
+
+    // Stream narrative updates
+    rpc StreamNarrativeUpdates(NarrativeStreamRequest) returns (stream NarrativeUpdate);
+}
+
+message DialogueRequest {
+    string npc_id = 1;
+    string player_id = 2;
+    map<string, string> context = 3;
+}
+
+message DialogueResponse {
+    string text = 1;
+    string emotion = 2;
+    repeated DialogueOption options = 3;
+    string audio_stream_id = 4;
+}
+
+message DialogueOption {
+    string id = 1;
+    string text = 2;
+    map<string, string> consequences = 3;
+}
+
+message StoryEventRequest {
+    string event_type = 1;
+    string player_id = 2;
+    map<string, string> parameters = 3;
+}
+
+message StoryEventResponse {
+    bool processed = 1;
+    repeated string triggered_quests = 2;
+    repeated string narrative_updates = 3;
+}
+
+message PlayerLegendRequest {
+    string player_id = 1;
+}
+
+message PlayerLegendResponse {
+    repeated LegendEntry entries = 1;
+    string chronicle_text = 2;
+}
+
+message LegendEntry {
+    google.protobuf.Timestamp timestamp = 1;
+    string event_type = 2;
+    string description = 3;
+    map<string, string> metadata = 4;
+}
+
+message NarrativeStreamRequest {
+    string player_id = 1;
+}
+
+message NarrativeUpdate {
+    oneof update {
+        QuestUpdate quest_update = 1;
+        LegendUpdate legend_update = 2;
+        WorldNarrativeUpdate world_update = 3;
+    }
+}
+
+message QuestUpdate {
+    string quest_id = 1;
+    string status = 2;
+    string description = 3;
+}
+
+message LegendUpdate {
+    LegendEntry new_entry = 1;
+}
+
+message WorldNarrativeUpdate {
+    string event_description = 1;
+    repeated string affected_regions = 2;
+}

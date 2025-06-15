@@ -32,8 +32,10 @@ members = [
     "crates/config",
     "crates/core",
     "crates/events",
+    "crates/grpc-client",
     "crates/health",
     "crates/plugin",
+    "crates/proto",
     "crates/protocol",
     "crates/wasm-runtime",
     "crates/ecosystem",
@@ -59,6 +61,7 @@ tokio = { version = "1.45.1", features = ["full"] }
 async-nats = "0.33"
 async-trait = "0.1"
 tokio-tungstenite = "0.21"
+tokio-stream = "0.1"
 
 # Web framework
 axum = "0.7.9"
@@ -72,6 +75,7 @@ serde_json = "1.0"
 prost = "0.12"
 tonic = "0.11"
 tonic-build = "0.13.1"
+prost-types = "0.12"
 
 # version 0.11 is need for HealthServer in server for now
 tonic-health = "0.11"
@@ -102,7 +106,9 @@ sysinfo = "0.35.2"
 finalverse-world3d = { path = "crates/world3d" }
 finalverse-audio-core = { path = "crates/audio-core" }
 finalverse-core = { path = "crates/core" }
+finalverse-grpc-client = { path = "crates/grpc-client"}
 finalverse-health = { path = "crates/health" }
+finalverse-proto = { path = "crates/proto"}
 finalverse-protocol = { path = "crates/protocol" }
 finalverse-ai-common = { path = "crates/ai-common" }
 service-registry = { path = "services/service-registry" }

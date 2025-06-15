@@ -1,0 +1,13 @@
+# crates/proto/Cargo.toml
+[package]
+name = "finalverse-proto"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+prost.workspace = true
+tonic.workspace = true
+prost-types.workspace = true
+
+[build-dependencies]
+tonic-build.workspace = true

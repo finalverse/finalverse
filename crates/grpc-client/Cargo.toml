@@ -1,0 +1,14 @@
+# crates/grpc-client/Cargo.toml
+[package]
+name = "finalverse-grpc-client"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+finalverse-proto.workspace = true
+
+tonic.workspace = true
+tokio = { workspace = true, features = ["full"] }
+chrono.workspace = true

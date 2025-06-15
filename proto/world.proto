@@ -1,0 +1,196 @@
+// proto/world.proto
+syntax = "proto3";
+
+package finalverse.world;
+
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+// World Engine Service
+service WorldService {
+    // Get current world state
+    rpc GetWorldState(GetWorldStateRequest) returns (WorldStateResponse);
+
+    // Stream world updates
+    rpc StreamWorldUpdates(StreamUpdatesRequest) returns (stream WorldUpdate);
+
+    // Process player action
+    rpc ProcessAction(PlayerActionRequest) returns (ActionResponse);
+
+    // Get region information
+    rpc GetRegion(GetRegionRequest) returns (RegionResponse);
+
+    // Update region harmony
+    rpc UpdateHarmony(UpdateHarmonyRequest) returns (UpdateHarmonyResponse);
+}
+
+message GetWorldStateRequest {
+    repeated string region_ids = 1;
+}
+
+message WorldStateResponse {
+    repeated Region regions = 1;
+    float global_harmony = 2;
+    repeated WorldEvent active_events = 3;
+    WorldTime time = 4;
+}
+
+message StreamUpdatesRequest {
+    string player_id = 1;
+    repeated string region_ids = 2;
+}
+
+message WorldUpdate {
+    oneof update {
+        RegionUpdate region_update = 1;
+        EventUpdate event_update = 2;
+        TimeUpdate time_update = 3;
+    }
+}
+
+message RegionUpdate {
+    string region_id = 1;
+    float harmony_level = 2;
+    float discord_level = 3;
+    WeatherState weather = 4;
+}
+
+message EventUpdate {
+    WorldEvent event = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message TimeUpdate {
+    WorldTime time = 1;
+}
+
+message PlayerActionRequest {
+    string player_id = 1;
+    oneof action {
+        MoveAction move = 2;
+        InteractAction interact = 3;
+        AbilityAction ability = 4;
+        CraftAction craft = 5;
+    }
+    uint64 timestamp = 6;
+}
+
+message MoveAction {
+    Position3D position = 1;
+}
+
+message InteractAction {
+    string target_id = 1;
+    string interaction_type = 2;
+}
+
+message AbilityAction {
+    string ability_id = 1;
+    Position3D target_position = 2;
+}
+
+message CraftAction {
+    string item_id = 1;
+    repeated string materials = 2;
+}
+
+message ActionResponse {
+    bool success = 1;
+    string message = 2;
+    repeated Effect effects = 3;
+}
+
+message Effect {
+    string type = 1;
+    map<string, string> parameters = 2;
+}
+
+message GetRegionRequest {
+    string region_id = 1;
+}
+
+message RegionResponse {
+    Region region = 1;
+}
+
+message UpdateHarmonyRequest {
+    string region_id = 1;
+    float delta = 2;
+    string source = 3;
+}
+
+message UpdateHarmonyResponse {
+    float new_harmony_level = 1;
+    repeated WorldEvent triggered_events = 2;
+}
+
+// Data models
+message Region {
+    string id = 1;
+    string name = 2;
+    float harmony_level = 3;
+    float discord_level = 4;
+    string terrain_type = 5;
+    WeatherState weather = 6;
+    repeated GridCoordinate grid_coords = 7;
+}
+
+message WeatherState {
+    string weather_type = 1;
+    float intensity = 2;
+    float wind_direction = 3;
+    float wind_speed = 4;
+}
+
+message WorldEvent {
+    oneof event {
+        CreatureMigration creature_migration = 1;
+        CelestialEvent celestial_event = 2;
+        SilenceOutbreak silence_outbreak = 3;
+        HarmonyRestored harmony_restored = 4;
+        EchoAppeared echo_appeared = 5;
+    }
+}
+
+message CreatureMigration {
+    string species = 1;
+    string from_region = 2;
+    string to_region = 3;
+}
+
+message CelestialEvent {
+    string event_type = 1;
+    uint64 duration = 2;
+}
+
+message SilenceOutbreak {
+    Position3D epicenter = 1;
+    float radius = 2;
+    float intensity = 3;
+}
+
+message HarmonyRestored {
+    string region_id = 1;
+    float amount = 2;
+}
+
+message EchoAppeared {
+    string echo_type = 1;
+    Position3D position = 2;
+}
+
+message WorldTime {
+    uint32 day = 1;
+    float hour = 2;
+}
+
+message GridCoordinate {
+    int32 x = 1;
+    int32 z = 2;
+}
+
+message Position3D {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+}
