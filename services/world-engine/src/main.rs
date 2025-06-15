@@ -1,10 +1,15 @@
 // crates/world-engine/src/bin/world-engine.rs
 use std::sync::Arc;
 use tokio::time::{interval, Duration};
+use tonic::transport::Server;
 pub use world_engine::{
     WorldEngine, Observer, WorldEvent, RegionState, RegionId, TerrainType,
     WeatherState, WeatherType, Species, SpeciesProfile, MigrationPhase,
 };
+use finalverse_proto::world::world_service_server::WorldServiceServer;
+
+mod grpc;
+use grpc::server::WorldServiceImpl;
 use finalverse_audio_core::{AudioEvent, AudioEventType, AudioSource};
 use nalgebra::Vector3;
 use redis::Client as RedisClient;
@@ -131,6 +136,21 @@ async fn main() {
             println!("⏰ Running world simulation tick...");
             engine_sim.simulate_tick().await;
         }
+    });
+
+    // Start gRPC server
+    let grpc_engine = engine.clone();
+    let grpc_port: u16 = std::env::var("WORLD_ENGINE_GRPC_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(3003);
+    tokio::spawn(async move {
+        println!("🚀 World Engine gRPC starting on port {}", grpc_port);
+        Server::builder()
+            .add_service(WorldServiceServer::new(WorldServiceImpl::new(grpc_engine)))
+            .serve(([0, 0, 0, 0], grpc_port).into())
+            .await
+            .expect("gRPC server failed");
     });
 
     // Start HTTP server
