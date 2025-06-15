@@ -19,8 +19,9 @@ pub struct PlayerId(pub Uuid);
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct RegionId(pub Uuid);
 
+/// Unique identifier for an Echo
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-pub struct EchoId(pub String);
+pub struct EchoId(pub Uuid);
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Coordinates {
@@ -62,13 +63,15 @@ pub enum EchoType {
 }
 
 impl EchoType {
+    /// Deterministically generate the unique [`EchoId`] for this variant
     pub fn id(&self) -> EchoId {
-        EchoId(match self {
-            EchoType::Lumi => "lumi".to_string(),
-            EchoType::KAI => "kai".to_string(),
-            EchoType::Terra => "terra".to_string(),
-            EchoType::Ignis => "ignis".to_string(),
-        })
+        let uuid = match self {
+            EchoType::Lumi => Uuid::new_v5(&Uuid::NAMESPACE_OID, b"lumi"),
+            EchoType::KAI => Uuid::new_v5(&Uuid::NAMESPACE_OID, b"kai"),
+            EchoType::Terra => Uuid::new_v5(&Uuid::NAMESPACE_OID, b"terra"),
+            EchoType::Ignis => Uuid::new_v5(&Uuid::NAMESPACE_OID, b"ignis"),
+        };
+        EchoId(uuid)
     }
 }
 
