@@ -107,7 +107,7 @@ async fn handle_websocket(socket: WebSocket, state: SharedGameState) {
             player_id.clone(),
             PlayerSession {
                 player_id: player_id.clone(),
-                current_region: RegionId("terra_nova".to_string()),
+                current_region: RegionId(Uuid::new_v4()),
                 sender: Some(tx.clone()),
             },
         );
@@ -177,11 +177,11 @@ async fn handle_message(
             .await;
 
             // Broadcast harmony update
-            broadcast_harmony_update(state, &RegionId("terra_nova".to_string()), 0.75).await;
+            broadcast_harmony_update(state, &RegionId(Uuid::new_v4()), 0.75).await;
 
             // Send confirmation to player
             let _ = tx.send(WSMessage::WorldUpdate {
-                region: RegionId("terra_nova".to_string()),
+                region: RegionId(Uuid::new_v4()),
                 harmony_level: 0.75,
             });
         }
