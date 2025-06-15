@@ -7,6 +7,9 @@ pub mod server;
 use serde::{Deserialize, Serialize};
 use finalverse_core::{RegionId, TerrainType, WeatherType};
 
+// Re-export RegionId for use by binaries depending on this crate
+pub use finalverse_core::RegionId;
+
 // Re-export the main types from world module
 pub use world::{WorldEngine, WorldState, WorldUpdate, WorldTime};
 

@@ -94,15 +94,15 @@ struct HarmonyCheckResponse {
 impl SongEngineState {
     pub fn new() -> Self {
         let mut regional_harmony = HashMap::new();
-        regional_harmony.insert(RegionId("terra_nova".to_string()), 75.0);
-        regional_harmony.insert(RegionId("aethelgard".to_string()), 45.0);
-        regional_harmony.insert(RegionId("technos_prime".to_string()), 60.0);
-        regional_harmony.insert(RegionId("whispering_wilds".to_string()), 80.0);
-        regional_harmony.insert(RegionId("star_sailor_expanse".to_string()), 55.0);
+        regional_harmony.insert(RegionId(Uuid::new_v4()), 75.0);
+        regional_harmony.insert(RegionId(Uuid::new_v4()), 45.0);
+        regional_harmony.insert(RegionId(Uuid::new_v4()), 60.0);
+        regional_harmony.insert(RegionId(Uuid::new_v4()), 80.0);
+        regional_harmony.insert(RegionId(Uuid::new_v4()), 55.0);
 
         let mut silence_corruption = HashMap::new();
-        silence_corruption.insert(RegionId("aethelgard".to_string()), 25.0);
-        silence_corruption.insert(RegionId("technos_prime".to_string()), 15.0);
+        silence_corruption.insert(RegionId(Uuid::new_v4()), 25.0);
+        silence_corruption.insert(RegionId(Uuid::new_v4()), 15.0);
 
         Self {
             global_harmony: 65.0,
@@ -164,7 +164,7 @@ impl SongEngineState {
     fn determine_region_from_coordinates(&self, _coordinates: &Coordinates) -> RegionId {
         // Simplified region determination - in a real implementation,
         // this would use spatial indexing
-        RegionId("terra_nova".to_string())
+        RegionId(Uuid::new_v4())
     }
 
     fn apply_harmony_effects(&mut self, region: &RegionId, power: f32, harmony_type: &HarmonyType) -> f32 {
@@ -282,7 +282,13 @@ async fn check_harmony(
     Json(request): Json<HarmonyCheckRequest>,
 ) -> impl IntoResponse {
     let song_state = state.read().unwrap();
-    let region_id = RegionId(request.region_id.clone());
+    let region_uuid = match Uuid::parse_str(&request.region_id) {
+        Ok(u) => u,
+        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
+            "error": "Invalid region ID"
+    }))),
+    };
+    let region_id = RegionId(region_uuid);
 
     let harmony_level = song_state.regional_harmony
         .get(&region_id)

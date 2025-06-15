@@ -78,7 +78,7 @@ impl EchoEngineState {
             EchoId("lumi".to_string()),
             EchoState {
                 echo_type: EchoType::Lumi,
-                current_region: Some(RegionId("terra_nova".to_string())),
+                current_region: Some(RegionId(Uuid::new_v4())),
                 bond_levels: HashMap::new(),
                 active_teachings: vec![
                     "melody_of_hope".to_string(),
@@ -92,7 +92,7 @@ impl EchoEngineState {
             EchoId("kai".to_string()),
             EchoState {
                 echo_type: EchoType::KAI,
-                current_region: Some(RegionId("technos_prime".to_string())),
+                current_region: Some(RegionId(Uuid::new_v4())),
                 bond_levels: HashMap::new(),
                 active_teachings: vec![
                     "logic_harmony".to_string(),
@@ -106,7 +106,7 @@ impl EchoEngineState {
             EchoId("terra".to_string()),
             EchoState {
                 echo_type: EchoType::Terra,
-                current_region: Some(RegionId("whispering_wilds".to_string())),
+                current_region: Some(RegionId(Uuid::new_v4())),
                 bond_levels: HashMap::new(),
                 active_teachings: vec![
                     "nature_song".to_string(),
@@ -120,7 +120,7 @@ impl EchoEngineState {
             EchoId("ignis".to_string()),
             EchoState {
                 echo_type: EchoType::Ignis,
-                current_region: Some(RegionId("star_sailor_expanse".to_string())),
+                current_region: Some(RegionId(Uuid::new_v4())),
                 bond_levels: HashMap::new(),
                 active_teachings: vec![
                     "courage_flame".to_string(),

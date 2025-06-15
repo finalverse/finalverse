@@ -89,7 +89,7 @@ async fn main() {
 
     // Initialize some tests data
     let test_region = RegionState {
-        id: RegionId("terra-nova-central".to_string()),
+        id: RegionId(Uuid::new_v4()),
         harmony_level: 0.8,
         discord_level: 0.2,
         terrain_type: TerrainType::Forest,
@@ -113,8 +113,8 @@ async fn main() {
         },
         population: 150,
         migration_pattern: vec![
-            RegionId("terra-nova-central".to_string()),
-            RegionId("whispering-woods".to_string()),
+            RegionId(Uuid::new_v4()),
+            RegionId(Uuid::new_v4()),
         ],
         preferred_terrain: vec![TerrainType::Forest, TerrainType::Plains],
     };
