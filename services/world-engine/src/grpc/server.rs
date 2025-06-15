@@ -3,6 +3,7 @@ use tonic::{Request, Response, Status};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::Stream;
 use crate::{WorldEngine, RegionId, PlayerAction, ActionType, Coordinates};
 use finalverse_proto::world::{
     world_service_server::WorldService,
@@ -12,10 +13,9 @@ use finalverse_proto::world::{
     GetRegionRequest, RegionResponse,
     UpdateHarmonyRequest, UpdateHarmonyResponse,
     Region as ProtoRegion, WeatherState as ProtoWeatherState,
-    WorldTime as ProtoWorldTime, GridCoordinate as ProtoGridCoordinate,
-    RegionUpdate, EventUpdate, TimeUpdate,
+    WorldTime as ProtoWorldTime,
+    RegionUpdate,
     WorldEvent as ProtoWorldEvent,
-    Position3D,
 };
 
 pub struct WorldServiceImpl {
@@ -116,7 +116,7 @@ impl WorldService for WorldServiceImpl {
             }
         });
 
-        Ok(Response::new(ReceiverStream::new(rx)))
+        Ok(Response::new(Box::pin(ReceiverStream::new(rx))))
     }
 
     async fn process_action(
@@ -225,7 +225,7 @@ fn event_to_proto(event: &crate::WorldEvent) -> ProtoWorldEvent {
     }
 }
 
-type StreamWorldUpdatesStream = ReceiverStream<Result<WorldUpdate, Status>>;
+type StreamWorldUpdatesStream = Pin<Box<dyn Stream<Item = Result<WorldUpdate, Status>> + Send + 'static>>;
 
 use std::collections::HashMap;
 use std::pin::Pin;
