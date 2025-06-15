@@ -156,10 +156,10 @@ pub mod utils {
     use super::*;
     
     pub fn new_player_id() -> PlayerId {
-        PlayerId(Uuid::new_v4())
+        PlayerId(Uuid::new_v5(&Uuid::NAMESPACE_OID, b"finalverse.com"))
     }
     
     pub fn new_region_id() -> RegionId {
-        RegionId(Uuid::new_v4())
+        RegionId(Uuid::new_v5(&Uuid::NAMESPACE_OID, b"finalverse.com"))
     }
 }

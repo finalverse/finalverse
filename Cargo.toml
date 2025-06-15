@@ -93,7 +93,7 @@ thiserror = "1.0"
 nalgebra = { version = "0.32", features = ["serde-serialize"] }
 
 # Utils
-uuid = { version = "1.6", features = ["v4", "serde"] }
+uuid = { version = "1.17.0", features = ["v5", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 rand = "0.8"
 sysinfo = "0.35.2"
