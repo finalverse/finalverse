@@ -3,10 +3,14 @@
 pub mod events;
 pub mod types;
 pub mod error;
+pub mod echo;
+pub mod character;
 
 pub use events::*;
 pub use types::*;
 pub use error::*;
+pub use character::*;
+pub use echo::*;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
