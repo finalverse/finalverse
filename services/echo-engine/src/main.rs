@@ -41,14 +41,14 @@ struct ServiceInfo {
 
 #[derive(Deserialize)]
 struct BondRequest {
-    player_id: String,
-    echo_id: String,
+    player_id: Uuid,
+    echo_id: Uuid,
     interaction_type: String,
 }
 
 #[derive(Serialize)]
 struct BondResponse {
-    echo_id: String,
+    echo_id: Uuid,
     new_bond_level: f32,
     abilities_unlocked: Vec<String>,
     message: String,
@@ -56,8 +56,8 @@ struct BondResponse {
 
 #[derive(Deserialize)]
 struct TeachingRequest {
-    player_id: String,
-    echo_id: String,
+    player_id: Uuid,
+    echo_id: Uuid,
     skill_requested: String,
 }
 
@@ -75,7 +75,7 @@ impl EchoEngineState {
 
         // Initialize the Four First Echoes
         echoes.insert(
-            EchoId("lumi".to_string()),
+            EchoType::Lumi.id(),
             EchoState {
                 echo_type: EchoType::Lumi,
                 current_region: Some(RegionId(Uuid::new_v4())),
@@ -89,7 +89,7 @@ impl EchoEngineState {
         );
 
         echoes.insert(
-            EchoId("kai".to_string()),
+            EchoType::KAI.id(),
             EchoState {
                 echo_type: EchoType::KAI,
                 current_region: Some(RegionId(Uuid::new_v4())),
@@ -103,7 +103,7 @@ impl EchoEngineState {
         );
 
         echoes.insert(
-            EchoId("terra".to_string()),
+            EchoType::Terra.id(),
             EchoState {
                 echo_type: EchoType::Terra,
                 current_region: Some(RegionId(Uuid::new_v4())),
@@ -117,7 +117,7 @@ impl EchoEngineState {
         );
 
         echoes.insert(
-            EchoId("ignis".to_string()),
+            EchoType::Ignis.id(),
             EchoState {
                 echo_type: EchoType::Ignis,
                 current_region: Some(RegionId(Uuid::new_v4())),
@@ -165,7 +165,7 @@ impl EchoEngineState {
 
 
 async fn get_echo_info(
-    Path(echo_id): Path<String>,
+    Path(echo_id): Path<Uuid>,
     State(state): State<SharedEchoState>,
 ) -> impl IntoResponse {
     let echo_state = state.read().unwrap();
@@ -310,7 +310,7 @@ async fn request_teaching(
 }
 
 async fn get_player_bonds(
-    Path(player_id): Path<String>,
+    Path(player_id): Path<Uuid>,
     State(state): State<SharedEchoState>,
 ) -> impl IntoResponse {
     let player_id = PlayerId(player_id);
