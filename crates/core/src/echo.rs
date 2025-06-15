@@ -1,5 +1,7 @@
 // crates/core/src/echo.rs
-use crate::types::{EchoType, Position, Uuid};
+use crate::types::EchoType;
+use crate::types::Coordinates as Position;
+use uuid::Uuid;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

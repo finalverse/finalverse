@@ -1,5 +1,6 @@
 // crates/finalverse-core/src/character.rs
-use crate::types::{Position, Uuid};
+use crate::types::Coordinates as Position;
+use uuid::Uuid;
 use crate::echo::{Echo, InteractionRecord};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -117,7 +118,7 @@ pub enum MelodyEffect {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TargetType {
-Self,
+SelfTarget,
 Single,
 Area { radius: f32 },
 Group { max_targets: u32 },
