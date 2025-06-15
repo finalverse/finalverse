@@ -98,7 +98,7 @@ async fn handle_websocket(socket: WebSocket, state: SharedGameState) {
     let (tx, mut rx) = mpsc::unbounded_channel();
 
     // Generate a unique player ID
-    let player_id = PlayerId(Uuid::new_v4().to_string());
+    let player_id = PlayerId(Uuid::new_v4());
 
     // Add player to game state
     {

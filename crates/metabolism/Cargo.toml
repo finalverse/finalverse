@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+finalverse-core.workspace = true
 tokio.workspace = true
 serde = { workspace = true, features = ["derive"] }
 rand.workspace = true

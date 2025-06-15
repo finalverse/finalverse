@@ -1,7 +1,7 @@
 // crates/world-engine/src/bin/world-engine.rs
 use std::sync::Arc;
 use tokio::time::{interval, Duration};
-use world_engine::{
+pub use world_engine::{
     WorldEngine, Observer, WorldEvent, RegionState, RegionId, TerrainType,
     WeatherState, WeatherType, Species, SpeciesProfile, MigrationPhase,
 };

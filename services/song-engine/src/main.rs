@@ -238,7 +238,7 @@ async fn perform_melody(
         }))),
     };
 
-    let player_id = PlayerId(player_uuid.to_string());
+    let player_id = PlayerId(player_uuid);
 
     // Convert request to internal types
     let harmony_type = match request.melody.harmony_type.as_str() {
