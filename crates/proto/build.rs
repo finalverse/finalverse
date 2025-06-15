@@ -12,7 +12,7 @@ fn main() {
     tonic_build::configure()
         .build_server(true)
         .build_client(true)
-        .compile_protos(
+        .compile(
             &[
                 proto_root.join("common.proto").to_str().unwrap(),
                 proto_root.join("world.proto").to_str().unwrap(),
