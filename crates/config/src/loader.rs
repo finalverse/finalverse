@@ -39,18 +39,22 @@ impl ConfigLoader {
 
         /// Recursively merge two `toml::Value` structures.
         fn merge_value(base: &mut Value, overlay: Value) {
-            match (base, overlay) {
-                (Value::Table(base_table), Value::Table(overlay_table)) => {
-                    for (k, v) in overlay_table {
-                        match base_table.get_mut(&k) {
-                            Some(base_val) => merge_value(base_val, v),
-                            None => {
-                                base_table.insert(k, v);
+            match overlay {
+                Value::Table(overlay_table) => {
+                    if let Value::Table(base_table) = base {
+                        for (k, v) in overlay_table {
+                            match base_table.get_mut(&k) {
+                                Some(base_val) => merge_value(base_val, v),
+                                None => {
+                                    base_table.insert(k, v);
+                                }
                             }
                         }
+                    } else {
+                        *base = Value::Table(overlay_table);
                     }
                 }
-                (_, v) => {
+                v => {
                     *base = v;
                 }
             }

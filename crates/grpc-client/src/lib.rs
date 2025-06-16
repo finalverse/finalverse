@@ -26,7 +26,7 @@ impl FinalverseGrpcClient {
 }
 
 async fn create_channel(addr: &str) -> Result<Channel, tonic::transport::Error> {
-    Endpoint::from_shared(addr)?
+    Endpoint::from_shared(addr.to_string())?
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(10))
         .connect()
