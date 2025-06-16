@@ -54,7 +54,8 @@ impl WorldService for WorldServiceImpl {
             // Return specific regions
             req.region_ids.iter()
                 .filter_map(|id| {
-                    world_state.regions.get(&RegionId(id.clone()))
+                    uuid::Uuid::parse_str(id).ok()
+                        .and_then(|u| world_state.regions.get(&RegionId(u)))
                         .map(|r| region_to_proto(r))
                 })
                 .collect()
@@ -102,18 +103,20 @@ impl WorldService for WorldServiceImpl {
 
                 // Send region updates
                 for region_id in &region_ids {
-                    if let Some(region) = state.regions.get(&RegionId(region_id.clone())) {
-                        let update = WorldUpdate {
-                            update: Some(world_update::Update::RegionUpdate(RegionUpdate {
-                                region_id: region.id.0.clone(),
+                    if let Ok(uuid) = uuid::Uuid::parse_str(region_id) {
+                        if let Some(region) = state.regions.get(&RegionId(uuid)) {
+                            let update = WorldUpdate {
+                                update: Some(world_update::Update::RegionUpdate(RegionUpdate {
+                                region_id: region.id.0.to_string(),
                                 harmony_level: region.harmony_level as f32,
                                 discord_level: region.discord_level as f32,
                                 weather: Some(weather_to_proto(&region.weather)),
                             })),
-                        };
+                            };
 
-                        if tx.send(update).await.is_err() {
-                            break;
+                            if tx.send(update).await.is_err() {
+                                break;
+                            }
                         }
                     }
                 }
@@ -169,7 +172,10 @@ impl WorldService for WorldServiceImpl {
         &self,
         request: Request<GetRegionRequest>,
     ) -> Result<Response<RegionResponse>, Status> {
-        let region_id = RegionId(request.into_inner().region_id);
+        let id_str = request.into_inner().region_id;
+        let uuid = uuid::Uuid::parse_str(&id_str)
+            .map_err(|_| Status::invalid_argument("Invalid region id"))?;
+        let region_id = RegionId(uuid);
 
         if let Some(region) = self.engine.metabolism().get_region(&region_id).await {
             Ok(Response::new(RegionResponse {
@@ -185,7 +191,9 @@ impl WorldService for WorldServiceImpl {
         request: Request<UpdateHarmonyRequest>,
     ) -> Result<Response<UpdateHarmonyResponse>, Status> {
         let req = request.into_inner();
-        let region_id = RegionId(req.region_id);
+        let uuid = uuid::Uuid::parse_str(&req.region_id)
+            .map_err(|_| Status::invalid_argument("Invalid region id"))?;
+        let region_id = RegionId(uuid);
 
         // Update harmony through the engine
         let update_result = self.engine.update_region_harmony(&region_id, req.delta).await
@@ -203,7 +211,7 @@ impl WorldService for WorldServiceImpl {
 // Conversion functions
 fn region_to_proto(region: &crate::RegionState) -> ProtoRegion {
     ProtoRegion {
-        id: region.id.0.clone(),
+        id: region.id.0.to_string(),
         name: format!("Region {}", region.id.0), // You might want to add name to RegionState
         harmony_level: region.harmony_level as f32,
         discord_level: region.discord_level as f32,
@@ -222,7 +230,7 @@ fn weather_to_proto(weather: &crate::WeatherState) -> ProtoWeatherState {
     }
 }
 
-fn event_to_proto(event: &crate::WorldEvent) -> ProtoWorldEvent {
+fn event_to_proto(_event: &crate::WorldEvent) -> ProtoWorldEvent {
     // Convert internal event to proto event
     // This is a simplified version - expand based on your needs
     ProtoWorldEvent {
