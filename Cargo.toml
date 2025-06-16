@@ -128,6 +128,7 @@ rustls = "0.21"
 # AI/ML
 candle-core = "0.3"
 ort = "1.16" # ONNX Runtime
+ndarray = "0.16.1"
 
 # config
 toml = "0.8"

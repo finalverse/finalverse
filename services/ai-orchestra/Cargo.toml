@@ -9,8 +9,8 @@ name = "ai-orchestra"
 path = "src/main.rs"
 
 [dependencies]
-finalverse-core = { path = "../../crates/core" }
-finalverse-protocol = { path = "../../crates/protocol" }
+finalverse-core.workspace = true
+finalverse-protocol.workspace = true
 axum.workspace = true
 tokio.workspace = true
 tracing.workspace = true
@@ -26,3 +26,4 @@ async-trait.workspace = true
 tower.workspace = true
 tower-http = { workspace = true, features = ["cors"] }
 ort.workspace = true
+ndarray.workspace = true
