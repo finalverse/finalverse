@@ -1,9 +1,10 @@
 // services/world-engine/src/grpc/server.rs
 use tonic::{Request, Response, Status};
 use std::sync::Arc;
+use std::collections::HashMap;
+use std::pin::Pin;
 use tokio::sync::RwLock;
-use tokio_stream::wrappers::ReceiverStream;
-use tokio_stream::Stream;
+use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 use crate::{WorldEngine, RegionId, PlayerAction, ActionType, Coordinates};
 use finalverse_proto::world::{
     world_service_server::WorldService,
@@ -16,6 +17,8 @@ use finalverse_proto::world::{
     WorldTime as ProtoWorldTime,
     RegionUpdate,
     WorldEvent as ProtoWorldEvent,
+    world_update,
+    player_action_request,
 };
 
 pub struct WorldServiceImpl {
@@ -34,6 +37,7 @@ impl WorldServiceImpl {
 
 #[tonic::async_trait]
 impl WorldService for WorldServiceImpl {
+    type StreamWorldUpdatesStream = WorldUpdateStream;
     async fn get_world_state(
         &self,
         request: Request<GetWorldStateRequest>,
@@ -116,7 +120,8 @@ impl WorldService for WorldServiceImpl {
             }
         });
 
-        Ok(Response::new(Box::pin(ReceiverStream::new(rx))))
+        let stream = ReceiverStream::new(rx).map(Ok);
+        Ok(Response::new(Box::pin(stream) as Self::StreamWorldUpdatesStream))
     }
 
     async fn process_action(
@@ -225,7 +230,4 @@ fn event_to_proto(event: &crate::WorldEvent) -> ProtoWorldEvent {
     }
 }
 
-type StreamWorldUpdatesStream = Pin<Box<dyn Stream<Item = Result<WorldUpdate, Status>> + Send + 'static>>;
-
-use std::collections::HashMap;
-use std::pin::Pin;
+pub type WorldUpdateStream = Pin<Box<dyn Stream<Item = Result<WorldUpdate, Status>> + Send + 'static>>;
