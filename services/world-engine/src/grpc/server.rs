@@ -5,7 +5,17 @@ use std::collections::HashMap;
 use std::pin::Pin;
 use tokio::sync::RwLock;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
-use crate::{WorldEngine, RegionId, PlayerAction, ActionType, Coordinates};
+use world_engine::{
+    WorldEngine,
+    RegionId,
+    PlayerAction,
+    PlayerId,
+    ActionType,
+    Coordinates,
+    RegionState,
+    WeatherState,
+    WorldEvent,
+};
 use finalverse_proto::world::{
     world_service_server::WorldService,
     GetWorldStateRequest, WorldStateResponse,
@@ -154,7 +164,7 @@ impl WorldService for WorldServiceImpl {
         };
 
         let player_action = PlayerAction {
-            player_id: crate::PlayerId(req.player_id),
+            player_id: PlayerId(req.player_id),
             action,
             timestamp: req.timestamp,
         };
@@ -209,7 +219,7 @@ impl WorldService for WorldServiceImpl {
 }
 
 // Conversion functions
-fn region_to_proto(region: &crate::RegionState) -> ProtoRegion {
+fn region_to_proto(region: &RegionState) -> ProtoRegion {
     ProtoRegion {
         id: region.id.0.to_string(),
         name: format!("Region {}", region.id.0), // You might want to add name to RegionState
@@ -221,7 +231,7 @@ fn region_to_proto(region: &crate::RegionState) -> ProtoRegion {
     }
 }
 
-fn weather_to_proto(weather: &crate::WeatherState) -> ProtoWeatherState {
+fn weather_to_proto(weather: &WeatherState) -> ProtoWeatherState {
     ProtoWeatherState {
         weather_type: format!("{:?}", weather.weather_type),
         intensity: weather.intensity as f32,
@@ -230,7 +240,7 @@ fn weather_to_proto(weather: &crate::WeatherState) -> ProtoWeatherState {
     }
 }
 
-fn event_to_proto(_event: &crate::WorldEvent) -> ProtoWorldEvent {
+fn event_to_proto(_event: &WorldEvent) -> ProtoWorldEvent {
     // Convert internal event to proto event
     // This is a simplified version - expand based on your needs
     ProtoWorldEvent {
