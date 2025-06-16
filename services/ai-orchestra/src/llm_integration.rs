@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use ort::{Environment, SessionBuilder, Session, Value, tensor::OrtOwnedTensor, OrtError};
-use ndarray::Array;
+use ort::ndarray::Array;
 
 #[derive(Debug, Clone)]
 pub struct LLMOrchestra {
@@ -242,10 +242,11 @@ impl LLMOrchestra {
         let prompt = request.prompt.clone();
         let session = provider.session.clone();
         let env = provider.environment.clone();
-        let output = tokio::task::spawn_blocking(move || -> Result<String, ort::OrtError> {
+        let output = tokio::task::spawn_blocking(move || -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
             let bytes: Vec<i64> = prompt.bytes().map(|b| b as i64).collect();
             let array = Array::from_shape_vec((1, bytes.len()), bytes)?;
-            let input = ort::Value::from_array(env.memory_info(), &array)?;
+            let memory_info = env.memory_info();
+            let input = ort::Value::from_array(memory_info, &array)?;
             let result: Vec<ort::tensor::OrtOwnedTensor<i64, _>> = session.run(vec![input])?;
             let generated = result
                 .get(0)
