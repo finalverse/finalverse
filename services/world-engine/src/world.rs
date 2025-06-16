@@ -187,4 +187,27 @@ impl WorldEngine {
     pub fn ecosystem(&self) -> Arc<EcosystemSimulator> {
         self.ecosystem.clone()
     }
+
+    pub async fn update_region_harmony(
+        &self,
+        region_id: &RegionId,
+        delta: f32,
+    ) -> anyhow::Result<HarmonyUpdateResult> {
+        let new_level = self
+            .metabolism
+            .update_harmony(region_id, delta as f64)
+            .await
+            .ok_or_else(|| anyhow::anyhow!("Region not found"))?;
+
+        Ok(HarmonyUpdateResult {
+            new_harmony_level: new_level as f32,
+            triggered_events: Vec::new(),
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct HarmonyUpdateResult {
+    pub new_harmony_level: f32,
+    pub triggered_events: Vec<WorldEvent>,
 }

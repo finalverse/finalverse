@@ -3,6 +3,7 @@ pub mod grid_generation;
 pub mod world;
 
 pub mod server;
+pub mod grpc;
 
 use serde::{Deserialize, Serialize};
 pub use finalverse_core::{RegionId, TerrainType, WeatherType};

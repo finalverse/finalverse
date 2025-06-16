@@ -61,4 +61,14 @@ impl MetabolismSimulator {
     pub async fn get_region(&self, id: &RegionId) -> Option<RegionState> {
         self.regions.read().await.get(id).cloned()
     }
+
+    pub async fn update_harmony(&self, id: &RegionId, delta: f64) -> Option<f64> {
+        let mut regions = self.regions.write().await;
+        if let Some(region) = regions.get_mut(id) {
+            region.harmony_level = (region.harmony_level + delta).clamp(0.0, 1.0);
+            Some(region.harmony_level)
+        } else {
+            None
+        }
+    }
 }
