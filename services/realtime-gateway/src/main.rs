@@ -7,6 +7,8 @@ use warp::ws::{WebSocket, Message};
 use futures::{StreamExt, SinkExt};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use tracing::info;
+use finalverse_logging as logging;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClientMessage {
@@ -154,7 +156,7 @@ async fn handle_websocket(
 
 #[tokio::main]
 async fn main() {
-    env_logger::init();
+    logging::init(None);
 
     let clients = Arc::new(ConnectionManager::new());
     let plugins = Arc::new(RwLock::new(PluginRegistry::new()));
@@ -174,7 +176,7 @@ async fn main() {
 
     let routes = ws_route.or(health_route);
 
-    println!("🌐 Realtime Gateway starting on port 3000");
+    info!("🌐 Realtime Gateway starting on port 3000");
     warp::serve(routes)
         .run(([0, 0, 0, 0], 3000))
         .await;
@@ -198,10 +200,10 @@ impl WebSocketPlugin for EchoPlugin {
     }
 
     async fn on_connect(&self, client_id: &str) {
-        println!("Client {} connected to echo plugin", client_id);
+        info!("Client {} connected to echo plugin", client_id);
     }
 
     async fn on_disconnect(&self, client_id: &str) {
-        println!("Client {} disconnected from echo plugin", client_id);
+        info!("Client {} disconnected from echo plugin", client_id);
     }
 }

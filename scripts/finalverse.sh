@@ -228,7 +228,7 @@ start_service() {
     if [ "$USE_DOCKER" = "true" ]; then
         info "Starting $service in Docker on port $port..."
         docker build -f docker/Dockerfile.service --build-arg SERVICE="$service" -t "finalverse/$service" . > "$LOG_DIR/${service}.log" 2>&1 && \
-        docker run -d --name "$service" --network finalverse-network -p "$port:$port" "finalverse/$service" >> "$LOG_DIR/${service}.log" 2>&1
+        docker run -d --name "$service" --network finalverse-network -p "$port:$port" -e "FINALVERSE_LOG_LEVEL=${FINALVERSE_LOG_LEVEL:-info}" "finalverse/$service" >> "$LOG_DIR/${service}.log" 2>&1
         if [ $? -eq 0 ]; then
             success "$service container started (Port: $port)"
             return 0
@@ -244,7 +244,7 @@ start_service() {
         fi
 
         info "Starting $service on port $port..."
-        RUST_LOG=info target/release/$service > "$LOG_DIR/${service}.log" 2>&1 &
+        RUST_LOG="${FINALVERSE_LOG_LEVEL:-info}" target/release/$service > "$LOG_DIR/${service}.log" 2>&1 &
         local pid=$!
         echo $pid > "$LOG_DIR/${service}.pid"
 

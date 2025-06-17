@@ -10,3 +10,4 @@ finalverse-health.workspace = true
 service-registry.workspace = true
 axum.workspace = true
 tokio.workspace = true
+finalverse-logging.workspace = true

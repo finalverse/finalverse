@@ -14,6 +14,8 @@ use finalverse_core::{
 };
 use futures::{stream::SplitSink, stream::SplitStream, SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
+use tracing::info;
+use finalverse_logging as logging;
 use std::{
     collections::HashMap,
     net::SocketAddr,
@@ -190,7 +192,7 @@ async fn handle_message(
             interaction_type,
         } => {
             // Handle Echo interaction
-            println!(
+            info!(
                 "Player {} interacting with Echo {:?}: {}",
                 player_id.0, echo_id, interaction_type
             );
@@ -201,7 +203,7 @@ async fn handle_message(
 
 async fn send_to_song_engine(event: SongEvent) {
     // In a real implementation, this would send to the Song Engine service
-    println!("Sending to Song Engine: {:?}", event);
+    info!("Sending to Song Engine: {:?}", event);
 
     // For now, simulate with HTTP call
     let client = reqwest::Client::new();
@@ -214,7 +216,7 @@ async fn send_to_song_engine(event: SongEvent) {
     if let Ok(response) = response {
         if response.status().is_success() {
             if let Ok(data) = response.json::<serde_json::Value>().await {
-                println!("Song Engine response: {:?}", data);
+                info!("Song Engine response: {:?}", data);
             }
         }
     }
@@ -241,7 +243,7 @@ async fn broadcast_harmony_update(state: &SharedGameState, region: &RegionId, le
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
+    logging::init(None);
 
     let state = Arc::new(RwLock::new(GameState::new()));
     let monitor = Arc::new(HealthMonitor::new("websocket-gateway", env!("CARGO_PKG_VERSION")));
@@ -261,7 +263,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
-    println!("WebSocket Gateway listening on {}", addr);
+    info!("WebSocket Gateway listening on {}", addr);
 
     // Use axum::serve instead of the deprecated Server
     let listener = tokio::net::TcpListener::bind(addr).await?;

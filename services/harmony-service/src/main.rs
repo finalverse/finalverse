@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
 use warp::Filter;
+use tracing::info;
+use finalverse_logging as logging;
 use finalverse_events::{
     GameEventBus, LocalEventBus, NatsEventBus,
     Event, EventType, HarmonyEvent, ResonanceType, PlayerId,
@@ -52,7 +54,7 @@ impl HarmonyService {
                     if let EventType::Player(player_event) = &event.event_type {
                     match player_event {
                         PlayerEvent::Connected { player_id } => {
-                            println!("🎵 Player {} connected, initializing harmony data", player_id.0);
+                            info!("🎵 Player {} connected, initializing harmony data", player_id.0);
                             // Initialize player progress if needed
                             let mut progress_map = progress.write().await;
                             progress_map.entry(player_id.clone()).or_insert_with(|| {
@@ -70,7 +72,7 @@ impl HarmonyService {
                             });
                         }
                         PlayerEvent::Disconnected { player_id } => {
-                            println!("👋 Player {} disconnected", player_id.0);
+                            info!("👋 Player {} disconnected", player_id.0);
                         }
                         _ => {}
                     }
@@ -86,14 +88,14 @@ impl HarmonyService {
             .event_bus
             .subscribe("events.harmony", Box::new(|event| {
                 if let EventType::Harmony(harmony_event) = &event.event_type {
-                    println!("🎼 Harmony Event: {:?}", harmony_event);
+                    info!("🎼 Harmony Event: {:?}", harmony_event);
                 }
             }))
             .await?;
 
         self.subscription_ids.write().await.push(harmony_sub_id);
 
-        println!("✅ Harmony Service event listeners started");
+        info!("✅ Harmony Service event listeners started");
         Ok(())
     }
 
@@ -153,7 +155,7 @@ impl HarmonyService {
 
             self.event_bus.publish(attunement_event).await?;
 
-            println!("⭐ Player {} achieved attunement tier {} (was {})", player_id.0, new_tier, old_tier);
+            info!("⭐ Player {} achieved attunement tier {} (was {})", player_id.0, new_tier, old_tier);
 
             // Unlock new abilities based on tier
             self.unlock_tier_abilities(progress, new_tier).await?;
@@ -284,14 +286,14 @@ async fn health_handler() -> Result<impl warp::Reply, warp::Rejection> {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    env_logger::init();
+    logging::init(None);
 
     // Initialize event bus - use NATS if URL provided, otherwise use local
     let event_bus: Arc<dyn GameEventBus> = if let Ok(nats_url) = std::env::var("NATS_URL") {
-        println!("📡 Connecting to NATS at {}", nats_url);
+        info!("📡 Connecting to NATS at {}", nats_url);
         Arc::new(NatsEventBus::new(&nats_url).await?)
     } else {
-        println!("📦 Using local event bus (no NATS_URL provided)");
+        info!("📦 Using local event bus (no NATS_URL provided)");
         Arc::new(LocalEventBus::new())
     };
 
@@ -327,13 +329,13 @@ async fn main() -> anyhow::Result<()> {
     let service_shutdown = service.clone();
     tokio::spawn(async move {
         tokio::signal::ctrl_c().await.expect("Failed to listen for ctrl+c");
-        println!("\n🛑 Shutting down Harmony Service...");
+        info!("\n🛑 Shutting down Harmony Service...");
         let _ = service_shutdown.shutdown().await;
         std::process::exit(0);
     });
 
-    println!("🎵 Harmony Service v{} starting on port 3006", env!("CARGO_PKG_VERSION"));
-    println!("   Event bus: {}", if std::env::var("NATS_URL").is_ok() { "NATS" } else { "Local" });
+    info!("🎵 Harmony Service v{} starting on port 3006", env!("CARGO_PKG_VERSION"));
+    info!("   Event bus: {}", if std::env::var("NATS_URL").is_ok() { "NATS" } else { "Local" });
 
     warp::serve(routes)
         .run(([0, 0, 0, 0], 3006))

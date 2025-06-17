@@ -4,6 +4,7 @@ use finalverse_config::{FinalverseConfig as Config, load_default_config};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::{info, error};
+use finalverse_logging as logging;
 use tokio_stream::StreamExt;
 
 mod audio_generator;
@@ -123,7 +124,7 @@ impl SymphonyEngine {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
+    logging::init(None);
 
     let config = load_default_config()?;
     let engine = SymphonyEngine::new(config).await?;

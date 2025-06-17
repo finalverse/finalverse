@@ -32,6 +32,7 @@ members = [
     "crates/config",
     "crates/core",
     "crates/events",
+    "crates/logging",
     "crates/grpc-client",
     "crates/health",
     "crates/plugin",
@@ -120,6 +121,7 @@ finalverse-plugin = { path = "crates/plugin" }
 finalverse-wasm-runtime = { path = "crates/wasm-runtime" }
 finalverse-ecosystem = { path = "crates/ecosystem" }
 finalverse-metobolism = { path = "crates/metabolism" }
+finalverse-logging = { path = "crates/logging" }
 
 # QUIC/Networking
 quinn = "0.10"

@@ -16,6 +16,7 @@ finalverse-protocol.workspace = true
 axum.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+finalverse-logging.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
 chrono.workspace = true
@@ -23,7 +24,6 @@ finalverse-health.workspace = true
 service-registry.workspace = true
 warp.workspace = true
 async-trait = "0.1.88"
-env_logger.workspace = true
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["full"] }
 

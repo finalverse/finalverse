@@ -18,6 +18,7 @@ tower-http = { workspace = true, features = ["cors"] }
 futures.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+finalverse-logging.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true

@@ -8,6 +8,8 @@ use axum::{
 use finalverse_health::HealthMonitor;
 use service_registry::LocalServiceRegistry;
 use serde::{Deserialize, Serialize};
+use tracing::info;
+use finalverse_logging as logging;
 use std::{
     net::SocketAddr,
     sync::{Arc, RwLock},
@@ -229,7 +231,7 @@ async fn generate_world_description(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
+    logging::init(None);
     let state = Arc::new(RwLock::new(AIState::new()));
     let monitor = Arc::new(HealthMonitor::new("ai-orchestra", env!("CARGO_PKG_VERSION")));
     let registry = LocalServiceRegistry::new();
@@ -251,7 +253,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3004));
-    println!("AI Orchestra listening on {}", addr);
+    info!("AI Orchestra listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;

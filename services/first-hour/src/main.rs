@@ -1,10 +1,11 @@
 // services/first-hour/src/main.rs
 use first_hour::{FirstHourService, FirstHourConfig};
 use tracing::info;
+use finalverse_logging as logging;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    logging::init(None);
 
     info!("Starting First Hour Service...");
 

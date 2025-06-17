@@ -3,9 +3,12 @@ use serde::{Deserialize, Serialize};
 use finalverse_health::HealthMonitor;
 use service_registry::LocalServiceRegistry;
 use std::{net::SocketAddr, sync::Arc};
+use tracing::info;
+use finalverse_logging as logging;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    logging::init(None);
     let monitor = Arc::new(HealthMonitor::new("api-gateway", env!("CARGO_PKG_VERSION")));
     let registry = LocalServiceRegistry::new();
     registry
@@ -17,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/login", post(login_handler));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-    println!("API Gateway listening on {}", addr);
+    info!("API Gateway listening on {}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
     Ok(())
