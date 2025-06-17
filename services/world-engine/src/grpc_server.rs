@@ -1,10 +1,12 @@
-// services/world-engine/src/grpc/server.rs
+// services/world-engine/src/grpc_server.rs
 use tonic::{Request, Response, Status};
 use std::sync::Arc;
 use std::collections::HashMap;
 use std::pin::Pin;
 use tokio::sync::RwLock;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
+// Import types from the world_engine library so this module works
+// both when compiled as part of the library and the binary.
 use world_engine::{
     WorldEngine,
     RegionId,
