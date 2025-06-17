@@ -8,8 +8,8 @@ pub use world_engine::{
 };
 use finalverse_proto::world::world_service_server::WorldServiceServer;
 
-mod grpc;
-use grpc::server::WorldServiceImpl;
+mod grpc_server;
+use grpc_server::WorldServiceImpl;
 use finalverse_audio_core::{AudioEvent, AudioEventType, AudioSource};
 use nalgebra::Vector3;
 use redis::Client as RedisClient;
