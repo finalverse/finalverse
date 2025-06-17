@@ -27,7 +27,7 @@ tower.workspace = true
 tower-http = { workspace = true, features = ["cors"] }
 warp = "0.3.7"
 anyhow = "1.0.98"
-env_logger = "0.11.8"
+finalverse-logging.workspace = true
 finalverse-audio-core.workspace = true
 redis.workspace = true
 nalgebra.workspace = true

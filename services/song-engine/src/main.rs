@@ -22,6 +22,8 @@ use tower_http::cors::CorsLayer;
 use uuid::Uuid;
 use finalverse_health::HealthMonitor;
 use service_registry::LocalServiceRegistry;
+use tracing::info;
+use finalverse_logging as logging;
 
 #[derive(Debug, Clone)]
 pub struct SongEngineState {
@@ -388,7 +390,7 @@ async fn process_song_event(
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
+    logging::init(None);
 
     let state = Arc::new(RwLock::new(SongEngineState::new()));
     let monitor = Arc::new(HealthMonitor::new("song-engine", env!("CARGO_PKG_VERSION")));
@@ -411,7 +413,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3001));
-    println!("Song Engine listening on {}", addr);
+    info!("Song Engine listening on {}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;

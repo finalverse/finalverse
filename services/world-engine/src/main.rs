@@ -17,6 +17,8 @@ use redis::Client as RedisClient;
 use uuid::Uuid;
 use chrono::Utc;
 use serde_json;
+use tracing::info;
+use finalverse_logging as logging;
 
 // Example observer for logging events
 struct LoggingObserver;
@@ -30,13 +32,13 @@ impl Observer for LoggingObserver {
     async fn notify(&self, event: &WorldEvent) {
         match event {
             WorldEvent::CreatureMigration { species, from, to } => {
-                println!("🦌 {} migrating from {} to {}", species, from.0, to.0);
+                info!("🦌 {} migrating from {} to {}", species, from.0, to.0);
             }
             WorldEvent::CelestialEvent { event_type, duration } => {
-                println!("✨ Celestial event: {:?} for {} seconds", event_type, duration);
+                info!("✨ Celestial event: {:?} for {} seconds", event_type, duration);
             }
             WorldEvent::SilenceOutbreak { epicenter, radius, intensity } => {
-                println!("🌑 Silence outbreak at ({:.2}, {:.2}, {:.2}), radius: {:.2}, intensity: {:.2}",
+                info!("🌑 Silence outbreak at ({:.2}, {:.2}, {:.2}), radius: {:.2}, intensity: {:.2}",
                          epicenter.x, epicenter.y, epicenter.z, radius, intensity);
             },
             &WorldEvent::HarmonyRestored { .. } | &WorldEvent::SilenceManifested { .. } | &WorldEvent::EchoAppeared { .. } => todo!()
@@ -81,9 +83,9 @@ impl Observer for AudioObserver {
 
 #[tokio::main]
 async fn main() {
-    env_logger::init();
+    logging::init(None);
 
-    println!("🌍 Starting World Engine...");
+    info!("🌍 Starting World Engine...");
 
     // Create world engine
     let engine = Arc::new(WorldEngine::new());
@@ -134,7 +136,7 @@ async fn main() {
 
         loop {
             tick_interval.tick().await;
-            println!("⏰ Running world simulation tick...");
+            info!("⏰ Running world simulation tick...");
             engine_sim.simulate_tick().await;
         }
     });
@@ -146,7 +148,7 @@ async fn main() {
         .and_then(|p| p.parse().ok())
         .unwrap_or(3003);
     tokio::spawn(async move {
-        println!("🚀 World Engine gRPC starting on port {}", grpc_port);
+        info!("🚀 World Engine gRPC starting on port {}", grpc_port);
         Server::builder()
             .add_service(WorldServiceServer::new(WorldServiceImpl::new(grpc_engine)))
             .serve(([0, 0, 0, 0], grpc_port).into())
@@ -157,7 +159,7 @@ async fn main() {
     // Start HTTP server
     let routes = world_engine::server::create_routes(engine);
 
-    println!("🚀 World Engine HTTP API starting on port 3002");
+    info!("🚀 World Engine HTTP API starting on port 3002");
     warp::serve(routes)
         .run(([0, 0, 0, 0], 3002))
         .await;

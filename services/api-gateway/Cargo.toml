@@ -13,3 +13,4 @@ service-registry.workspace = true
 axum.workspace = true
 tokio.workspace = true
 serde = { workspace = true, features = ["derive"] }
+finalverse-logging.workspace = true

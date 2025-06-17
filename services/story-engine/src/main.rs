@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
 use warp::Filter;
+use tracing::info;
+use finalverse_logging as logging;
 use finalverse_audio_core::{AudioEvent, AudioEventType, AudioSource, EmotionalState};
 use redis::Client as RedisClient;
 use uuid::Uuid;
@@ -94,7 +96,7 @@ impl StoryEngineService {
                         HarmonyEvent::AttunementAchieved { player_id, tier, .. } => {
                             if *tier >= 3 {
                                 // High-tier players automatically create ambient songs
-                                println!("🎵 Player {} achieved tier {}, creating ambient song", player_id.0, tier);
+                                info!("🎵 Player {} achieved tier {}, creating ambient song", player_id.0, tier);
 
                                 let song = ActiveSong {
                                     id: uuid::Uuid::new_v4().to_string(),
@@ -154,12 +156,12 @@ impl StoryEngineService {
 
                 for id in expired_songs {
                     songs.write().await.remove(&id);
-                    println!("🎵 Song {} expired and removed", id);
+                    info!("🎵 Song {} expired and removed", id);
                 }
             }
         });
 
-        println!("✅ Story Engine event listeners started");
+        info!("✅ Story Engine event listeners started");
         Ok(())
     }
 
@@ -403,14 +405,14 @@ struct WeaveRequest {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    env_logger::init();
+    logging::init(None);
 
     // Initialize event bus
     let event_bus: Arc<dyn GameEventBus> = if let Ok(nats_url) = std::env::var("NATS_URL") {
-        println!("📡 Connecting to NATS at {}", nats_url);
+        info!("📡 Connecting to NATS at {}", nats_url);
         Arc::new(NatsEventBus::new(&nats_url).await?)
     } else {
-        println!("📦 Using local event bus");
+        info!("📦 Using local event bus");
         Arc::new(LocalEventBus::new())
     };
 
@@ -451,12 +453,12 @@ async fn main() -> anyhow::Result<()> {
     let service_shutdown = service.clone();
     tokio::spawn(async move {
         tokio::signal::ctrl_c().await.expect("Failed to listen for ctrl+c");
-        println!("\n🛑 Shutting down Story Engine...");
+        info!("\n🛑 Shutting down Story Engine...");
         let _ = service_shutdown.shutdown().await;
         std::process::exit(0);
     });
 
-    println!("🎵 Story Engine v{} starting on port 3005", env!("CARGO_PKG_VERSION"));
+    info!("🎵 Story Engine v{} starting on port 3005", env!("CARGO_PKG_VERSION"));
 
     warp::serve(routes)
         .run(([0, 0, 0, 0], 3005))

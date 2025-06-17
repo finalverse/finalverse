@@ -13,6 +13,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tonic::{transport::Server, Request, Response, Status};
 use tracing::{info, error};
+use finalverse_logging as logging;
 
 pub struct World3DService {
     world_manager: Arc<world_manager::WorldManager>,
@@ -57,7 +58,7 @@ impl World3DService {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt::init();
+    logging::init(None);
 
     let service = World3DService::new().await?;
     service.initialize_first_hour_world().await?;

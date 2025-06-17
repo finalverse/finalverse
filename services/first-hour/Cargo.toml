@@ -20,6 +20,7 @@ anyhow.workspace = true
 image = "0.24.9"
 serde_json = "1.0.140"
 tracing-subscriber = "0.3.19"
+finalverse-logging.workspace = true
 maplit = "1"
 
 redis = { workspace = true, features = ["tokio-comp"] }

@@ -135,6 +135,12 @@ See [docs/plugin_dev_guide.md](docs/plugin_dev_guide.md) for details.
   server loads dynamic plugins from `FINALVERSE_PLUGIN_DIR` and exposes all
   gRPC services on `FINALVERSE_GRPC_PORT`. See `.env.example` for defaults.
 
+## Logging
+
+All services initialize logging via `finalverse-logging`.
+Set `FINALVERSE_LOG_LEVEL` (e.g. `info`, `debug`) to adjust verbosity.
+The format is controlled by `general.log_format` in `finalverse.toml`.
+
 ## Contributing
 
 This MVP focuses on the core loop of songweaving, world simulation and AI interaction. Contributions that enhance interoperability with FinalStorm, improve AI behaviours or extend the service APIs are welcome. Please ensure code is formatted with `cargo fmt` and that all services compile with `cargo build --workspace`.

@@ -25,6 +25,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 tracing.workspace = true
 tracing-subscriber = "0.3"
+finalverse-logging.workspace = true
 nalgebra.workspace = true
 rand = "0.8.5"
 tokio-stream = "0.1"

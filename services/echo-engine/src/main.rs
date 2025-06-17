@@ -18,6 +18,7 @@ use std::{
 };
 use tower_http::trace::TraceLayer;
 use tracing::{info, Level};
+use finalverse_logging as logging;
 
 #[derive(Clone)]
 struct AppState {
@@ -54,9 +55,7 @@ impl From<&Echo> for EchoResponse {
 #[tokio::main]
 async fn main() {
     // Initialize tracing
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    logging::init(Some("info"));
 
     let state = AppState {
         echoes: Arc::new(Mutex::new(HashMap::new())),
