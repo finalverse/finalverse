@@ -1,4 +1,4 @@
-// services/song-engine/src/main.rs
+// services/story-engine/src/main.rs
 use std::sync::Arc;
 use std::collections::HashMap;
 use tokio::sync::RwLock;
@@ -58,7 +58,7 @@ pub struct DialogueResponse {
     pub audio_stream_id: uuid::Uuid,
 }
 
-pub struct SongEngineService {
+pub struct StoryEngineService {
     active_songs: Arc<RwLock<HashMap<String, ActiveSong>>>,
     symphonies: Arc<RwLock<HashMap<String, Symphony>>>,
     event_bus: Arc<dyn GameEventBus>,
@@ -66,7 +66,7 @@ pub struct SongEngineService {
     redis_client: RedisClient,
 }
 
-impl SongEngineService {
+impl StoryEngineService {
     pub fn new(event_bus: Arc<dyn GameEventBus>, redis_client: RedisClient) -> Self {
         Self {
             active_songs: Arc::new(RwLock::new(HashMap::new())),
@@ -115,7 +115,7 @@ impl SongEngineService {
                                     power: song.power,
                                     location: song.location,
                                 })).with_metadata(EventMetadata {
-                                    source: Some("song-engine".to_string()),
+                                    source: Some("story-engine".to_string()),
                                     causation_id: Some(event.id.clone()),
                                     ..Default::default()
                                 });
@@ -159,7 +159,7 @@ impl SongEngineService {
             }
         });
 
-        println!("✅ Song Engine event listeners started");
+        println!("✅ Story Engine event listeners started");
         Ok(())
     }
 
@@ -196,7 +196,7 @@ impl SongEngineService {
             power,
             location,
         })).with_metadata(EventMetadata {
-            source: Some("song-engine".to_string()),
+            source: Some("story-engine".to_string()),
             tags: vec!["player_action".to_string()],
             ..Default::default()
         });
@@ -231,7 +231,7 @@ impl SongEngineService {
             symphony_type,
             required_power,
         })).with_metadata(EventMetadata {
-            source: Some("song-engine".to_string()),
+            source: Some("story-engine".to_string()),
             correlation_id: Some(symphony_id.clone()),
             ..Default::default()
         });
@@ -281,7 +281,7 @@ impl SongEngineService {
                         symphony_type,
                         success: true,
                     })).with_metadata(EventMetadata {
-                        source: Some("song-engine".to_string()),
+                        source: Some("story-engine".to_string()),
                         correlation_id: Some(symphony_id),
                         ..Default::default()
                     });
@@ -367,7 +367,7 @@ impl SongEngineService {
 // HTTP handlers
 async fn weave_song_handler(
     body: WeaveRequest,
-    service: Arc<SongEngineService>,
+    service: Arc<StoryEngineService>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     match service.weave_song(
         PlayerId(body.player_id),
@@ -388,7 +388,7 @@ async fn weave_song_handler(
 async fn health_handler() -> Result<impl warp::Reply, warp::Rejection> {
     Ok(warp::reply::json(&serde_json::json!({
         "status": "healthy",
-        "service": "song-engine",
+        "service": "story-engine",
         "version": env!("CARGO_PKG_VERSION"),
     })))
 }
@@ -416,7 +416,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Create service
     let redis_client = RedisClient::open("redis://127.0.0.1/").unwrap();
-    let service = Arc::new(SongEngineService::new(event_bus, redis_client));
+    let service = Arc::new(StoryEngineService::new(event_bus, redis_client));
 
     // Start event listeners
     service.start_event_listeners().await?;
@@ -434,7 +434,7 @@ async fn main() -> anyhow::Result<()> {
     let get_songs = warp::path!("songs")
         .and(warp::get())
         .and(service_filter.clone())
-        .and_then(|service: Arc<SongEngineService>| async move {
+        .and_then(|service: Arc<StoryEngineService>| async move {
             let songs = service.get_active_songs().await;
             Ok::<_, warp::Rejection>(warp::reply::json(&songs))
         });
@@ -451,15 +451,15 @@ async fn main() -> anyhow::Result<()> {
     let service_shutdown = service.clone();
     tokio::spawn(async move {
         tokio::signal::ctrl_c().await.expect("Failed to listen for ctrl+c");
-        println!("\n🛑 Shutting down Song Engine...");
+        println!("\n🛑 Shutting down Story Engine...");
         let _ = service_shutdown.shutdown().await;
         std::process::exit(0);
     });
 
-    println!("🎵 Song Engine v{} starting on port 3001", env!("CARGO_PKG_VERSION"));
+    println!("🎵 Story Engine v{} starting on port 3005", env!("CARGO_PKG_VERSION"));
 
     warp::serve(routes)
-        .run(([0, 0, 0, 0], 3001))
+        .run(([0, 0, 0, 0], 3005))
         .await;
 
     Ok(())
