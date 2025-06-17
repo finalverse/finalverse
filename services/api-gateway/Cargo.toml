@@ -14,3 +14,4 @@ axum.workspace = true
 tokio.workspace = true
 serde = { workspace = true, features = ["derive"] }
 finalverse-logging.workspace = true
+tracing.workspace = true

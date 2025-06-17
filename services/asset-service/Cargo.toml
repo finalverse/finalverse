@@ -11,3 +11,4 @@ service-registry.workspace = true
 axum.workspace = true
 tokio.workspace = true
 finalverse-logging.workspace = true
+tracing.workspace = true
