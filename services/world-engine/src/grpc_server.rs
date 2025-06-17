@@ -7,7 +7,7 @@ use tokio::sync::RwLock;
 use tokio_stream::{wrappers::ReceiverStream, Stream, StreamExt};
 // Import types from the world_engine library so this module works
 // both when compiled as part of the library and the binary.
-use world_engine::{
+use crate::{
     WorldEngine,
     RegionId,
     PlayerAction,
@@ -21,7 +21,7 @@ use world_engine::{
 use finalverse_proto::world::{
     world_service_server::WorldService,
     GetWorldStateRequest, WorldStateResponse,
-    StreamUpdatesRequest, WorldUpdate,
+    StreamUpdatesRequest, WorldUpdate as ProtoWorldUpdate,
     PlayerActionRequest, ActionResponse,
     GetRegionRequest, RegionResponse,
     UpdateHarmonyRequest, UpdateHarmonyResponse,
@@ -35,7 +35,7 @@ use finalverse_proto::world::{
 
 pub struct WorldServiceImpl {
     engine: Arc<WorldEngine>,
-    update_channels: Arc<RwLock<HashMap<String, tokio::sync::mpsc::Sender<WorldUpdate>>>>,
+    update_channels: Arc<RwLock<HashMap<String, tokio::sync::mpsc::Sender<ProtoWorldUpdate>>>>,
 }
 
 impl WorldServiceImpl {
@@ -117,7 +117,7 @@ impl WorldService for WorldServiceImpl {
                 for region_id in &region_ids {
                     if let Ok(uuid) = uuid::Uuid::parse_str(region_id) {
                         if let Some(region) = state.regions.get(&RegionId(uuid)) {
-                            let update = WorldUpdate {
+                            let update = ProtoWorldUpdate {
                                 update: Some(world_update::Update::RegionUpdate(RegionUpdate {
                                 region_id: region.id.0.to_string(),
                                 harmony_level: region.harmony_level as f32,
@@ -250,4 +250,4 @@ fn event_to_proto(_event: &WorldEvent) -> ProtoWorldEvent {
     }
 }
 
-pub type WorldUpdateStream = Pin<Box<dyn Stream<Item = Result<WorldUpdate, Status>> + Send + 'static>>;
+pub type WorldUpdateStream = Pin<Box<dyn Stream<Item = Result<ProtoWorldUpdate, Status>> + Send + 'static>>;
