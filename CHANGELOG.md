@@ -5,6 +5,7 @@
 - Host function registration for Wasm runtime plugins.
 - Local LLM provider for offline model inference.
 - Documentation filename corrected to `advance_features_impl.md`.
+- Stable gRPC World Engine API with example client.
 
 ## [0.1.2] - 2025-06-20
 ### Added

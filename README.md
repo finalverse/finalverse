@@ -141,7 +141,7 @@ This MVP focuses on the core loop of songweaving, world simulation and AI intera
 
 ## Release History
 
-- **0.1.3** - Plugin discovery, deep config merging and local LLM provider.
+- **0.1.3** - gRPC world engine API, plugin discovery, deep config merging and local LLM provider.
 - **0.1.2** - Improved monitoring and WebSocket integration.
 - **0.1.1** - First official release with working setup scripts and Docker deployment.
 - **0.1.0** - Initial proof-of-concept MVP. See `CHANGELOG.md` for details.
