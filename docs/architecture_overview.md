@@ -88,3 +88,17 @@ The MVP already includes WebSocket support, AI integration and a dynamic quest s
 
 Future phases will expand multiplayer systems, procedural content and AI-driven events. Details are outlined in [advance_features_plan.md](advance_features_plan.md).
 
+## Potential External 3D Client
+
+An external 3D client (such as the planned **FinalStorm**) could connect through
+WebSocket or QUIC via the WebSocket Gateway on port `3000`. It would subscribe
+to spatial streams from `services/world3d-service`, which coordinates grids,
+terrain generation and streaming through components like `WorldManager`,
+`SpatialStreamManager` and `TerrainService`.
+
+The client consumes structures from `crates/world3d` — including `Grid`,
+`TerrainPatch`, `EchoEntity` and the `AssetManifest` for meshes and textures —
+to render the world. AI-generated quests and characters are inserted into the 3D
+space by `world3d-service`, allowing players to see new content appear in real
+time.
+
