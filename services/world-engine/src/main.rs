@@ -5,6 +5,7 @@ use tonic::transport::Server;
 pub use world_engine::{
     WorldEngine, Observer, WorldEvent, RegionState, RegionId, TerrainType,
     WeatherState, WeatherType, Species, SpeciesProfile, MigrationPhase,
+    PlayerAction, PlayerId, ActionType, Coordinates,
 };
 use finalverse_proto::world::world_service_server::WorldServiceServer;
 
