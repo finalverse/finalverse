@@ -15,6 +15,9 @@ pub enum LLMProvider {
     Ollama(OllamaProvider),
     OpenAI(OpenAIProvider),
     Local(LocalProvider),
+    Claude(ClaudeProvider),
+    Gemini(GeminiProvider),
+    Mistral(MistralProvider),
 }
 
 #[derive(Debug, Clone)]
@@ -25,6 +28,27 @@ pub struct OllamaProvider {
 
 #[derive(Debug, Clone)]
 pub struct OpenAIProvider {
+    base_url: String,
+    api_key: String,
+    model_name: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct ClaudeProvider {
+    base_url: String,
+    api_key: String,
+    model_name: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct GeminiProvider {
+    base_url: String,
+    api_key: String,
+    model_name: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct MistralProvider {
     base_url: String,
     api_key: String,
     model_name: String,
@@ -134,9 +158,78 @@ impl LLMOrchestra {
             }
         }
 
+        // Add OpenAI provider if API key is set
+        if let Ok(openai_key) = std::env::var("OPENAI_API_KEY") {
+            let base = std::env::var("OPENAI_BASE_URL")
+                .unwrap_or_else(|_| "https://api.openai.com".to_string());
+            let model = std::env::var("OPENAI_MODEL")
+                .unwrap_or_else(|_| "gpt-4".to_string());
+            models.insert(
+                "openai".to_string(),
+                LLMProvider::OpenAI(OpenAIProvider {
+                    base_url: base,
+                    api_key: openai_key,
+                    model_name: model,
+                }),
+            );
+        }
+
+        // Add Claude provider if API key is set
+        if let Ok(anthropic_key) = std::env::var("ANTHROPIC_API_KEY") {
+            let base = std::env::var("ANTHROPIC_BASE_URL")
+                .unwrap_or_else(|_| "https://api.anthropic.com".to_string());
+            let model = std::env::var("CLAUDE_MODEL")
+                .unwrap_or_else(|_| "claude-3-opus-20240229".to_string());
+            models.insert(
+                "claude".to_string(),
+                LLMProvider::Claude(ClaudeProvider {
+                    base_url: base,
+                    api_key: anthropic_key,
+                    model_name: model,
+                }),
+            );
+        }
+
+        // Add Gemini provider if API key is set
+        if let Ok(gemini_key) = std::env::var("GEMINI_API_KEY") {
+            let base = std::env::var("GEMINI_BASE_URL")
+                .unwrap_or_else(|_| {
+                    "https://generativelanguage.googleapis.com".to_string()
+                });
+            let model = std::env::var("GEMINI_MODEL")
+                .unwrap_or_else(|_| "gemini-pro".to_string());
+            models.insert(
+                "gemini".to_string(),
+                LLMProvider::Gemini(GeminiProvider {
+                    base_url: base,
+                    api_key: gemini_key,
+                    model_name: model,
+                }),
+            );
+        }
+
+        // Add Mistral provider if API key is set
+        if let Ok(mistral_key) = std::env::var("MISTRAL_API_KEY") {
+            let base = std::env::var("MISTRAL_BASE_URL")
+                .unwrap_or_else(|_| "https://api.mistral.ai".to_string());
+            let model = std::env::var("MISTRAL_MODEL")
+                .unwrap_or_else(|_| "mistral-large-latest".to_string());
+            models.insert(
+                "mistral".to_string(),
+                LLMProvider::Mistral(MistralProvider {
+                    base_url: base,
+                    api_key: mistral_key,
+                    model_name: model,
+                }),
+            );
+        }
+
+        let default_model = std::env::var("FINALVERSE_DEFAULT_LLM")
+            .unwrap_or_else(|_| "ollama".to_string());
+
         Self {
             models,
-            default_model: "ollama".to_string(),
+            default_model,
         }
     }
 
@@ -152,6 +245,9 @@ impl LLMOrchestra {
             LLMProvider::Ollama(ollama) => self.generate_ollama(ollama, request).await,
             LLMProvider::OpenAI(openai) => self.generate_openai(openai, request).await,
             LLMProvider::Local(local) => self.generate_local(local, request).await,
+            LLMProvider::Claude(c) => self.generate_claude(c, request).await,
+            LLMProvider::Gemini(g) => self.generate_gemini(g, request).await,
+            LLMProvider::Mistral(m) => self.generate_mistral(m, request).await,
         }
     }
 
@@ -230,6 +326,132 @@ impl LLMOrchestra {
             }
         } else {
             Err(format!("OpenAI request failed with status: {}", response.status()).into())
+        }
+    }
+
+    async fn generate_claude(
+        &self,
+        provider: &ClaudeProvider,
+        request: GenerationRequest,
+    ) -> Result<GenerationResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let client = reqwest::Client::new();
+
+        let messages = vec![OpenAIMessage {
+            role: "user".to_string(),
+            content: request.prompt,
+        }];
+
+        let req_body = OpenAIRequest {
+            model: provider.model_name.clone(),
+            messages,
+            temperature: request.temperature.unwrap_or(0.7),
+            max_tokens: request.max_tokens.unwrap_or(2048),
+        };
+
+        let response = client
+            .post(&format!("{}/v1/messages", provider.base_url))
+            .header("Authorization", format!("Bearer {}", provider.api_key))
+            .json(&req_body)
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            let api_res: OpenAIResponse = response.json().await?;
+            if let Some(choice) = api_res.choices.first() {
+                Ok(GenerationResponse {
+                    text: choice.message.content.clone(),
+                    model_used: provider.model_name.clone(),
+                    tokens_used: api_res.usage.total_tokens,
+                })
+            } else {
+                Err("No choices returned from Claude".into())
+            }
+        } else {
+            Err(format!("Claude request failed with status: {}", response.status()).into())
+        }
+    }
+
+    async fn generate_gemini(
+        &self,
+        provider: &GeminiProvider,
+        request: GenerationRequest,
+    ) -> Result<GenerationResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let client = reqwest::Client::new();
+
+        let messages = vec![OpenAIMessage {
+            role: "user".to_string(),
+            content: request.prompt,
+        }];
+
+        let req_body = OpenAIRequest {
+            model: provider.model_name.clone(),
+            messages,
+            temperature: request.temperature.unwrap_or(0.7),
+            max_tokens: request.max_tokens.unwrap_or(2048),
+        };
+
+        let response = client
+            .post(&format!("{}/v1beta/models/{}:generateContent", provider.base_url, provider.model_name))
+            .header("Authorization", format!("Bearer {}", provider.api_key))
+            .json(&req_body)
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            let api_res: OpenAIResponse = response.json().await?;
+            if let Some(choice) = api_res.choices.first() {
+                Ok(GenerationResponse {
+                    text: choice.message.content.clone(),
+                    model_used: provider.model_name.clone(),
+                    tokens_used: api_res.usage.total_tokens,
+                })
+            } else {
+                Err("No choices returned from Gemini".into())
+            }
+        } else {
+            Err(format!("Gemini request failed with status: {}", response.status()).into())
+        }
+    }
+
+    async fn generate_mistral(
+        &self,
+        provider: &MistralProvider,
+        request: GenerationRequest,
+    ) -> Result<GenerationResponse, Box<dyn std::error::Error + Send + Sync>> {
+        let client = reqwest::Client::new();
+
+        let messages = vec![OpenAIMessage {
+            role: "user".to_string(),
+            content: request.prompt,
+        }];
+
+        let req_body = OpenAIRequest {
+            model: provider.model_name.clone(),
+            messages,
+            temperature: request.temperature.unwrap_or(0.7),
+            max_tokens: request.max_tokens.unwrap_or(2048),
+        };
+
+        let response = client
+            .post(&format!("{}/v1/chat/completions", provider.base_url))
+            .header("Authorization", format!("Bearer {}", provider.api_key))
+            .json(&req_body)
+            .send()
+            .await?;
+
+        if response.status().is_success() {
+            let api_res: OpenAIResponse = response.json().await?;
+            if let Some(choice) = api_res.choices.first() {
+                Ok(GenerationResponse {
+                    text: choice.message.content.clone(),
+                    model_used: provider.model_name.clone(),
+                    tokens_used: api_res.usage.total_tokens,
+                })
+            } else {
+                Err("No choices returned from Mistral".into())
+            }
+        } else {
+            Err(format!("Mistral request failed with status: {}", response.status()).into())
         }
     }
 

@@ -83,6 +83,12 @@ OLLAMA_BASE_URL=http://localhost:11434
 
 # Optional: OpenAI Configuration
 # OPENAI_API_KEY=your-key-here
+# Optional: Claude (Anthropic)
+# ANTHROPIC_API_KEY=your-key-here
+# Optional: Gemini
+# GEMINI_API_KEY=your-key-here
+# Optional: Mistral
+# MISTRAL_API_KEY=your-key-here
 
 # WebSocket Configuration
 WS_PORT=3007
@@ -154,6 +160,20 @@ Box::new(OpenAIProvider::new(
     "https://api.anthropic.com",
     &api_key,
     "claude-3-sonnet-20240229"
+))
+
+// For Gemini API:
+Box::new(GeminiProvider::new(
+    "https://generativelanguage.googleapis.com",
+    &gemini_key,
+    "gemini-pro",
+))
+
+// For Mistral API:
+Box::new(MistralProvider::new(
+    "https://api.mistral.ai",
+    &mistral_key,
+    "mistral-large-latest",
 ))
 ```
 
