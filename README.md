@@ -153,6 +153,12 @@ This MVP focuses on the core loop of songweaving, world simulation and AI intera
 - **0.1.1** - First official release with working setup scripts and Docker deployment.
 - **0.1.0** - Initial proof-of-concept MVP. See `CHANGELOG.md` for details.
 
+## MapleAI External Protocols
+
+MapleAI integrates with several external APIs to support different language model providers (OpenAI, Claude, Gemini, Mistral and Ollama). It also uses the ONNX Runtime for local models and relies on gRPC/Protocol Buffers for service communication. The specific licenses or terms for these protocols are listed in [LICENSE_MAPLEAI.md](LICENSE_MAPLEAI.md).
+
+Contributors extending MapleAI must review those upstream licenses and comply with any attribution or usage requirements.
+
 ## License
 
 © 2025 Finalverse Inc. All rights reserved.
