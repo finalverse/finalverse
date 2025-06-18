@@ -39,6 +39,7 @@ members = [
     "crates/proto",
     "crates/protocol",
     "crates/wasm-runtime",
+    "crates/mapleai-agent",
     "crates/ecosystem",
     "crates/world3d",
     
@@ -119,6 +120,7 @@ finalverse-server = { path = "server" }
 finalverse-config = { path = "crates/config" }
 finalverse-plugin = { path = "crates/plugin" }
 finalverse-wasm-runtime = { path = "crates/wasm-runtime" }
+mapleai-agent = { path = "crates/mapleai-agent" }
 finalverse-ecosystem = { path = "crates/ecosystem" }
 finalverse-metobolism = { path = "crates/metabolism" }
 finalverse-logging = { path = "crates/logging" }

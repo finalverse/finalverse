@@ -1,0 +1,10 @@
+[package]
+name = "mapleai-agent"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+finalverse-protocol.workspace = true
+ai-orchestra = { path = "../../services/ai-orchestra" }
+async-trait.workspace = true
+tokio.workspace = true
