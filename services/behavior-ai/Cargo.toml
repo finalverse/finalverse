@@ -12,3 +12,6 @@ axum.workspace = true
 tokio.workspace = true
 finalverse-logging.workspace = true
 tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+mapleai-agent.workspace = true
