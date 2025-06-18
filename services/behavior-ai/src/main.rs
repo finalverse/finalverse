@@ -79,8 +79,11 @@ async fn act_agent(
     State(state): State<AppState>,
     Json(req): Json<ActRequest>,
 ) -> Option<Json<ActResponse>> {
-    let mut agents = state.agents.write().await;
-    let agent = agents.get_mut(&id)?;
+    // Remove the agent from the map so the lock isn't held across `.await`
+    let mut agent = {
+        let mut agents = state.agents.write().await;
+        agents.remove(&id)?
+    };
 
     let ctx = ReasoningContext {
         location: req.location,
@@ -91,7 +94,15 @@ async fn act_agent(
     };
     agent.update_context(ctx);
     agent.step().await;
-    if let Some(action) = agent.state().last_action.clone() {
+    let last_action = agent.state().last_action.clone();
+
+    // Put the agent back into the map after the async call completes
+    {
+        let mut agents = state.agents.write().await;
+        agents.insert(id, agent);
+    }
+
+    if let Some(action) = last_action {
         Some(Json(ActResponse { action: to_dto(action) }))
     } else {
         None
