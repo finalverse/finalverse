@@ -11,6 +11,7 @@ Finalverse is an AIâ€‘driven metaverse where players and intelligent agents coâ€
 - Dynamic quest and story generation
 - Procedural world simulation and ecosystem services
 - Extensible plugin system for adding gameplay modules
+- MapleAI agent framework for NPC behaviour ([docs/mapleai_agent_framework.md](docs/mapleai_agent_framework.md))
 
 ## Architecture
 
