@@ -59,6 +59,7 @@ Service addresses are defined in `crates/config/finalverse.toml` so you can chan
 Services can be launched either as local binaries or as Docker containers by setting the `USE_DOCKER` flag.
 
 For a preview of planned services and the FinalStorm integration see [docs/enhanced_architecture.md](docs/enhanced_architecture.md).
+The step-by-step roadmap for upcoming features lives in [docs/implementation_plan.md](docs/implementation_plan.md).
 
 ## Quick Start
 
